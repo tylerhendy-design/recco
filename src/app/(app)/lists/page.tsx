@@ -114,7 +114,7 @@ export default function ListsPage() {
               </span>
               {allCats.map((cat) => {
                 const color = CATEGORIES.find((c) => c.id === cat)?.color ?? EXTRA_CATS[cat] ?? '#888'
-                const bg = CATEGORIES.find((c) => c.id === cat)?.bgColor ?? `${EXTRA_CATS[cat]}1a` ?? '#88888811'
+                const bg = CATEGORIES.find((c) => c.id === cat)?.bgColor ?? (EXTRA_CATS[cat] ? `${EXTRA_CATS[cat]}1a` : '#88888811')
                 const isActive = activeFilter === cat
                 return (
                   <span
