@@ -13,6 +13,8 @@ type ProfileStats = {
   joined_at: string
   recos_sent: number
   friends_count: number
+  recos_completed: number
+  stinkers_sent: number
 }
 
 type FavouriteReco = {
@@ -40,6 +42,8 @@ export default function ProfilePage() {
         { data: prof },
         { count: recosSent },
         { count: friendsCount },
+        { count: recosCompleted },
+        { count: stinkersSent },
         { data: doneRecos },
       ] = await Promise.all([
         supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', user.id).single(),
@@ -47,6 +51,16 @@ export default function ProfilePage() {
         supabase.from('friend_connections').select('*', { count: 'exact', head: true })
           .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
           .eq('status', 'accepted'),
+        // Recos this user has marked as done
+        supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
+          .eq('recipient_id', user.id)
+          .eq('status', 'done'),
+        // Recos the user sent that got rated below 40 (stinkers)
+        supabase.from('reco_recipients')
+          .select('recommendations!inner(sender_id)', { count: 'exact', head: true })
+          .eq('recommendations.sender_id', user.id)
+          .eq('status', 'done')
+          .lt('score', 40),
         // Top completed recos for this user (restaurants + TV)
         supabase.from('reco_recipients')
           .select('score, recommendations(id, title, category, meta)')
@@ -66,6 +80,8 @@ export default function ProfilePage() {
           joined_at: prof.joined_at,
           recos_sent: recosSent ?? 0,
           friends_count: friendsCount ?? 0,
+          recos_completed: recosCompleted ?? 0,
+          stinkers_sent: stinkersSent ?? 0,
         })
       }
 
@@ -135,9 +151,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="flex gap-2.5">
+            <div className="flex gap-2.5 mb-2.5">
               <StatBox value={String(profile.recos_sent)} label="Recos sent" />
               <StatBox value={String(profile.friends_count)} label="Friends" />
+            </div>
+            <div className="flex gap-2.5">
+              <StatBox value={String(profile.recos_completed)} label="Completed" />
+              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger />
             </div>
           </div>
 
@@ -183,10 +203,10 @@ export default function ProfilePage() {
   )
 }
 
-function StatBox({ value, label }: { value: string; label: string }) {
+function StatBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
   return (
     <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
-      <div className="text-[20px] font-bold text-white">{value}</div>
+      <div className={`text-[20px] font-bold ${danger ? 'text-red-400' : 'text-white'}`}>{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>
   )
