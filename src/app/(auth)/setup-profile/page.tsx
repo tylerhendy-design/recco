@@ -16,19 +16,22 @@ export default function SetupProfilePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Pre-fill display name from OAuth metadata
+  // Pre-fill display name from OAuth metadata, store userId for availability check
+  const [userId, setUserId] = useState<string | null>(null)
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
         router.push('/login')
         return
       }
+      setUserId(user.id)
       const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? ''
       if (name) setDisplayName(name)
     })
   }, [])
 
-  // Check username availability with debounce
+  // Check username availability with debounce — exclude the current user's own row
   useEffect(() => {
     if (username.length < 3) {
       setUsernameAvailable(null)
@@ -36,16 +39,17 @@ export default function SetupProfilePage() {
     }
     const t = setTimeout(async () => {
       setCheckingUsername(true)
-      const { data } = await supabase
+      let query = supabase
         .from('profiles')
         .select('id')
         .eq('username', username.toLowerCase())
-        .maybeSingle()
+      if (userId) query = query.neq('id', userId)
+      const { data } = await query.maybeSingle()
       setUsernameAvailable(!data)
       setCheckingUsername(false)
     }, 400)
     return () => clearTimeout(t)
-  }, [username])
+  }, [username, userId])
 
   async function save() {
     if (!displayName.trim() || !username.trim()) return
@@ -57,17 +61,18 @@ export default function SetupProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    const { error: upsertError } = await supabase
+    // The trigger already created the profile row on signup — just update it
+    const { error: updateError } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
+      .update({
         display_name: displayName.trim(),
         username: username.toLowerCase().trim(),
         avatar_url: user.user_metadata?.avatar_url ?? null,
       })
+      .eq('id', user.id)
 
-    if (upsertError) {
-      setError(upsertError.message)
+    if (updateError) {
+      setError(updateError.message)
       setSaving(false)
       return
     }
