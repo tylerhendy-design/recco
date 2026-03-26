@@ -40,28 +40,19 @@ export default function ProfilePage() {
 
       const [
         { data: prof },
-        { count: recosSent },
+        { data: sentRecos },
         { count: friendsCount },
         { count: recosCompleted },
-        { count: stinkersSent },
         { data: doneRecos },
       ] = await Promise.all([
         supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', user.id).single(),
-        supabase.from('recommendations').select('*', { count: 'exact', head: true }).eq('sender_id', user.id),
+        supabase.from('recommendations').select('id').eq('sender_id', user.id),
         supabase.from('friend_connections').select('*', { count: 'exact', head: true })
           .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
           .eq('status', 'accepted'),
-        // Recos this user has marked as done
         supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
           .eq('recipient_id', user.id)
           .eq('status', 'done'),
-        // Recos the user sent that got rated below 40 (stinkers)
-        supabase.from('reco_recipients')
-          .select('recommendations!inner(sender_id)', { count: 'exact', head: true })
-          .eq('recommendations.sender_id', user.id)
-          .eq('status', 'done')
-          .lt('score', 40),
-        // Top completed recos for this user (restaurants + TV)
         supabase.from('reco_recipients')
           .select('score, recommendations(id, title, category, meta)')
           .eq('recipient_id', user.id)
@@ -72,16 +63,31 @@ export default function ProfilePage() {
           .limit(20),
       ])
 
+      const sentIds = sentRecos?.map((r) => r.id) ?? []
+      const recosSent = sentIds.length
+
+      // Count stinkers separately using the IDs we already have
+      let stinkersSent = 0
+      if (sentIds.length > 0) {
+        const { count } = await supabase
+          .from('reco_recipients')
+          .select('*', { count: 'exact', head: true })
+          .in('reco_id', sentIds)
+          .eq('status', 'done')
+          .lt('score', 40)
+        stinkersSent = count ?? 0
+      }
+
       if (prof) {
         setProfile({
           display_name: prof.display_name,
           username: prof.username,
           avatar_url: prof.avatar_url,
           joined_at: prof.joined_at,
-          recos_sent: recosSent ?? 0,
+          recos_sent: recosSent,
           friends_count: friendsCount ?? 0,
           recos_completed: recosCompleted ?? 0,
-          stinkers_sent: stinkersSent ?? 0,
+          stinkers_sent: stinkersSent,
         })
       }
 
