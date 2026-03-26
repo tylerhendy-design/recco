@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
@@ -40,12 +40,13 @@ const EXTRA_COLORS: Record<string, string> = {
   culture: '#FB923C',
 }
 
-export default function ListDetailPage({ params }: { params: { id: string } }) {
+export default function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const [shareOpen, setShareOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const list = PARIS_LIST
-  const shareUrl = `https://reco.app/lists/${params.id}`
+  const shareUrl = `https://reco.app/lists/${id}`
 
   function handleCopy() {
     navigator.clipboard.writeText(shareUrl).then(() => {

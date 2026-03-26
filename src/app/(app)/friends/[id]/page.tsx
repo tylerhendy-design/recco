@@ -1,5 +1,6 @@
 'use client'
 
+import { use } from 'react'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { Avatar } from '@/components/ui/Avatar'
@@ -231,8 +232,9 @@ function RecoRow({ reco }: { reco: RecentReco }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function FriendProfilePage({ params }: { params: { id: string } }) {
-  const profile = FRIEND_PROFILES[params.id]
+export default function FriendProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const profile = FRIEND_PROFILES[id]
 
   if (!profile) {
     return (
