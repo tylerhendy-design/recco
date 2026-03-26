@@ -11,6 +11,7 @@ import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
 import { fetchHomeFeed, submitFeedback } from '@/lib/data/recos'
+import { initials } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 
 const CATEGORY_FILTERS = [
@@ -35,6 +36,8 @@ export default function HomePage() {
 
   const [userId, setUserId] = useState<string | null>(null)
   const [firstName, setFirstName] = useState('there')
+  const [userInitials, setUserInitials] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [dbRecos, setDbRecos] = useState<Reco[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -70,7 +73,9 @@ export default function HomePage() {
 
       if (profile?.display_name) {
         setFirstName(profile.display_name.split(' ')[0])
+        setUserInitials(initials(profile.display_name))
       }
+      if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
 
       loadFeed(user.id)
     })
@@ -123,7 +128,14 @@ export default function HomePage() {
 
       {/* Nav */}
       <div className="flex justify-between items-center px-6 pt-5 pb-2.5 flex-shrink-0">
-        <img src="/stars.svg" alt="reco" className="h-8 w-auto" />
+        {/* Avatar → profile */}
+        <Link href="/profile" className="w-8 h-8 rounded-full bg-[#1e1c04] border border-accent flex items-center justify-center overflow-hidden flex-shrink-0">
+          {avatarUrl
+            ? <img src={avatarUrl} alt="profile" className="w-full h-full object-cover" />
+            : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
+          }
+        </Link>
+
         <div className="flex items-center gap-3">
           {/* Manual add */}
           <button
