@@ -78,7 +78,7 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
         {reco.meta.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
         {reco.meta.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
         {reco.meta.location && onShowMap && (
-          <MetaPill icon="map" onClick={() => onShowMap(reco)} color="#5BC4F5">
+          <MetaPill icon="map" onClick={() => onShowMap(reco)}>
             Map
           </MetaPill>
         )}

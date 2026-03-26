@@ -194,8 +194,23 @@ export default function SendPage() {
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-5 pt-4 flex flex-col gap-3 pb-6">
 
-        {/* What */}
-        <SectionCard label="What?">
+        {/* Category */}
+        <SectionCard label="Category">
+          <div className="flex flex-wrap gap-[7px]">
+            {CATEGORIES.map((cat) => (
+              <CategoryChip
+                key={cat.id}
+                id={cat.id}
+                selected={category === cat.id}
+                dashed={cat.id === 'custom'}
+                onClick={() => setCategory(cat.id === category ? null : cat.id)}
+              />
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* Name */}
+        <SectionCard label="Name">
           <input
             autoFocus
             className="bg-transparent outline-none text-white font-sans text-[17px] font-normal w-full tracking-[-0.3px] placeholder:text-[#2a2a30]"
@@ -323,7 +338,7 @@ export default function SendPage() {
             onClick={() => setBonusOpen((o) => !o)}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:opacity-80 transition-opacity"
           >
-            <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">Bonus details</span>
+            <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">Links, pics &amp; details</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 ${bonusOpen ? 'rotate-180' : ''}`}>
               <path d="M6 9l6 6 6-6"/>
             </svg>
@@ -331,22 +346,6 @@ export default function SendPage() {
 
           {bonusOpen && (
             <div className="px-4 pb-5 flex flex-col gap-4 border-t border-border">
-
-              {/* Category */}
-              <div className="pt-4">
-                <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2.5">Category</div>
-                <div className="flex flex-wrap gap-[7px]">
-                  {CATEGORIES.map((cat) => (
-                    <CategoryChip
-                      key={cat.id}
-                      id={cat.id}
-                      selected={category === cat.id}
-                      dashed={cat.id === 'custom'}
-                      onClick={() => setCategory(cat.id === category ? null : cat.id)}
-                    />
-                  ))}
-                </div>
-              </div>
 
               {/* Category-specific fields */}
               {catDef && catDef.extraFields.length > 0 && (

@@ -1,26 +1,22 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 
-const RECO_URL = 'https://reco.app/r/baosoho'
+const RECO_URL = 'https://givemeareco.com/r/baosoho'
 
 export default function QRPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [dataUrl, setDataUrl] = useState<string>('')
 
   useEffect(() => {
-    if (!canvasRef.current) return
-    QRCode.toCanvas(canvasRef.current, RECO_URL, {
-      width: 148,
-      margin: 1,
-      color: {
-        dark: '#0c0c0e',
-        light: '#ffffff',
-      },
-    })
+    QRCode.toDataURL(RECO_URL, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#0c0c0e', light: '#ffffff' },
+    }).then(setDataUrl)
   }, [])
 
   return (
@@ -32,13 +28,15 @@ export default function QRPage() {
           Share this QR code and anyone can open your reco directly in Reco
         </div>
 
-        {/* Real QR code */}
-        <div className="w-[180px] h-[180px] bg-white rounded-card p-4 flex items-center justify-center mb-7">
-          <canvas ref={canvasRef} />
+        <div className="w-[200px] h-[200px] bg-white rounded-card flex items-center justify-center mb-7">
+          {dataUrl
+            ? <img src={dataUrl} alt="QR code" width={200} height={200} className="rounded-card" />
+            : <div className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin" />
+          }
         </div>
 
         <div className="text-[13px] font-semibold text-white mb-1">BAO Soho — Restaurant</div>
-        <div className="text-xs text-text-faint mb-7">reco.app/r/baosoho</div>
+        <div className="text-xs text-text-faint mb-7">givemeareco.com/r/baosoho</div>
 
         <Link
           href="/home"
