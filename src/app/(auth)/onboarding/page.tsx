@@ -200,7 +200,7 @@ export default function OnboardingPage() {
               <div className="px-9 pb-11 flex flex-col gap-3 flex-shrink-0">
                 {isLast ? (
                   <Link
-                    href="/home"
+                    href="/login"
                     className="bg-accent text-accent-fg text-center py-4 rounded-btn text-[15px] font-bold"
                   >
                     Get started
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
                       Next
                     </button>
                     <Link
-                      href="/home"
+                      href="/login"
                       className="text-center text-[13px] text-text-faint py-2 cursor-pointer"
                     >
                       Skip intro

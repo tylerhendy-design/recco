@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { FeedbackSheet } from '@/components/overlays/FeedbackSheet'
 import { SuccessOverlay } from '@/components/overlays/SuccessOverlay'
 import { MapSheet } from '@/components/overlays/MapSheet'
-
-import type { Reco } from '@/types/app.types'
-import { INCOMPLETE_RECOS } from '@/lib/seed-recos'
 import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { useRecos } from '@/lib/context/RecosContext'
+import { createClient } from '@/lib/supabase/client'
+import { fetchHomeFeed, submitFeedback } from '@/lib/data/recos'
+import type { Reco } from '@/types/app.types'
 
 const CATEGORY_FILTERS = [
   { value: 'all', label: 'all' },
@@ -31,6 +31,13 @@ const TIME_FILTERS = [
 
 export default function HomePage() {
   const { manualRecos } = useRecos()
+  const supabase = createClient()
+
+  const [userId, setUserId] = useState<string | null>(null)
+  const [firstName, setFirstName] = useState('there')
+  const [dbRecos, setDbRecos] = useState<Reco[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [catFilter, setCatFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
   const [catDDOpen, setCatDDOpen] = useState(false)
@@ -42,16 +49,72 @@ export default function HomePage() {
   const [manualAddOpen, setManualAddOpen] = useState(false)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
 
-  const allIncomplete = [...manualRecos, ...INCOMPLETE_RECOS]
-  const filtered = allIncomplete
+  // Load current user and their feed
+  const loadFeed = useCallback(async (uid: string) => {
+    const recos = await fetchHomeFeed(uid)
+    setDbRecos(recos)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setUserId(user.id)
+
+      // Get first name from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.display_name) {
+        setFirstName(profile.display_name.split(' ')[0])
+      }
+
+      loadFeed(user.id)
+    })
+  }, [])
+
+  // Realtime: re-fetch when a new reco_recipient row appears for this user
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel('home-feed')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reco_recipients',
+          filter: `recipient_id=eq.${userId}`,
+        },
+        () => loadFeed(userId)
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [userId, loadFeed])
+
+  const allRecos = [...manualRecos, ...dbRecos]
+  const filtered = allRecos
     .filter((r) => catFilter === 'all' || r.category === catFilter)
     .filter((r) => !doneIds.has(r.id))
 
-  function handleFeedbackSubmit(score: number, text: string) {
-    if (!feedbackReco) return
-    setDoneIds((prev) => new Set(prev).add(feedbackReco.id))
+  async function handleFeedbackSubmit(score: number, text: string) {
+    if (!feedbackReco || !userId) return
+    const reco = feedbackReco
+    setDoneIds((prev) => new Set(prev).add(reco.id))
     setFeedbackReco(null)
-    setSuccessState({ reco: feedbackReco, score })
+    setSuccessState({ reco, score })
+
+    // Persist to DB (fire and forget — optimistic UI already updated)
+    await submitFeedback({
+      recoId: reco.id,
+      recipientId: userId,
+      senderId: reco.sender_id,
+      score,
+      feedbackText: text,
+    })
   }
 
   return (
@@ -85,9 +148,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Intro filter headline */}
+      {/* Greeting + filters */}
       <div className="px-6 pb-4 flex-shrink-0 relative z-10">
-        <div className="text-[26px] font-semibold text-white leading-[1.2] tracking-[-0.6px] mb-0.5 mt-4">Hey Tyler,</div>
+        <div className="text-[26px] font-semibold text-white leading-[1.2] tracking-[-0.6px] mb-0.5 mt-4">
+          Hey {firstName},
+        </div>
         <div className="text-[26px] font-semibold text-white leading-[1.2] tracking-[-0.6px] relative">
           {/* Category dropdown trigger */}
           <span
@@ -131,7 +196,6 @@ export default function HomePage() {
             )}
           </span>
         </div>
-
       </div>
 
       {/* Reco list */}
@@ -139,7 +203,13 @@ export default function HomePage() {
         className="flex-1 overflow-y-auto scrollbar-none px-5 pt-4 flex flex-col gap-3 pb-6"
         onClick={() => { setCatDDOpen(false); setTimeDDOpen(false) }}
       >
-        {filtered.map((reco, i) => (
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {!loading && filtered.map((reco, i) => (
           <RecoCard
             key={reco.id}
             reco={reco}
@@ -148,10 +218,17 @@ export default function HomePage() {
             onShowMap={setMapReco}
           />
         ))}
-        {filtered.length === 0 && (
+
+        {!loading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
-            <div className="text-[15px] text-text-dim">No {catFilter === 'all' ? '' : catFilter} recos yet</div>
-            <Link href="/send" className="text-accent text-sm font-semibold underline">Send one</Link>
+            <div className="text-[40px] mb-2">🎯</div>
+            <div className="text-[17px] font-semibold text-white">No recos yet</div>
+            <div className="text-[14px] text-text-muted leading-[1.6]">
+              When friends send you recos they'll appear here. Or ask someone for one.
+            </div>
+            <Link href="/get" className="mt-2 text-accent text-sm font-semibold">
+              Request a reco →
+            </Link>
           </div>
         )}
       </div>
