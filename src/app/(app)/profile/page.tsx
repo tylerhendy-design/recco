@@ -15,10 +15,19 @@ type ProfileStats = {
   friends_count: number
 }
 
+type FavouriteReco = {
+  id: string
+  title: string
+  score: number
+  meta: Record<string, string>
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
   const [profile, setProfile] = useState<ProfileStats | null>(null)
+  const [topRestaurants, setTopRestaurants] = useState<FavouriteReco[]>([])
+  const [topTV, setTopTV] = useState<FavouriteReco[]>([])
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
 
@@ -27,12 +36,26 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const [{ data: prof }, { count: recosSent }, { count: friendsCount }] = await Promise.all([
+      const [
+        { data: prof },
+        { count: recosSent },
+        { count: friendsCount },
+        { data: doneRecos },
+      ] = await Promise.all([
         supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', user.id).single(),
         supabase.from('recommendations').select('*', { count: 'exact', head: true }).eq('sender_id', user.id),
         supabase.from('friend_connections').select('*', { count: 'exact', head: true })
           .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
           .eq('status', 'accepted'),
+        // Top completed recos for this user (restaurants + TV)
+        supabase.from('reco_recipients')
+          .select('score, recommendations(id, title, category, meta)')
+          .eq('recipient_id', user.id)
+          .eq('status', 'done')
+          .not('score', 'is', null)
+          .gte('score', 65)
+          .order('score', { ascending: false })
+          .limit(20),
       ])
 
       if (prof) {
@@ -45,6 +68,21 @@ export default function ProfilePage() {
           friends_count: friendsCount ?? 0,
         })
       }
+
+      if (doneRecos) {
+        const restaurants: FavouriteReco[] = []
+        const tv: FavouriteReco[] = []
+        for (const row of doneRecos as any[]) {
+          const r = row.recommendations
+          if (!r) continue
+          const item = { id: r.id, title: r.title, score: row.score, meta: r.meta ?? {} }
+          if (r.category === 'restaurant' && restaurants.length < 5) restaurants.push(item)
+          if (r.category === 'tv' && tv.length < 5) tv.push(item)
+        }
+        setTopRestaurants(restaurants)
+        setTopTV(tv)
+      }
+
       setLoading(false)
     }
     load()
@@ -78,7 +116,8 @@ export default function ProfilePage() {
           <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
         </div>
       ) : profile ? (
-        <div className="flex-1 overflow-y-auto scrollbar-none">
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
+
           {/* Avatar + name */}
           <div className="px-6 pb-6 border-b border-bg-card">
             <div className="flex items-center gap-4 mb-5">
@@ -90,7 +129,9 @@ export default function ProfilePage() {
               </div>
               <div>
                 <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
-                <div className="text-[13px] text-text-faint mt-0.5">@{profile.username}{joinYear ? ` · joined ${joinYear}` : ''}</div>
+                <div className="text-[13px] text-text-faint mt-0.5">
+                  @{profile.username}{joinYear ? ` · joined ${joinYear}` : ''}
+                </div>
               </div>
             </div>
 
@@ -100,15 +141,33 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Settings rows */}
-          <div className="pt-2">
-            <SettingsRow label="Edit profile" onPress={() => router.push('/setup-profile')} />
-            <SettingsRow label="Notifications" onPress={() => {}} />
-            <SettingsRow label="Privacy" onPress={() => {}} />
+          {/* Top restaurants */}
+          <SectionLabel>Top restaurants</SectionLabel>
+          {topRestaurants.length > 0 ? (
+            topRestaurants.map((item, i) => (
+              <FavRow key={item.id} rank={i + 1} title={item.title} sub={item.meta.location ?? ''} score={item.score} />
+            ))
+          ) : (
+            <EmptyFav>Mark restaurant recos as done to build your top 5.</EmptyFav>
+          )}
+
+          {/* Top TV */}
+          <SectionLabel>Top TV series</SectionLabel>
+          {topTV.length > 0 ? (
+            topTV.map((item, i) => (
+              <FavRow key={item.id} rank={i + 1} title={item.title} sub={item.meta.streaming_service ?? ''} score={item.score} />
+            ))
+          ) : (
+            <EmptyFav>Mark TV recos as done to build your top 5.</EmptyFav>
+          )}
+
+          {/* Settings */}
+          <div className="mt-4">
+            <SettingsRow label="Edit profile" onPress={() => router.push('/edit-profile')} />
           </div>
 
           {/* Sign out */}
-          <div className="px-6 pt-8 pb-10">
+          <div className="px-6 pt-6">
             <button
               onClick={signOut}
               disabled={signingOut}
@@ -117,6 +176,7 @@ export default function ProfilePage() {
               {signingOut ? 'Signing out…' : 'Sign out'}
             </button>
           </div>
+
         </div>
       ) : null}
     </div>
@@ -128,6 +188,37 @@ function StatBox({ value, label }: { value: string; label: string }) {
     <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
       <div className="text-[20px] font-bold text-white">{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
+    </div>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint px-6 pt-5 pb-2">
+      {children}
+    </div>
+  )
+}
+
+function FavRow({ rank, title, sub, score }: { rank: number; title: string; sub: string; score: number }) {
+  return (
+    <div className="flex justify-between items-center px-6 py-3 border-b border-[#0e0e10]">
+      <div className="flex items-center gap-3">
+        <span className="text-[13px] font-bold text-text-faint w-4">{rank}</span>
+        <div>
+          <div className="text-[14px] font-medium text-white tracking-[-0.2px]">{title}</div>
+          {sub ? <div className="text-[11px] text-text-faint mt-0.5">{sub}</div> : null}
+        </div>
+      </div>
+      <span className="text-[12px] font-semibold text-accent">{score}</span>
+    </div>
+  )
+}
+
+function EmptyFav({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="px-6 py-3">
+      <p className="text-[13px] text-text-faint leading-[1.5]">{children}</p>
     </div>
   )
 }

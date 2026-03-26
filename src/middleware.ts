@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 // Routes that don't require authentication
-const PUBLIC_PATHS = ['/onboarding', '/login', '/setup-profile', '/auth/', '/r/']
+const PUBLIC_PATHS = ['/login', '/onboarding', '/setup-profile', '/auth/', '/r/']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -34,11 +34,12 @@ export async function middleware(request: NextRequest) {
 
   // Unauthenticated users can only access public paths
   if (!user && !isPublic) {
-    return NextResponse.redirect(new URL('/onboarding', request.url))
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Authenticated users don't need to see onboarding or login again
-  if (user && (pathname === '/onboarding' || pathname === '/login')) {
+  // Authenticated users don't need to see login again
+  // (but CAN see /onboarding — new users are sent there after setup-profile)
+  if (user && pathname === '/login') {
     return NextResponse.redirect(new URL('/home', request.url))
   }
 
