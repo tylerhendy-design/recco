@@ -333,61 +333,41 @@ export default function SendPage() {
         </SectionCard>
 
         {/* Bonus details — collapsed by default */}
-        <div className="bg-bg-card border border-border rounded-card overflow-hidden">
+        <div className="bg-bg-card border border-border rounded-card">
           <button
             onClick={() => setBonusOpen((o) => !o)}
-            className="w-full flex items-center justify-between px-4 py-3.5 hover:opacity-80 transition-opacity"
+            className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-60 transition-opacity"
           >
-            <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">Links, pics &amp; details</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 ${bonusOpen ? 'rotate-180' : ''}`}>
+            <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">
+              Links, pics &amp; details
+              <span className="ml-1.5 normal-case font-normal text-[11px] text-text-faint">optional</span>
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 flex-shrink-0 ${bonusOpen ? 'rotate-180' : ''}`}>
               <path d="M6 9l6 6 6-6"/>
             </svg>
           </button>
 
           {bonusOpen && (
-            <div className="px-4 pb-5 flex flex-col gap-4 border-t border-border">
+            <div className="flex flex-col gap-4 border-t border-border px-4 pt-4 pb-5">
 
-              {/* Category-specific fields */}
-              {catDef && catDef.extraFields.length > 0 && (
-                <div className="flex flex-col gap-2.5">
-                  {catDef.extraFields.map((field) => {
-                    if (field.type === 'image') return (
-                      <div key={field.id}>
-                        <div className="text-[11px] font-medium text-text-faint uppercase tracking-[0.4px] mb-1.5">{field.label}</div>
-                        <label className="block cursor-pointer">
-                          <input type="file" accept="image/*" capture="environment" className="sr-only" />
-                          <div className="border-[1.5px] border-dashed border-border rounded-input p-4 text-center hover:border-accent/50 transition-colors">
-                            <div className="flex flex-col items-center gap-1.5">
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                              </svg>
-                              <div className="text-[12px] text-text-dim">
-                                <span className="text-accent font-semibold">Take a photo</span>
-                                <span className="text-text-faint"> or choose from library</span>
-                              </div>
-                            </div>
-                          </div>
-                        </label>
+              {/* Photos — always visible */}
+              <div>
+                <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Photos</div>
+                <label className="block cursor-pointer">
+                  <input type="file" accept="image/*" multiple className="sr-only" />
+                  <div className="border-[1.5px] border-dashed border-border rounded-input p-4 text-center active:border-accent/70 transition-colors">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <div className="text-[12px] text-text-dim">
+                        <span className="text-accent font-semibold">Take a photo</span>
+                        <span className="text-text-faint"> or choose from library</span>
                       </div>
-                    )
-                    if (field.type === 'date') return (
-                      <div key={field.id}>
-                        <div className="text-[11px] font-medium text-text-faint uppercase tracking-[0.4px] mb-1.5">{field.label}</div>
-                        <input className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none font-sans" defaultValue={today()} />
-                      </div>
-                    )
-                    return (
-                      <div key={field.id}>
-                        <div className="text-[11px] font-medium text-text-faint uppercase tracking-[0.4px] mb-1.5 flex items-center gap-2">
-                          {field.label}
-                          {field.sublabel && <span className="text-spotify text-[9px] font-normal normal-case tracking-normal">{field.sublabel}</span>}
-                        </div>
-                        <input className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans" placeholder={field.placeholder} />
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                    </div>
+                  </div>
+                </label>
+              </div>
 
               {/* Links */}
               <div>
@@ -424,6 +404,26 @@ export default function SendPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Category-specific extra fields */}
+              {catDef && catDef.extraFields.filter(f => f.type !== 'image').length > 0 && (
+                <div className="flex flex-col gap-2.5">
+                  <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase">Details</div>
+                  {catDef.extraFields.filter(f => f.type !== 'image').map((field) => (
+                    <div key={field.id}>
+                      <div className="text-[11px] font-medium text-text-faint uppercase tracking-[0.4px] mb-1.5 flex items-center gap-2">
+                        {field.label}
+                        {field.sublabel && <span className="text-spotify text-[9px] font-normal normal-case">{field.sublabel}</span>}
+                      </div>
+                      <input
+                        className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans"
+                        placeholder={field.placeholder}
+                        defaultValue={field.type === 'date' ? today() : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </div>
           )}
