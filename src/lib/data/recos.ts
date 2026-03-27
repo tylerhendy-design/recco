@@ -151,15 +151,18 @@ export async function sendReco({
 }): Promise<{ recoId: string | null; error: string | null }> {
   const supabase = createClient()
 
+  const recoId = crypto.randomUUID()
+
   const filteredLinks = (links ?? []).filter((l) => l.trim())
   const metaWithLinks = filteredLinks.length > 0
     ? { ...(meta ?? {}), links: filteredLinks }
     : (meta ?? {})
 
-  // 1. Create the recommendation
-  const { data: reco, error: recoError } = await supabase
+  // 1. Create the recommendation (id generated client-side to avoid SELECT after INSERT)
+  const { error: recoError } = await supabase
     .from('recommendations')
     .insert({
+      id: recoId,
       sender_id: senderId,
       category,
       custom_cat: customCat ?? null,
@@ -167,14 +170,12 @@ export async function sendReco({
       why_text: whyText ?? null,
       meta: metaWithLinks,
     })
-    .select('id')
-    .single()
 
-  if (recoError || !reco) return { recoId: null, error: recoError?.message ?? 'Failed to create reco' }
+  if (recoError) return { recoId: null, error: recoError.message }
 
   // 2. Add recipients
   const recipientRows = recipientIds.map((id) => ({
-    reco_id: reco.id,
+    reco_id: recoId,
     recipient_id: id,
     status: 'unseen' as const,
   }))
@@ -183,18 +184,18 @@ export async function sendReco({
     .from('reco_recipients')
     .insert(recipientRows)
 
-  if (recipientsError) return { recoId: reco.id, error: recipientsError.message }
+  if (recipientsError) return { recoId, error: recipientsError.message }
 
   // 3. Notify each recipient
   const notifRows = recipientIds.map((id) => ({
     user_id: id,
     type: 'reco_received' as const,
     actor_id: senderId,
-    reco_id: reco.id,
+    reco_id: recoId,
     payload: {},
   }))
 
   await supabase.from('notifications').insert(notifRows)
 
-  return { recoId: reco.id, error: null }
+  return { recoId, error: null }
 }
