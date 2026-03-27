@@ -15,8 +15,10 @@ export default function NotificationsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [notifs, setNotifs] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept'>>({})
+  const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept' | 'completed'>>({})
   const [replyTarget, setReplyTarget] = useState<{
+    notifId: string
+    notifPayload: Record<string, any>
     recipientId: string
     recipientName: string
     category: string | null
@@ -31,7 +33,7 @@ export default function NotificationsPage() {
       const data = await fetchNotifications(user.id)
       setNotifs(data)
       // Seed handled state from persisted payload
-      const persistedHandled: Record<string, 'accepted' | 'declined' | 'released' | 'kept'> = {}
+      const persistedHandled: Record<string, 'accepted' | 'declined' | 'released' | 'kept' | 'completed'> = {}
       for (const n of data) {
         if (n.payload?.handled) persistedHandled[n.id] = n.payload.handled
       }
@@ -112,6 +114,8 @@ export default function NotificationsPage() {
               onReleasePlea={() => handleReleasePlea(n)}
               onKeepPlea={() => handleKeepPlea(n)}
               onReply={() => setReplyTarget({
+                notifId: n.id,
+                notifPayload: n.payload,
                 recipientId: n.actor_id,
                 recipientName: n.actor.display_name,
                 category: n.payload?.category ?? null,
@@ -133,6 +137,10 @@ export default function NotificationsPage() {
           initialCategory={replyTarget.category}
           requestContext={replyTarget.context}
           requestCount={replyTarget.count}
+          onAllSent={async () => {
+            setHandled((prev) => ({ ...prev, [replyTarget.notifId]: 'completed' }))
+            await markNotificationHandled(replyTarget.notifId, replyTarget.notifPayload, 'completed')
+          }}
         />
       )}
     </div>
@@ -149,7 +157,7 @@ function NotifRow({
   onReply,
 }: {
   notif: NotificationRow
-  handled?: 'accepted' | 'declined' | 'released' | 'kept'
+  handled?: 'accepted' | 'declined' | 'released' | 'kept' | 'completed'
   onAccept: () => void
   onDecline: () => void
   onReleasePlea: () => void
@@ -271,15 +279,26 @@ function NotifRow({
             </div>
           )}
 
-          {/* Reco request — Give reco button */}
+          {/* Reco request — Give reco button / completed state */}
           {notif.type === 'request_received' && (
             <div className="mt-2.5">
-              <button
-                onClick={onReply}
-                className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
-              >
-                Give reco
-              </button>
+              {handled === 'completed' ? (() => {
+                const count = notif.payload?.count ?? 1
+                const cat = notif.payload?.category
+                const firstName = actor.display_name.split(' ')[0]
+                return (
+                  <span className="text-[12px] text-accent font-medium">
+                    Completed {firstName}'s request for {count > 1 ? `${count} ` : ''}{cat ? `${cat} ` : ''}reco{count > 1 ? 's' : ''}.
+                  </span>
+                )
+              })() : (
+                <button
+                  onClick={onReply}
+                  className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+                >
+                  Give reco
+                </button>
+              )}
             </div>
           )}
 

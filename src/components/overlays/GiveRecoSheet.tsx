@@ -43,6 +43,7 @@ interface GiveRecoSheetProps {
   initialCategory?: string | null
   requestContext?: string | null
   requestCount?: number
+  onAllSent?: () => void | Promise<void>
 }
 
 export function GiveRecoSheet({
@@ -55,6 +56,7 @@ export function GiveRecoSheet({
   initialCategory,
   requestContext,
   requestCount = 1,
+  onAllSent,
 }: GiveRecoSheetProps) {
   const firstName = recipientName.split(' ')[0]
   const total = requestCount ?? 1
@@ -134,6 +136,7 @@ export function GiveRecoSheet({
       resetForm()
     } else {
       setAllDone(true)
+      await onAllSent?.()
     }
   }
 

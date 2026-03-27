@@ -40,7 +40,7 @@ export async function markAllRead(userId: string) {
 export async function markNotificationHandled(
   notifId: string,
   currentPayload: Record<string, any>,
-  outcome: 'released' | 'kept',
+  outcome: 'released' | 'kept' | 'completed',
 ) {
   const supabase = createClient()
   await supabase
