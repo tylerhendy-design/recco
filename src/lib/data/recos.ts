@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Reco } from '@/types/app.types'
+import type { Reco, RecoRecommender } from '@/types/app.types'
 
 // ── Types returned from Supabase queries ──────────────────────────────────────
 
@@ -55,6 +55,11 @@ function mapRecipientRow(row: RecipientRow): Reco | null {
     score: row.score ?? undefined,
     feedback_text: row.feedback_text ?? undefined,
     rated_at: row.rated_at ?? undefined,
+    recommenders: [{
+      profile: { id: sender.id, display_name: sender.display_name, avatar_url: sender.avatar_url },
+      why_text: r.why_text ?? undefined,
+      tier: 'clan' as const,
+    } satisfies RecoRecommender],
   }
 }
 

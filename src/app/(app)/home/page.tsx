@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
@@ -12,11 +12,48 @@ import { SentimentBadge } from '@/components/ui/SentimentBadge'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
 import { fetchHomeFeed, fetchDoneRecos, submitFeedback } from '@/lib/data/recos'
-import { initials, getSentimentColor } from '@/lib/utils'
+import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
-import type { Reco } from '@/types/app.types'
+import type { Reco, RecoRecommender } from '@/types/app.types'
 
-type Tab = 'active' | 'done'
+type Tab = 'todo' | 'done'
+
+const CATEGORY_FILTERS = [
+  { value: 'all', label: 'all' },
+  { value: 'restaurant', label: 'restaurants' },
+  { value: 'tv', label: 'TV series' },
+  { value: 'podcast', label: 'podcasts' },
+  { value: 'music', label: 'music' },
+  { value: 'book', label: 'books' },
+  { value: 'film', label: 'films' },
+]
+
+const TIME_FILTERS = [
+  { value: 'all', label: 'all time' },
+  { value: 'week', label: 'this week' },
+  { value: 'month', label: 'this month' },
+  { value: 'year', label: 'this year' },
+]
+
+// Merge recos with same title+category into one card with multiple recommenders
+function groupRecos(recos: Reco[]): Reco[] {
+  const map = new Map<string, Reco>()
+  for (const reco of recos) {
+    const key = `${reco.category}::${reco.title.toLowerCase().trim()}`
+    if (map.has(key)) {
+      const existing = map.get(key)!
+      const newRec: RecoRecommender = {
+        profile: reco.sender,
+        why_text: reco.why_text,
+        tier: 'clan',
+      }
+      existing.recommenders = [...(existing.recommenders ?? []), newRec]
+    } else {
+      map.set(key, { ...reco })
+    }
+  }
+  return Array.from(map.values())
+}
 
 export default function HomePage() {
   const { manualRecos } = useRecos()
@@ -31,10 +68,15 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [loadingDone, setLoadingDone] = useState(false)
 
-  const [tab, setTab] = useState<Tab>('active')
+  const [tab, setTab] = useState<Tab>('todo')
   const [catFilter, setCatFilter] = useState('all')
-  const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
+  const [timeFilter, setTimeFilter] = useState('all')
+  const [senderFilter, setSenderFilter] = useState('all')
+  const [catDDOpen, setCatDDOpen] = useState(false)
+  const [timeDDOpen, setTimeDDOpen] = useState(false)
+  const [senderDDOpen, setSenderDDOpen] = useState(false)
 
+  const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
   const [successState, setSuccessState] = useState<{ reco: Reco; score: number } | null>(null)
   const [mapReco, setMapReco] = useState<Reco | null>(null)
@@ -86,25 +128,63 @@ export default function HomePage() {
     return () => { supabase.removeChannel(channel) }
   }, [userId, loadFeed])
 
-  // Load done recos when switching to done tab
   useEffect(() => {
     if (tab === 'done' && userId && doneRecos.length === 0) {
       loadDone(userId)
     }
   }, [tab, userId])
 
-  const allActive = [...manualRecos, ...dbRecos].filter((r) => !doneIds.has(r.id))
-  const filtered = catFilter === 'all' ? allActive : allActive.filter((r) => r.category === catFilter)
+  // Group duplicates into single cards
+  const grouped = useMemo(
+    () => groupRecos([...manualRecos, ...dbRecos].filter((r) => !doneIds.has(r.id))),
+    [manualRecos, dbRecos, doneIds]
+  )
 
-  // Group done recos by category
-  const doneByCategory = doneRecos.reduce<Record<string, Reco[]>>((acc, r) => {
-    const key = r.category
-    if (!acc[key]) acc[key] = []
-    acc[key].push(r)
-    return acc
-  }, {})
+  // Derive sender options from grouped recos
+  const senderOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+    for (const reco of grouped) {
+      for (const rec of reco.recommenders ?? []) {
+        seen.set(rec.profile.id, rec.profile.display_name.split(' ')[0])
+      }
+    }
+    return [
+      { value: 'all', label: 'everyone' },
+      ...Array.from(seen.entries()).map(([id, name]) => ({ value: id, label: name })),
+    ]
+  }, [grouped])
 
-  const categories = [...new Set(allActive.map((r) => r.category))].filter(Boolean)
+  const filtered = useMemo(() => {
+    return grouped
+      .filter((r) => catFilter === 'all' || r.category === catFilter)
+      .filter((r) => {
+        if (timeFilter === 'all') return true
+        const ms = Date.now() - new Date(r.created_at).getTime()
+        if (timeFilter === 'week') return ms < 7 * 86400000
+        if (timeFilter === 'month') return ms < 30 * 86400000
+        if (timeFilter === 'year') return ms < 365 * 86400000
+        return true
+      })
+      .filter((r) =>
+        senderFilter === 'all' ||
+        r.recommenders?.some((rec) => rec.profile.id === senderFilter)
+      )
+  }, [grouped, catFilter, timeFilter, senderFilter])
+
+  const doneByCategory = useMemo(() =>
+    doneRecos.reduce<Record<string, Reco[]>>((acc, r) => {
+      if (!acc[r.category]) acc[r.category] = []
+      acc[r.category].push(r)
+      return acc
+    }, {}),
+    [doneRecos]
+  )
+
+  function closeAllDD() {
+    setCatDDOpen(false)
+    setTimeDDOpen(false)
+    setSenderDDOpen(false)
+  }
 
   async function handleFeedbackSubmit(score: number, text: string) {
     if (!feedbackReco || !userId) return
@@ -120,9 +200,12 @@ export default function HomePage() {
       feedbackText: text,
       recoTitle: reco.title,
     })
-    // Refresh done list if it's been loaded
     if (doneRecos.length > 0) loadDone(userId)
   }
+
+  const catLabel = CATEGORY_FILTERS.find((f) => f.value === catFilter)?.label ?? 'all'
+  const timeLabel = TIME_FILTERS.find((f) => f.value === timeFilter)?.label ?? 'all time'
+  const senderLabel = senderOptions.find((f) => f.value === senderFilter)?.label ?? 'everyone'
 
   return (
     <div className="flex flex-col flex-1 relative overflow-hidden">
@@ -137,7 +220,7 @@ export default function HomePage() {
           }
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={() => setManualAddOpen(true)} aria-label="Add reco manually" className="cursor-pointer">
+          <button onClick={() => setManualAddOpen(true)} aria-label="Add reco manually">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="2" width="6" height="4" rx="1"/>
               <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
@@ -145,7 +228,7 @@ export default function HomePage() {
               <line x1="9" y1="14" x2="15" y2="14"/>
             </svg>
           </button>
-          <Link href="/notifications" className="relative cursor-pointer">
+          <Link href="/notifications" className="relative">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
             </svg>
@@ -154,21 +237,94 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Greeting */}
-      <div className="px-6 pt-4 pb-4 flex-shrink-0">
-        <div className="text-[26px] font-semibold text-white leading-[1.2] tracking-[-0.6px] mb-4">
+      {/* Greeting + filters */}
+      <div className="px-6 pt-3 pb-4 flex-shrink-0" onClick={closeAllDD}>
+        <div className="text-[26px] font-semibold text-white leading-[1.25] tracking-[-0.6px] mb-3">
           Hey {firstName},
         </div>
 
-        {/* Active / Done toggle */}
-        <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit">
+        {/* Three-filter line */}
+        <div className="text-[15px] text-text-muted leading-[1.7]" onClick={(e) => e.stopPropagation()}>
+          Here are{' '}
+          {/* Category */}
+          <span className="relative inline-block">
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
+            >
+              {catLabel}
+            </span>
+            {catDDOpen && (
+              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+                {CATEGORY_FILTERS.map((f) => (
+                  <div
+                    key={f.value}
+                    onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
+                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${catFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                  >
+                    {f.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </span>
+          {' '}recos from{' '}
+          {/* Time */}
+          <span className="relative inline-block">
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
+            >
+              {timeLabel}
+            </span>
+            {timeDDOpen && (
+              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+                {TIME_FILTERS.map((f) => (
+                  <div
+                    key={f.value}
+                    onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
+                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${timeFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                  >
+                    {f.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </span>
+          {' '}sent by{' '}
+          {/* Sender */}
+          <span className="relative inline-block">
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
+            >
+              {senderLabel}
+            </span>
+            {senderDDOpen && (
+              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+                {senderOptions.map((f) => (
+                  <div
+                    key={f.value}
+                    onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
+                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                  >
+                    {f.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </span>
+        </div>
+
+        {/* To do / Done toggle */}
+        <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit mt-4">
           <button
-            onClick={() => setTab('active')}
+            onClick={() => setTab('todo')}
             className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
-              tab === 'active' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
+              tab === 'todo' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
             }`}
           >
-            Active{allActive.length > 0 ? ` · ${allActive.length}` : ''}
+            To do{grouped.length > 0 ? ` · ${grouped.length}` : ''}
           </button>
           <button
             onClick={() => setTab('done')}
@@ -181,67 +337,38 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── ACTIVE TAB ── */}
-      {tab === 'active' && (
-        <>
-          {/* Category filter pills */}
-          {categories.length > 1 && (
-            <div className="px-6 pb-3 flex-shrink-0 flex gap-2 overflow-x-auto scrollbar-none">
-              <button
-                onClick={() => setCatFilter('all')}
-                className={`text-[12px] font-semibold px-3 py-1 rounded-chip border flex-shrink-0 transition-all ${
-                  catFilter === 'all' ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-faint'
-                }`}
-              >
-                All
-              </button>
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setCatFilter(cat === catFilter ? 'all' : cat)}
-                  className="text-[12px] font-semibold px-3 py-1 rounded-chip border flex-shrink-0 transition-all"
-                  style={catFilter === cat
-                    ? { borderColor: getCategoryColor(cat), color: getCategoryColor(cat), background: `${getCategoryColor(cat)}15` }
-                    : { borderColor: '#2a2a30', color: '#6e6e78' }
-                  }
-                >
-                  {getCategoryLabel(cat)}
-                </button>
-              ))}
+      {/* ── TO DO TAB ── */}
+      {tab === 'todo' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none px-5 flex flex-col gap-3 pb-6" onClick={closeAllDD}>
+          {loading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto scrollbar-none px-5 flex flex-col gap-3 pb-6">
-            {loading && (
-              <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
-              </div>
-            )}
+          {!loading && filtered.map((reco, i) => (
+            <RecoCard
+              key={reco.id}
+              reco={reco}
+              rank={i + 1}
+              onMarkDone={setFeedbackReco}
+              onShowMap={setMapReco}
+            />
+          ))}
 
-            {!loading && filtered.map((reco, i) => (
-              <RecoCard
-                key={reco.id}
-                reco={reco}
-                rank={i + 1}
-                onMarkDone={setFeedbackReco}
-                onShowMap={setMapReco}
-              />
-            ))}
-
-            {!loading && filtered.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
-                <div className="text-[40px] mb-2">🎯</div>
-                <div className="text-[17px] font-semibold text-white">No recos yet</div>
-                <div className="text-[14px] text-text-muted leading-[1.6]">
-                  When friends give you recos they'll appear here. Or ask someone for one.
-                </div>
-                <Link href="/get" className="mt-2 text-accent text-sm font-semibold">
-                  Ask for a reco →
-                </Link>
+          {!loading && filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
+              <div className="text-[40px] mb-2">🎯</div>
+              <div className="text-[17px] font-semibold text-white">No recos yet</div>
+              <div className="text-[14px] text-text-muted leading-[1.6]">
+                When friends give you recos they'll appear here.
               </div>
-            )}
-          </div>
-        </>
+              <Link href="/get" className="mt-2 text-accent text-sm font-semibold">
+                Ask for a reco →
+              </Link>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── DONE TAB ── */}
@@ -266,7 +393,6 @@ export default function HomePage() {
           {!loadingDone && Object.entries(doneByCategory).map(([category, recos]) => {
             const isOpen = doneExpanded[category] ?? true
             const color = getCategoryColor(category)
-            const avgScore = recos.filter(r => r.score != null).reduce((sum, r, _, arr) => sum + (r.score ?? 0) / arr.length, 0)
             return (
               <div key={category} className="border-b border-[#0e0e10]">
                 <button
@@ -280,11 +406,8 @@ export default function HomePage() {
                     </span>
                     <span className="text-[12px] text-text-faint">{recos.length}</span>
                   </div>
-                  <svg
-                    width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="#6e6e78" strokeWidth="2.5" strokeLinecap="round"
-                    className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="2.5" strokeLinecap="round"
+                    className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}>
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </button>
