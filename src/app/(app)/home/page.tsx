@@ -80,7 +80,7 @@ export default function HomePage() {
 
   const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
-  const [successState, setSuccessState] = useState<{ reco: Reco; score: number } | null>(null)
+  const [successState, setSuccessState] = useState<{ reco: Reco; score: number; sinBinWarning?: { category: string; remaining: number } } | null>(null)
   const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
   const [mapReco, setMapReco] = useState<Reco | null>(null)
   const [manualAddOpen, setManualAddOpen] = useState(false)
@@ -238,6 +238,8 @@ export default function HomePage() {
         category: result.sinBinTriggered.category,
         offences: result.sinBinTriggered.offences,
       })
+    } else if (result.sinBinWarning) {
+      setSuccessState({ reco, score, sinBinWarning: result.sinBinWarning })
     }
     if (doneRecos.length > 0) loadDone(userId)
   }
@@ -487,6 +489,8 @@ export default function HomePage() {
           onClose={() => setSuccessState(null)}
           score={successState.score}
           recoTitle={successState.reco.title}
+          recommenderName={successState.reco.sender.display_name}
+          sinBinWarning={successState.sinBinWarning}
         />
       )}
 

@@ -128,7 +128,7 @@ export async function submitFeedback({
   feedbackText: string
   recoTitle?: string
   recoCategory?: string
-}): Promise<{ error: string | null; sinBinTriggered?: { category: string; offences: string[] } }> {
+}): Promise<{ error: string | null; sinBinTriggered?: { category: string; offences: string[] }; sinBinWarning?: { category: string; remaining: number } }> {
   const supabase = createClient()
 
   // 1. Update recipient row (DB trigger update_sin_bin fires here)
@@ -209,11 +209,14 @@ export async function submitFeedback({
             user_id: senderId,
             type: 'sin_bin',
             actor_id: recipientId,
-            payload: { category: recoCategory, bad_count: SCORE.SIN_BIN_THRESHOLD, offences },
+            payload: { category: recoCategory, bad_count: SCORE.SIN_BIN_THRESHOLD, offences, last_reco_title: recoTitle },
           })
 
           return { error: null, sinBinTriggered: { category: recoCategory, offences } }
         }
+      } else if (badCount !== null && badCount > 0 && badCount < SCORE.SIN_BIN_THRESHOLD) {
+        // Below threshold — return a warning with how many remain
+        return { error: null, sinBinWarning: { category: recoCategory, remaining: SCORE.SIN_BIN_THRESHOLD - badCount } }
       }
     }
   }

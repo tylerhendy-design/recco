@@ -8,6 +8,7 @@ interface SuccessOverlayProps {
   score: number
   recoTitle: string
   recommenderName?: string
+  sinBinWarning?: { category: string; remaining: number }
 }
 
 const HEADLINES: Record<string, string> = {
@@ -22,10 +23,11 @@ const SUBS: Record<string, string> = {
   good: 'And now they know you did.',
 }
 
-export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderName }: SuccessOverlayProps) {
+export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderName, sinBinWarning }: SuccessOverlayProps) {
   if (!open) return null
 
   const sentiment = scoreLabel(score)
+  const firstName = recommenderName?.split(' ')[0]
 
   return (
     <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center px-8 text-center animate-fade-in">
@@ -39,12 +41,24 @@ export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderNam
         {HEADLINES[sentiment]}
       </div>
       <div className="text-[15px] text-text-dim leading-[1.6] mb-[22px]">
-        {recommenderName ? SUBS[sentiment].replace('they', recommenderName) : SUBS[sentiment]}
+        {firstName ? SUBS[sentiment].replace('they', firstName) : SUBS[sentiment]}
       </div>
 
       <div className="text-[14px] font-semibold text-text-secondary bg-bg-card border border-border rounded-input px-[22px] py-3">
         {recoTitle}
       </div>
+
+      {sinBinWarning && (
+        <div className="mt-5 px-4 py-3 bg-bad/10 border border-bad/30 rounded-input w-full text-left">
+          <div className="text-[12px] font-semibold text-bad mb-0.5">Heads up</div>
+          <div className="text-[13px] text-bad/80 leading-[1.5]">
+            {sinBinWarning.remaining === 1
+              ? `One more bad ${sinBinWarning.category} reco from ${firstName ?? 'them'} and they're in the sin bin.`
+              : `${sinBinWarning.remaining} more bad ${sinBinWarning.category} recos from ${firstName ?? 'them'} and they're in the sin bin.`
+            }
+          </div>
+        </div>
+      )}
 
       <button
         onClick={onClose}
