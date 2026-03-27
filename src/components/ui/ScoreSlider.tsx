@@ -1,6 +1,6 @@
 'use client'
 
-import { cn } from '@/lib/utils'
+import { cn, getScoreColor } from '@/lib/utils'
 
 interface ScoreSliderProps {
   value?: number
@@ -9,26 +9,23 @@ interface ScoreSliderProps {
 }
 
 const LABELS: Record<number, string> = {
-  0:   "You have shit taste",
-  10:  "I don't understand how you like this",
-  20:  "This isn't for me, and I suspect that's not the problem",
-  30:  "I can see what it's going for, I just don't think it gets there",
-  40:  "Not great, not quite awful, just a bit regrettable",
-  50:  "Better luck next time, something wasn't right",
-  60:  "There's something here, and it mostly works",
-  70:  "Solid, easy enough to recommend",
-  80:  "Very good, I'd happily point people towards it",
-  90:  "Excellent, and worth making a bit of noise about",
+  0:   "You have shit taste. I cannot recommend this to anyone",
+  11:  "I don't understand how you like this. I wouldn't recommend it",
+  21:  "This really didn't work for me. I can't recommend this at all",
+  31:  "I see what it's trying to do. I wouldn't recommend it",
+  41:  "Not great overall. I wouldn't go out of my way to recommend",
+  51:  "Something didn't quite land. I wouldn't recommend it yet",
+  61:  "There's something here. I'd cautiously recommend it",
+  71:  "This is solid overall. I'd recommend it without much hesitation",
+  81:  "Very good overall. I'd happily recommend this to people",
+  91:  "Excellent overall. I would strongly recommend this to people",
   100: "Life changing. I will recommend this to everyone",
 }
 
-// poo brown (#5C3310) → brand yellow (#D4E23A)
-function getScoreColor(score: number): string {
-  const t = score / 100
-  const r = Math.round(92  + (212 - 92)  * t)
-  const g = Math.round(51  + (226 - 51)  * t)
-  const b = Math.round(16  + (58  - 16)  * t)
-  return `rgb(${r},${g},${b})`
+function getBucket(value: number): number {
+  if (value === 100) return 100
+  if (value <= 10) return 0
+  return Math.floor((value - 1) / 10) * 10 + 1
 }
 
 export function ScoreSlider({ value: controlled, onChange, className }: ScoreSliderProps) {
@@ -39,12 +36,11 @@ export function ScoreSlider({ value: controlled, onChange, className }: ScoreSli
   }
 
   const color = getScoreColor(value)
-  const bucket = Math.min(100, Math.round(value / 10) * 10)
-  const label = LABELS[bucket]
+  const label = LABELS[getBucket(value)]
   const isMax = value === 100
 
   const glowStyle = isMax
-    ? { color, textShadow: `0 0 12px #D4E23A, 0 0 28px #D4E23A88` }
+    ? { color, textShadow: `0 0 8px #D4E23A55` }
     : { color }
 
   return (
@@ -55,7 +51,6 @@ export function ScoreSlider({ value: controlled, onChange, className }: ScoreSli
         .score-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.5); cursor: pointer; }
       `}</style>
 
-      {/* Score + label row */}
       <div className="flex items-baseline gap-2">
         <span className="text-[24px] font-bold leading-none tabular-nums" style={glowStyle}>
           {value}
@@ -67,7 +62,6 @@ export function ScoreSlider({ value: controlled, onChange, className }: ScoreSli
         {label}
       </div>
 
-      {/* Slider */}
       <div className="py-1.5">
         <input
           type="range"

@@ -30,6 +30,15 @@ export function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
+// Gradient: vibrant red-brown (#B83A1A) → brand yellow (#D4E23A)
+export function getScoreColor(score: number): string {
+  const t = Math.max(0, Math.min(100, score)) / 100
+  const r = Math.round(184 + (212 - 184) * t)
+  const g = Math.round(58  + (226 - 58)  * t)
+  const b = Math.round(26  + (58  - 26)  * t)
+  return `rgb(${r},${g},${b})`
+}
+
 export function getSentimentColor(score: number): string {
   const label = scoreLabel(score)
   if (label === 'bad') return '#ef4444'

@@ -7,7 +7,7 @@ import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
 import { fetchNotifications, markAllRead, type NotificationRow } from '@/lib/data/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
-import { initials, formatRelativeTime } from '@/lib/utils'
+import { initials, formatRelativeTime, getScoreColor } from '@/lib/utils'
 
 export default function NotificationsPage() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -91,20 +91,25 @@ function NotifRow({
   const time = formatRelativeTime(notif.created_at)
 
   let body = ''
+  let scoreLozenge: { score: number; title?: string; feedbackText?: string; category?: string } | null = null
+
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
   else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
   } else if (notif.type === 'feedback_received') {
-    const title = notif.payload?.reco_title
-    const category = notif.payload?.reco_category
     const score = notif.payload?.score
-    const feedbackText = notif.payload?.feedback_text
+    const category = notif.payload?.reco_category
     const categoryLabel = category ? `${category} ` : ''
-    body = `gave your ${categoryLabel}reco a ${score}/100.`
-    if (title || feedbackText) {
-      body += `\n${title ? `${title}: ` : ''}${feedbackText ?? ''}`
+    body = `reviewed your ${categoryLabel}reco`
+    if (score != null) {
+      scoreLozenge = {
+        score,
+        title: notif.payload?.reco_title,
+        feedbackText: notif.payload?.feedback_text,
+        category,
+      }
     }
   }
 
@@ -125,10 +130,27 @@ function NotifRow({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] text-white leading-[1.5] whitespace-pre-line">
+          <div className="text-[13px] text-white leading-[1.5]">
             <span className="font-semibold">{actor.display_name}</span>{' '}
             <span className="text-text-muted">{body}</span>
+            {scoreLozenge != null && (() => {
+              const c = getScoreColor(scoreLozenge.score)
+              return (
+                <span
+                  className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-chip text-[11px] font-bold"
+                  style={{ color: c, background: `${c}22`, border: `1px solid ${c}44` }}
+                >
+                  {scoreLozenge.score}/100
+                </span>
+              )
+            })()}
           </div>
+          {scoreLozenge?.title || scoreLozenge?.feedbackText ? (
+            <div className="text-[12px] text-text-muted mt-0.5 leading-[1.4]">
+              {scoreLozenge.title && <span className="font-medium text-white">{scoreLozenge.title}: </span>}
+              {scoreLozenge.feedbackText}
+            </div>
+          ) : null}
           <div className="text-[11px] text-text-faint mt-0.5">{time}</div>
 
           {/* Friend request actions */}
