@@ -48,18 +48,6 @@ export default function LoginPage() {
           {/* Sign in buttons */}
           <div className="w-full flex flex-col gap-3">
             <button
-              disabled
-              className="w-full flex items-center justify-center gap-3 bg-white text-[#0c0c0e] py-4 rounded-btn text-[15px] font-semibold opacity-20 cursor-not-allowed"
-            >
-              {loading === 'apple' ? (
-                <span className="w-5 h-5 border-2 border-[#0c0c0e]/30 border-t-[#0c0c0e] rounded-full animate-spin" />
-              ) : (
-                <AppleIcon />
-              )}
-              Continue with Apple
-            </button>
-
-            <button
               onClick={() => signIn('google')}
               disabled={loading !== null}
               className="w-full flex items-center justify-center gap-3 bg-[#1e1e22] text-white border border-border py-4 rounded-btn text-[15px] font-semibold disabled:opacity-50 transition-opacity active:opacity-70"
@@ -71,6 +59,17 @@ export default function LoginPage() {
               )}
               Continue with Google
             </button>
+
+            <div>
+              <p className="text-center text-[12px] text-text-faint mb-2">Coming soon</p>
+              <button
+                disabled
+                className="w-full flex items-center justify-center gap-3 bg-white text-[#0c0c0e] py-4 rounded-btn text-[15px] font-semibold opacity-20 cursor-not-allowed"
+              >
+                <AppleIcon />
+                Continue with Apple
+              </button>
+            </div>
           </div>
 
           {error && (
