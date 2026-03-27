@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
@@ -34,6 +34,14 @@ function SectionCard({ label, children }: { label: string; children: React.React
 }
 
 export default function GivePage() {
+  return (
+    <Suspense>
+      <GivePageInner />
+    </Suspense>
+  )
+}
+
+function GivePageInner() {
   const searchParams = useSearchParams()
   const preselectedId = searchParams.get('to')
 
