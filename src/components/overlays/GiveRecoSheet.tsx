@@ -79,8 +79,12 @@ export function GiveRecoSheet({
     onClose()
   }
 
+  const isRestaurant = category === 'restaurant'
+  const hasGoogleMapsLink = links.some((l) => {
+    try { const h = new URL(l).hostname; return h.includes('google.com') || h.includes('goo.gl') || h.includes('maps.apple.com') } catch { return false }
+  })
   const isCategoryBlocked = category !== null && blockedCategories.includes(category)
-  const canSend = category !== null && title.trim().length > 0 && !sending && !isCategoryBlocked
+  const canSend = category !== null && title.trim().length > 0 && !sending && !isCategoryBlocked && (!isRestaurant || hasGoogleMapsLink)
 
   async function handleSend() {
     if (!canSend) return
@@ -149,7 +153,11 @@ export function GiveRecoSheet({
                   id={cat.id}
                   selected={category === cat.id}
                   dashed={cat.id === 'custom'}
-                  onClick={() => setCategory(cat.id === category ? null : cat.id as CategoryId)}
+                  onClick={() => {
+                    const next = cat.id === category ? null : cat.id as CategoryId
+                    setCategory(next)
+                    if (next === 'restaurant') setLinksOpen(true)
+                  }}
                 />
               ))}
             </div>
@@ -202,7 +210,13 @@ export function GiveRecoSheet({
             onClick={() => setLinksOpen((o) => !o)}
             className="flex items-center justify-between w-full text-[12px] font-semibold text-text-faint hover:text-text-muted transition-colors"
           >
-            <span>Links <span className="font-normal">— optional</span></span>
+            <span>
+              Links{' '}
+              {isRestaurant
+                ? <span className="font-normal text-accent">— Google Maps required</span>
+                : <span className="font-normal">— optional</span>
+              }
+            </span>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 ${linksOpen ? 'rotate-180' : ''}`}>
               <path d="M6 9l6 6 6-6"/>
             </svg>
@@ -219,7 +233,7 @@ export function GiveRecoSheet({
                     </svg>
                     <input
                       className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-border font-sans"
-                      placeholder="Paste a URL…"
+                      placeholder={isRestaurant && i === 0 ? 'Paste Google Maps link…' : 'Paste a URL…'}
                       value={link}
                       onChange={(e) => { const n = [...links]; n[i] = e.target.value; setLinks(n) }}
                     />
