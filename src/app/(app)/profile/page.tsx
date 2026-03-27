@@ -567,8 +567,8 @@ export default function ProfilePage() {
 
       {/* Stinkers overlay */}
       {showStinkers && (
-        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowStinkers(false)}>
-          <div className="absolute inset-0 bg-black/60" />
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowStinkers(false)}>
+          <div className="fixed inset-0 bg-black/60" />
           <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
             <div className="text-[11px] font-semibold text-bad tracking-[1px] uppercase mb-2">Your track record</div>
