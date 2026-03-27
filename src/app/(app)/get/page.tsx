@@ -17,6 +17,7 @@ export default function GetPage() {
     vibes: '', budget: '', location: '',
   })
   const [openConstraint, setOpenConstraint] = useState<'vibes' | 'budget' | 'location' | null>(null)
+  const [details, setDetails] = useState('')
   const [sent, setSent] = useState(false)
 
   const allSelected = selectedPeople.length === PEOPLE.length
@@ -183,6 +184,20 @@ export default function GetPage() {
               />
             </div>
           )}
+
+          {/* Extra details — mimics "Why?" on the reco card */}
+          <div className="mb-4">
+            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">
+              Extra details
+            </div>
+            <textarea
+              rows={2}
+              className="w-full bg-transparent outline-none text-[13px] text-text-secondary leading-[1.5] placeholder:text-[#2a2a30] font-sans resize-none"
+              placeholder="Anything that'll help narrow it down — occasion, who it's for, what you've already tried…"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+            />
+          </div>
 
           {/* Divider */}
           <div className="border-t border-[#0e0e10] mb-3" />
