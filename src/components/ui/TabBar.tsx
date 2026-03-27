@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const TABS = [
   {
@@ -71,18 +72,56 @@ const TABS = [
 
 export function TabBar() {
   const pathname = usePathname()
+  const [pendingRequests, setPendingRequests] = useState(0)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { count } = await supabase
+        .from('friend_connections')
+        .select('*', { count: 'exact', head: true })
+        .eq('addressee_id', user.id)
+        .eq('status', 'pending')
+      setPendingRequests(count ?? 0)
+
+      // Live updates
+      supabase
+        .channel('pending-requests')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'friend_connections',
+          filter: `addressee_id=eq.${user.id}`,
+        }, async () => {
+          const { count: updated } = await supabase
+            .from('friend_connections')
+            .select('*', { count: 'exact', head: true })
+            .eq('addressee_id', user.id)
+            .eq('status', 'pending')
+          setPendingRequests(updated ?? 0)
+        })
+        .subscribe()
+    })
+  }, [])
 
   return (
     <div className="flex px-0.5 pb-5 pt-2 border-t border-border/50 bg-bg-base flex-shrink-0">
       {TABS.map((tab) => {
         const isActive = pathname.startsWith(tab.href)
+        const showBadge = tab.href === '/friends' && pendingRequests > 0
         return (
           <Link
             key={tab.href}
             href={tab.href}
             className="flex-1 flex flex-col items-center gap-[3px] cursor-pointer py-1.5 rounded-xl transition-colors duration-150"
           >
-            {tab.icon(isActive)}
+            <div className="relative">
+              {tab.icon(isActive)}
+              {showBadge && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent" />
+              )}
+            </div>
             <span
               className="text-[9px] font-medium tracking-[0.1px]"
               style={{ color: isActive ? '#D4E23A' : '#6e6e78' }}

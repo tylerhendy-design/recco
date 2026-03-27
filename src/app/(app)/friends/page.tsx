@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
-import { NavHeader } from '@/components/ui/NavHeader'
 import { Avatar } from '@/components/ui/Avatar'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriends, fetchIncomingRequests, acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
@@ -69,14 +68,21 @@ export default function FriendsPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader
-        title="Friends"
-        rightAction={
-          <span className="text-[13px] font-medium text-text-faint px-3 py-1.5 border border-border rounded-chip">
-            {friends.length} / 150
-          </span>
-        }
-      />
+      <div className="flex items-center justify-between px-6 py-3.5 pb-2.5 flex-shrink-0">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[22px] font-semibold text-white tracking-[-0.5px]">Friends</span>
+          <span className="text-[13px] font-medium text-text-faint">{friends.length} / 150</span>
+        </div>
+        <Link
+          href="/friends/add"
+          className="h-10 px-4 rounded-btn bg-accent flex items-center gap-2 hover:opacity-90 transition-opacity"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c0c0e" strokeWidth="3" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span className="text-[13px] font-bold text-[#0c0c0e]">Add</span>
+        </Link>
+      </div>
 
       <input
         value={search}
@@ -170,20 +176,6 @@ export default function FriendsPage() {
           </>
         )}
 
-        {/* Add friend button */}
-        <div className="flex justify-center py-6">
-          <Link
-            href="/friends/add"
-            className="w-12 h-12 rounded-full border-[1.5px] border-border bg-bg-base flex items-center justify-center hover:border-accent transition-colors"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M20 21a8 8 0 00-16 0"/>
-              <line x1="19" y1="8" x2="19" y2="14"/>
-              <line x1="16" y1="11" x2="22" y2="11"/>
-            </svg>
-          </Link>
-        </div>
 
       </div>
     </div>
