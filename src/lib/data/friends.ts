@@ -6,7 +6,7 @@ export async function searchProfiles(query: string, currentUserId: string) {
   const { data } = await supabase
     .from('profiles')
     .select('id, display_name, username, avatar_url')
-    .ilike('username', `%${query}%`)
+    .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
     .neq('id', currentUserId)
     .limit(10)
   return data ?? []
