@@ -35,6 +35,7 @@ export default function ProfilePage() {
   const [customCategoryName, setCustomCategoryName] = useState('')
   const [newPickTitle, setNewPickTitle] = useState('')
   const [newPickWhy, setNewPickWhy] = useState('')
+  const [newPickLocation, setNewPickLocation] = useState('')
   const [newPickLinks, setNewPickLinks] = useState<string[]>([''])
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [addingPick, setAddingPick] = useState(false)
@@ -102,12 +103,13 @@ export default function ProfilePage() {
     const category = selectedCategory === 'custom' ? customCategoryName.trim() : selectedCategory
     if (!category) return
     setAddingPick(true)
-    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks)
+    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks, newPickLocation)
     if (!error) {
       const updated = await fetchUserPicks(profile.id)
       setPicks(updated)
       setNewPickTitle('')
       setNewPickWhy('')
+      setNewPickLocation('')
       setNewPickLinks([''])
       setCustomCategoryName('')
       setSelectedCategory(null)
@@ -252,6 +254,21 @@ export default function ProfilePage() {
                   </div>
                 )}
 
+                {/* Location — required for restaurants */}
+                {selectedCategory === 'restaurant' && (
+                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
+                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">
+                      Location <span className="normal-case font-normal text-[11px] text-red-400">required</span>
+                    </div>
+                    <input
+                      value={newPickLocation}
+                      onChange={(e) => setNewPickLocation(e.target.value)}
+                      placeholder="e.g. Soho, London"
+                      className="bg-transparent outline-none text-white font-sans text-[17px] w-full tracking-[-0.3px] placeholder:text-[#2a2a30]"
+                    />
+                  </div>
+                )}
+
                 {/* Why */}
                 {selectedCategory && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
@@ -320,7 +337,7 @@ export default function ProfilePage() {
                 {selectedCategory && (
                   <button
                     onClick={handleAddPick}
-                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim())}
+                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickLocation.trim())}
                     className="w-full py-4 rounded-btn bg-accent text-accent-fg text-[15px] font-bold disabled:opacity-40 transition-opacity"
                   >
                     {addingPick ? 'Adding…' : 'Add pick'}
@@ -365,6 +382,7 @@ export default function ProfilePage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="flex-1 min-w-0">
                                 <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
                                 {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
                                 {pick.links.length > 0 && (
                                   <div className="flex flex-col gap-0.5 mt-1.5">

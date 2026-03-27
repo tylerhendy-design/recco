@@ -26,7 +26,7 @@ export interface ExtraFieldDef {
 export const CATEGORIES: CategoryDef[] = [
   {
     id: 'restaurant',
-    label: 'Restaurant',
+    label: 'Restaurants',
     color: '#F56E6E',
     bgColor: '#2a1010',
     extraFields: [
@@ -38,7 +38,7 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'tv',
-    label: 'TV Series',
+    label: 'TV Shows',
     color: '#5BC4F5',
     bgColor: '#0e1e2e',
     extraFields: [
@@ -48,7 +48,7 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'podcast',
-    label: 'Podcast',
+    label: 'Podcasts',
     color: '#2DD4BF',
     bgColor: '#062420',
     extraFields: [
@@ -78,7 +78,7 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'book',
-    label: 'Book',
+    label: 'Books',
     color: '#FB923C',
     bgColor: '#2a1808',
     extraFields: [
@@ -88,7 +88,7 @@ export const CATEGORIES: CategoryDef[] = [
   },
   {
     id: 'film',
-    label: 'Film',
+    label: 'Films',
     color: '#F472B6',
     bgColor: '#2a0e1e',
     extraFields: [

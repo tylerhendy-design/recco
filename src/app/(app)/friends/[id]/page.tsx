@@ -140,6 +140,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                         {items.map((pick) => (
                           <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
                             <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                            {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
                             {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
                             {pick.links.length > 0 && (
                               <div className="flex flex-col gap-0.5 mt-1.5">
