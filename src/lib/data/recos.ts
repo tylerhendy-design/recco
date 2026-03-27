@@ -17,7 +17,6 @@ type RecipientRow = {
     title: string
     why_text: string | null
     why_audio_url: string | null
-    photo_urls: string[]
     meta: Record<string, unknown>
     created_at: string
     profiles: {
@@ -50,7 +49,6 @@ function mapRecipientRow(row: RecipientRow): Reco | null {
     title: r.title,
     why_text: r.why_text ?? undefined,
     why_audio_url: r.why_audio_url ?? undefined,
-    photo_urls: r.photo_urls ?? [],
     meta: (r.meta ?? {}) as Reco['meta'],
     created_at: r.created_at,
     status: (row.status as Reco['status']) ?? 'unseen',
@@ -70,7 +68,7 @@ export async function fetchHomeFeed(userId: string): Promise<Reco[]> {
       id, status, score, feedback_text, rated_at,
       recommendations (
         id, sender_id, category, custom_cat, title,
-        why_text, why_audio_url, photo_urls, meta, created_at,
+        why_text, why_audio_url, meta, created_at,
         profiles (id, display_name, username, avatar_url)
       )
     `)
