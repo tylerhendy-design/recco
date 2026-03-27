@@ -29,6 +29,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [showStinkers, setShowStinkers] = useState(false)
 
   // Add pick form
   const [showAddPick, setShowAddPick] = useState(false)
@@ -191,7 +192,7 @@ export default function ProfilePage() {
   }, {})
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden relative">
       <StatusBar />
 
       <div className="flex items-center justify-between px-6 pt-5 pb-4 flex-shrink-0">
@@ -241,7 +242,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex gap-2.5">
               <StatBox value={String(profile.recos_completed)} label="Completed" />
-              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger />
+              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger onPress={() => setShowStinkers(true)} />
             </div>
           </div>
 
@@ -563,13 +564,46 @@ export default function ProfilePage() {
 
         </div>
       ) : null}
+
+      {/* Stinkers overlay */}
+      {showStinkers && (
+        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowStinkers(false)}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
+            <div className="text-[11px] font-semibold text-bad tracking-[1px] uppercase mb-2">Your track record</div>
+            <div className="text-[22px] font-bold text-white tracking-[-0.5px] leading-[1.2] mb-4">
+              What's a stinker?
+            </div>
+            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
+              A stinker is a reco you sent that someone rated as bad — below 40 out of 100. It means the person on the other end tried something on your say-so and it didn't land.
+            </p>
+            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
+              Give someone three stinkers in the same category and you're sin-binned. They block you from sending more of those recos until they decide to let you out. That's the consequence of burning someone's trust.
+            </p>
+            <p className="text-[15px] text-text-muted leading-[1.7]">
+              Reco is built on the idea that a recommendation only means something when it comes from someone with real taste. Every stinker chips away at that. Keep yours low — it's a badge of honour.
+            </p>
+            <button
+              onClick={() => setShowStinkers(false)}
+              className="w-full mt-7 py-4 rounded-btn bg-bg-card border border-border text-[15px] font-semibold text-white"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
 
-function StatBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
+function StatBox({ value, label, danger, onPress }: { value: string; label: string; danger?: boolean; onPress?: () => void }) {
   return (
-    <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
+    <div
+      className={`flex-1 bg-bg-card rounded-input p-2.5 text-center ${onPress ? 'cursor-pointer active:opacity-70' : ''}`}
+      onClick={onPress}
+    >
       <div className={`text-[20px] font-bold ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>
