@@ -30,18 +30,20 @@ export async function getConnectionStatus(userId: string, otherId: string) {
 export async function sendFriendRequest(requesterId: string, addresseeId: string) {
   const supabase = createClient()
 
-  const { error } = await supabase
+  const { data: conn, error } = await supabase
     .from('friend_connections')
     .insert({ requester_id: requesterId, addressee_id: addresseeId, status: 'pending' })
+    .select('id')
+    .single()
 
   if (error) return { error: error.message }
 
-  // Notify the addressee
+  // Notify the addressee, storing the connection_id so they can accept/decline from the notification
   await supabase.from('notifications').insert({
     user_id: addresseeId,
     type: 'friend_request',
     actor_id: requesterId,
-    payload: {},
+    payload: { connection_id: conn.id },
   })
 
   return { error: null }

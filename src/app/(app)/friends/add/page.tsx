@@ -60,7 +60,12 @@ export default function AddFriendsPage() {
   async function handleAdd(person: SearchResult) {
     if (!userId) return
     setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'loading' } : r))
-    await sendFriendRequest(userId, person.id)
+    const { error } = await sendFriendRequest(userId, person.id)
+    if (error) {
+      alert(`Failed to send request: ${error}`)
+      setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'none' } : r))
+      return
+    }
     setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'pending_sent' } : r))
   }
 

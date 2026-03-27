@@ -1,82 +1,154 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { Avatar } from '@/components/ui/Avatar'
-import { SentimentPill } from '@/components/ui/SentimentBadge'
-import Link from 'next/link'
-
-const NOTIFS = [
-  {
-    id: 'n1',
-    threadId: 'thread-1',
-    name: 'Sam Huckle',
-    initials: 'SH',
-    color: '#5BC4F5',
-    bg: '#1a2030',
-    time: '2 hours ago',
-    body: 'Loved The Boys. Season 2 is even better.',
-    score: 88,
-    unread: true,
-  },
-  {
-    id: 'n2',
-    threadId: null,
-    name: 'Tyler Hendy',
-    initials: 'TH',
-    color: '#2DD4BF',
-    bg: '#0e2420',
-    time: 'Yesterday',
-    body: 'BAO Soho was incredible. The pork chop bao — unreal.',
-    score: 95,
-    unread: false,
-  },
-  {
-    id: 'n3',
-    threadId: null,
-    name: 'Alex Horlock',
-    initials: 'AH',
-    color: '#C084FC',
-    bg: '#1e1030',
-    time: '3 days ago',
-    body: 'Acquired isn\'t really for me. Too long.',
-    score: 40,
-    unread: false,
-  },
-]
+import { createClient } from '@/lib/supabase/client'
+import { fetchNotifications, markAllRead, type NotificationRow } from '@/lib/data/notifications'
+import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
+import { initials, formatRelativeTime } from '@/lib/utils'
 
 export default function NotificationsPage() {
+  const [userId, setUserId] = useState<string | null>(null)
+  const [notifs, setNotifs] = useState<NotificationRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined'>>({})
+
+  useEffect(() => {
+    createClient().auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setUserId(user.id)
+      const data = await fetchNotifications(user.id)
+      setNotifs(data)
+      setLoading(false)
+      // Mark all as read once viewed
+      markAllRead(user.id)
+    })
+  }, [])
+
+  async function handleAccept(notif: NotificationRow) {
+    if (!userId) return
+    const connectionId = notif.payload?.connection_id
+    if (!connectionId) return
+    setHandled((prev) => ({ ...prev, [notif.id]: 'accepted' }))
+    await acceptFriendRequest(connectionId, notif.actor_id, userId)
+  }
+
+  async function handleDecline(notif: NotificationRow) {
+    const connectionId = notif.payload?.connection_id
+    if (!connectionId) return
+    setHandled((prev) => ({ ...prev, [notif.id]: 'declined' }))
+    await declineFriendRequest(connectionId)
+  }
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="notifications" closeHref="/home" />
-      <div className="flex-1 overflow-y-auto scrollbar-none">
-        {NOTIFS.map((n) => {
-          const inner = (
-            <div className="px-6 py-3.5 border-b border-bg-card cursor-pointer hover:bg-bg-hover transition-colors">
-              <div className="flex justify-between items-start mb-1.5">
-                <div className="flex items-center gap-2">
-                  {n.unread && <div className="w-[7px] h-[7px] rounded-full bg-accent flex-shrink-0" />}
-                  <Avatar name={n.name} size="sm" color={n.color} bgColor={n.bg} />
-                  <div>
-                    <div className="text-[13px] font-semibold text-white">{n.name}</div>
-                    <div className="text-[10px] text-text-faint">{n.time}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-[13px] text-text-muted leading-[1.5] ml-[38px]">{n.body}</div>
-              <div className="ml-[38px] mt-1.5">
-                <SentimentPill score={n.score} />
-              </div>
-            </div>
-          )
+      <NavHeader title="Notifications" closeHref="/home" />
 
-          return n.threadId ? (
-            <Link key={n.id} href={`/notifications/${n.threadId}`}>
-              {inner}
-            </Link>
-          ) : (
-            <div key={n.id}>{inner}</div>
-          )
-        })}
+      <div className="flex-1 overflow-y-auto scrollbar-none">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
+          </div>
+        ) : notifs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-3">
+            <div className="text-[36px] mb-1">🔔</div>
+            <div className="text-[16px] font-semibold text-white">Nothing yet</div>
+            <div className="text-[13px] text-text-muted leading-[1.6]">
+              You'll see friend requests and reco activity here.
+            </div>
+          </div>
+        ) : (
+          notifs.map((n) => (
+            <NotifRow
+              key={n.id}
+              notif={n}
+              handled={handled[n.id]}
+              onAccept={() => handleAccept(n)}
+              onDecline={() => handleDecline(n)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function NotifRow({
+  notif,
+  handled,
+  onAccept,
+  onDecline,
+}: {
+  notif: NotificationRow
+  handled?: 'accepted' | 'declined'
+  onAccept: () => void
+  onDecline: () => void
+}) {
+  const actor = notif.actor
+  const time = formatRelativeTime(notif.created_at)
+
+  let body = ''
+  if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
+  else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
+  else if (notif.type === 'reco_received') {
+    const title = notif.payload?.title
+    body = title ? `sent you a reco: ${title}` : 'sent you a reco.'
+  } else if (notif.type === 'feedback_received') {
+    body = 'left feedback on your reco.'
+  }
+
+  return (
+    <div className={`px-6 py-4 border-b border-[#0e0e10] ${!notif.read ? 'bg-bg-card/40' : ''}`}>
+      <div className="flex items-start gap-3">
+        {/* Unread dot */}
+        <div className="pt-1 w-2 flex-shrink-0">
+          {!notif.read && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
+        </div>
+
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+          {actor.avatar_url
+            ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
+            : initials(actor.display_name)
+          }
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] text-white leading-[1.5]">
+            <span className="font-semibold">{actor.display_name}</span>{' '}
+            <span className="text-text-muted">{body}</span>
+          </div>
+          <div className="text-[11px] text-text-faint mt-0.5">{time}</div>
+
+          {/* Friend request actions */}
+          {notif.type === 'friend_request' && (
+            <div className="flex gap-2 mt-2.5">
+              {handled === 'accepted' ? (
+                <span className="text-[12px] text-accent font-medium">Friends!</span>
+              ) : handled === 'declined' ? (
+                <span className="text-[12px] text-text-faint">Declined</span>
+              ) : (
+                <>
+                  <button
+                    onClick={onDecline}
+                    className="px-3 py-1.5 rounded-chip border border-border text-[12px] text-text-faint hover:border-red-400 hover:text-red-400 transition-colors"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={onAccept}
+                    className="px-3 py-1.5 rounded-chip border border-accent text-[12px] text-accent font-semibold hover:bg-accent/10 transition-colors"
+                  >
+                    Accept
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -1,21 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { Suspense } from 'react'
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [loading, setLoading] = useState<'google' | 'apple' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    const err = searchParams.get('error')
+    if (err === 'auth_failed') setError('Sign in failed. Please try again.')
+    else if (err === 'no_code') setError('No auth code received. Please try again.')
+    else if (err) setError(`Error: ${err}`)
+  }, [searchParams])
 
   async function signIn(provider: 'google' | 'apple') {
     setLoading(provider)
     setError(null)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
       },
     })
     if (error) {
