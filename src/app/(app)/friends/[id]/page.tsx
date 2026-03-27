@@ -168,10 +168,17 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
               </p>
             ) : (
               Object.entries(picksByCategory).map(([key, items]) => {
-                const [category, city] = key.split('||')
+                const [category] = key.split('||')
                 const color = getCategoryColor(category)
-                const label = city ? `${getCategoryLabel(category)} — ${city}` : getCategoryLabel(category)
                 const isOpen = expanded[key] ?? false
+                const byCityMap = items.reduce<Record<string, Pick[]>>((acc, p) => {
+                  const city = p.location ? p.location.split(',')[0].trim() : ''
+                  const k = city || '__none__'
+                  if (!acc[k]) acc[k] = []
+                  acc[k].push(p)
+                  return acc
+                }, {})
+                const hasCities = Object.keys(byCityMap).some((k) => k !== '__none__')
                 return (
                   <div key={key} className="border border-border rounded-card overflow-hidden mb-2">
                     <button
@@ -180,7 +187,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                        <span className="text-[13px] font-semibold text-white">{label}</span>
+                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
                         <span className="text-[11px] text-text-faint">{items.length}</span>
                       </div>
                       <svg
@@ -193,20 +200,44 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                     </button>
                     {isOpen && (
                       <div className="border-t border-border">
-                        {items.map((pick) => (
-                          <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
-                            <div className="text-[14px] font-medium text-white">{pick.title}</div>
-                            {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
-                            {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
-                            {pick.links.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                {pick.links.map((link, i) => (
-                                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
+                        {hasCities
+                          ? Object.entries(byCityMap).map(([cityKey, cityPicks]) => (
+                              <div key={cityKey}>
+                                {cityKey !== '__none__' && (
+                                  <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-text-faint tracking-[0.6px] uppercase border-b border-[#0e0e10]">
+                                    {cityKey}
+                                  </div>
+                                )}
+                                {cityPicks.map((pick) => (
+                                  <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
+                                    <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                    {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                    {pick.links.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                        {pick.links.map((link, i) => (
+                                          <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
-                            )}
-                          </div>
-                        ))}
+                            ))
+                          : items.map((pick) => (
+                              <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
+                                <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
+                                {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                {pick.links.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                    {pick.links.map((link, i) => (
+                                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                        }
                       </div>
                     )}
                   </div>

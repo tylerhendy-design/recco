@@ -181,10 +181,8 @@ export default function ProfilePage() {
   const joinYear = profile?.joined_at ? new Date(profile.joined_at).getFullYear() : null
 
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
-    const city = p.location ? p.location.split(',')[0].trim() : null
-    const key = city ? `${p.category}||${city}` : p.category
-    if (!acc[key]) acc[key] = []
-    acc[key].push(p)
+    if (!acc[p.category]) acc[p.category] = []
+    acc[p.category].push(p)
     return acc
   }, {})
 
@@ -406,20 +404,27 @@ export default function ProfilePage() {
                 Add your favourite restaurants, films, books and more. The stuff that shows people who you are. The stuff that changed your life.
               </p>
             ) : (
-              Object.entries(picksByCategory).map(([key, items]) => {
-                const [category, city] = key.split('||')
+              Object.entries(picksByCategory).map(([category, items]) => {
                 const color = getCategoryColor(category)
-                const label = city ? `${getCategoryLabel(category)} — ${city}` : getCategoryLabel(category)
-                const isOpen = expanded[key] ?? false
+                const isOpen = expanded[category] ?? false
+                // Group by city within this category
+                const byCityMap = items.reduce<Record<string, Pick[]>>((acc, p) => {
+                  const city = p.location ? p.location.split(',')[0].trim() : ''
+                  const k = city || '__none__'
+                  if (!acc[k]) acc[k] = []
+                  acc[k].push(p)
+                  return acc
+                }, {})
+                const hasCities = Object.keys(byCityMap).some((k) => k !== '__none__')
                 return (
-                  <div key={key} className="border border-border rounded-card mb-2">
+                  <div key={category} className="border border-border rounded-card mb-2">
                     <button
-                      onClick={() => toggleExpanded(key)}
+                      onClick={() => toggleExpanded(category)}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                        <span className="text-[13px] font-semibold text-white">{label}</span>
+                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
                         <span className="text-[11px] text-text-faint">{items.length}</span>
                       </div>
                       <svg
@@ -433,99 +438,51 @@ export default function ProfilePage() {
 
                     {isOpen && (
                       <div className="border-t border-border">
-                        {items.map((pick) => (
-                          <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
-                            {editingPick?.id === pick.id ? (
-                              /* Inline edit form */
-                              <div className="flex flex-col gap-2.5">
-                                <input
-                                  value={editTitle}
-                                  onChange={(e) => setEditTitle(e.target.value)}
-                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent"
-                                />
-                                {pick.category === 'restaurant' && (
-                                  <input
-                                    value={editCity}
-                                    onChange={(e) => setEditCity(e.target.value)}
-                                    placeholder="City"
-                                    className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                                  />
-                                )}
-                                <textarea
-                                  value={editWhy}
-                                  onChange={(e) => setEditWhy(e.target.value)}
-                                  placeholder="Why? (optional)"
-                                  rows={3}
-                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans"
-                                />
-                                {editLinks.map((link, i) => (
-                                  <div key={i} className="flex items-center gap-2">
-                                    <input
-                                      value={link}
-                                      onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }}
-                                      placeholder="Link (optional)"
-                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                                    />
-                                    {editLinks.length > 1 && (
-                                      <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                                      </button>
-                                    )}
+                        {hasCities
+                          ? Object.entries(byCityMap).map(([cityKey, cityPicks]) => (
+                              <div key={cityKey}>
+                                {cityKey !== '__none__' && (
+                                  <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-text-faint tracking-[0.6px] uppercase border-b border-[#0e0e10]">
+                                    {cityKey}
                                   </div>
+                                )}
+                                {cityPicks.map((pick) => (
+                                  <PickRow
+                                    key={pick.id}
+                                    pick={pick}
+                                    editingPick={editingPick}
+                                    editTitle={editTitle} setEditTitle={setEditTitle}
+                                    editCity={editCity} setEditCity={setEditCity}
+                                    editWhy={editWhy} setEditWhy={setEditWhy}
+                                    editLinks={editLinks} setEditLinks={setEditLinks}
+                                    savingEdit={savingEdit}
+                                    menuOpenId={menuOpenId} setMenuOpenId={setMenuOpenId}
+                                    onSave={handleSaveEdit}
+                                    onCancel={() => setEditingPick(null)}
+                                    onEdit={startEdit}
+                                    onDelete={handleRemovePick}
+                                  />
                                 ))}
-                                <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint hover:text-accent transition-colors text-left">+ Add link</button>
-                                <div className="flex gap-2 mt-1">
-                                  <button onClick={() => setEditingPick(null)} className="flex-1 py-2 border border-border rounded-input text-[12px] font-semibold text-text-dim">Cancel</button>
-                                  <button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2 rounded-input bg-accent text-accent-fg text-[12px] font-bold disabled:opacity-40">
-                                    {savingEdit ? 'Saving…' : 'Save'}
-                                  </button>
-                                </div>
                               </div>
-                            ) : (
-                              /* Normal view */
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-[14px] font-medium text-white">{pick.title}</div>
-                                  {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
-                                  {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
-                                  {pick.links.length > 0 && (
-                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                      {pick.links.map((link, i) => (
-                                        <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="relative flex-shrink-0">
-                                  <button
-                                    onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)}
-                                    className="text-text-faint hover:text-white transition-colors p-1"
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                      <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-                                    </svg>
-                                  </button>
-                                  {menuOpenId === pick.id && (
-                                    <div className="absolute right-0 top-7 z-50 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
-                                      <button
-                                        onClick={() => startEdit(pick)}
-                                        className="w-full px-4 py-2.5 text-left text-[13px] text-white hover:bg-bg-base transition-colors"
-                                      >
-                                        Edit
-                                      </button>
-                                      <button
-                                        onClick={() => handleRemovePick(pick.id)}
-                                        className="w-full px-4 py-2.5 text-left text-[13px] text-red-400 hover:bg-bg-base transition-colors"
-                                      >
-                                        Delete
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                            ))
+                          : items.map((pick) => (
+                              <PickRow
+                                key={pick.id}
+                                pick={pick}
+                                editingPick={editingPick}
+                                editTitle={editTitle} setEditTitle={setEditTitle}
+                                editCity={editCity} setEditCity={setEditCity}
+                                editWhy={editWhy} setEditWhy={setEditWhy}
+                                editLinks={editLinks} setEditLinks={setEditLinks}
+                                savingEdit={savingEdit}
+                                menuOpenId={menuOpenId} setMenuOpenId={setMenuOpenId}
+                                onSave={handleSaveEdit}
+                                onCancel={() => setEditingPick(null)}
+                                onEdit={startEdit}
+                                onDelete={handleRemovePick}
+                              />
+                            ))
+                        }
                       </div>
                     )}
                   </div>
@@ -607,6 +564,75 @@ async function geocodeCity(city: string): Promise<string> {
     }
   } catch {}
   return city.trim()
+}
+
+function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEditCity, editWhy, setEditWhy, editLinks, setEditLinks, savingEdit, menuOpenId, setMenuOpenId, onSave, onCancel, onEdit, onDelete }: {
+  pick: Pick
+  editingPick: Pick | null
+  editTitle: string; setEditTitle: (v: string) => void
+  editCity: string; setEditCity: (v: string) => void
+  editWhy: string; setEditWhy: (v: string) => void
+  editLinks: string[]; setEditLinks: (v: string[]) => void
+  savingEdit: boolean
+  menuOpenId: string | null; setMenuOpenId: (v: string | null) => void
+  onSave: () => void; onCancel: () => void
+  onEdit: (p: Pick) => void; onDelete: (id: string) => void
+}) {
+  return (
+    <div className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
+      {editingPick?.id === pick.id ? (
+        <div className="flex flex-col gap-2.5">
+          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent" />
+          {pick.category === 'restaurant' && (
+            <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />
+          )}
+          <textarea value={editWhy} onChange={(e) => setEditWhy(e.target.value)} placeholder="Why? (optional)" rows={3} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans" />
+          {editLinks.map((link, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link (optional)" className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />
+              {editLinks.length > 1 && (
+                <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              )}
+            </div>
+          ))}
+          <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint hover:text-accent transition-colors text-left">+ Add link</button>
+          <div className="flex gap-2 mt-1">
+            <button onClick={onCancel} className="flex-1 py-2 border border-border rounded-input text-[12px] font-semibold text-text-dim">Cancel</button>
+            <button onClick={onSave} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2 rounded-input bg-accent text-accent-fg text-[12px] font-bold disabled:opacity-40">
+              {savingEdit ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-medium text-white">{pick.title}</div>
+            {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+            {pick.links.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {pick.links.map((link, i) => (
+                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="relative flex-shrink-0">
+            <button onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)} className="text-text-faint hover:text-white transition-colors p-1">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            {menuOpenId === pick.id && (
+              <div className="absolute right-0 top-7 z-50 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
+                <button onClick={() => onEdit(pick)} className="w-full px-4 py-2.5 text-left text-[13px] text-white hover:bg-bg-base transition-colors">Edit</button>
+                <button onClick={() => onDelete(pick.id)} className="w-full px-4 py-2.5 text-left text-[13px] text-red-400 hover:bg-bg-base transition-colors">Delete</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function getLinkLabel(url: string): string {
