@@ -83,6 +83,7 @@ export default function HomePage() {
   const [mapReco, setMapReco] = useState<Reco | null>(null)
   const [manualAddOpen, setManualAddOpen] = useState(false)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
+  const [unreadCount, setUnreadCount] = useState(0)
 
   const loadFeed = useCallback(async (uid: string) => {
     const recos = await fetchHomeFeed(uid)
@@ -112,6 +113,28 @@ export default function HomePage() {
       }
       if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
       loadFeed(user.id)
+
+      // Unread notification count
+      const fetchUnread = async () => {
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('read', false)
+        setUnreadCount(count ?? 0)
+      }
+      fetchUnread()
+
+      // Live updates for new notifications
+      supabase
+        .channel('unread-notifs')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        }, fetchUnread)
+        .subscribe()
     })
   }, [])
 
@@ -236,11 +259,11 @@ export default function HomePage() {
               <line x1="9" y1="14" x2="15" y2="14"/>
             </svg>
           </button>
-          <Link href="/notifications" className="relative">
+          <Link href="/notifications" className="relative" onClick={() => setUnreadCount(0)}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
             </svg>
-            <div className="absolute -top-[3px] -right-[3px] w-2 h-2 rounded-full bg-accent" />
+            {unreadCount > 0 && <div className="absolute -top-[3px] -right-[3px] w-2 h-2 rounded-full bg-accent" />}
           </Link>
         </div>
       </div>

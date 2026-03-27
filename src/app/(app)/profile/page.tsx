@@ -516,13 +516,10 @@ export default function ProfilePage() {
               What's a stinker?
             </div>
             <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
-              A stinker is a reco you sent that someone rated as bad — below 40 out of 100. It means the person on the other end tried something on your say-so and it didn't land.
-            </p>
-            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
-              Give someone three stinkers in the same category and you're sin-binned. They block you from sending more of those recos until they decide to let you out. That's the consequence of burning someone's trust.
+              A stinker is a recommendation you sent that scored below 40. You said it would be good, and it wasn't. Three stinkers in the same category and you're sin-binned: blocked from sending more until you're let back in. Fool me three times…
             </p>
             <p className="text-[15px] text-text-muted leading-[1.7]">
-              Reco is built on the idea that a recommendation only means something when it comes from someone with real taste. Every stinker chips away at that. Keep yours low — it's a badge of honour.
+              Why do we have stinkers? Every rating — good or bad — helps you learn what someone actually likes. Reco works because recommendations come from real taste. Every stinker chips away at that. Harsh but fair.
             </p>
             <button
               onClick={() => setShowStinkers(false)}
