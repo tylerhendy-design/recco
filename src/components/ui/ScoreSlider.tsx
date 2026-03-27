@@ -9,34 +9,26 @@ interface ScoreSliderProps {
 }
 
 const LABELS: Record<number, string> = {
-  0:   "you have shit taste",
-  10:  "i don't understand how you like this",
-  20:  "this isn't for me, and i suspect that's not the problem",
-  30:  "i can see what it's going for, i just don't think it gets there",
-  40:  "not great, not quite awful, just a bit regrettable",
-  50:  "better luck next time, something wasn't right",
-  60:  "there's something here, and it mostly works",
-  70:  "solid, easy enough to recommend",
-  80:  "very good, i'd happily point people towards it",
-  90:  "excellent, and worth making a bit of noise about",
+  0:   "You have shit taste",
+  10:  "I don't understand how you like this",
+  20:  "This isn't for me, and I suspect that's not the problem",
+  30:  "I can see what it's going for, I just don't think it gets there",
+  40:  "Not great, not quite awful, just a bit regrettable",
+  50:  "Better luck next time, something wasn't right",
+  60:  "There's something here, and it mostly works",
+  70:  "Solid, easy enough to recommend",
+  80:  "Very good, I'd happily point people towards it",
+  90:  "Excellent, and worth making a bit of noise about",
   100: "Life changing. I will recommend this to everyone",
 }
 
-// brown (#7A3B1E) → orange (#F97316) → heart pink (#FF3A6E)
+// poo brown (#5C3310) → brand yellow (#D4E23A)
 function getScoreColor(score: number): string {
-  if (score <= 50) {
-    const t = score / 50
-    const r = Math.round(122 + (249 - 122) * t)
-    const g = Math.round(59  + (115 - 59)  * t)
-    const b = Math.round(30  + (22  - 30)  * t)
-    return `rgb(${r},${g},${b})`
-  } else {
-    const t = (score - 50) / 50
-    const r = Math.round(249 + (255 - 249) * t)
-    const g = Math.round(115 + (58  - 115) * t)
-    const b = Math.round(22  + (110 - 22)  * t)
-    return `rgb(${r},${g},${b})`
-  }
+  const t = score / 100
+  const r = Math.round(92  + (212 - 92)  * t)
+  const g = Math.round(51  + (226 - 51)  * t)
+  const b = Math.round(16  + (58  - 16)  * t)
+  return `rgb(${r},${g},${b})`
 }
 
 export function ScoreSlider({ value: controlled, onChange, className }: ScoreSliderProps) {
@@ -49,6 +41,11 @@ export function ScoreSlider({ value: controlled, onChange, className }: ScoreSli
   const color = getScoreColor(value)
   const bucket = Math.min(100, Math.round(value / 10) * 10)
   const label = LABELS[bucket]
+  const isMax = value === 100
+
+  const glowStyle = isMax
+    ? { color, textShadow: `0 0 12px #D4E23A, 0 0 28px #D4E23A88` }
+    : { color }
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -58,16 +55,15 @@ export function ScoreSlider({ value: controlled, onChange, className }: ScoreSli
         .score-slider::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.5); cursor: pointer; }
       `}</style>
 
-      {/* Score number */}
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-[36px] font-bold leading-none tabular-nums" style={{ color }}>
+      {/* Score + label row */}
+      <div className="flex items-baseline gap-2">
+        <span className="text-[24px] font-bold leading-none tabular-nums" style={glowStyle}>
           {value}
         </span>
-        <span className="text-[14px] text-text-faint">/100</span>
+        <span className="text-[24px] font-bold leading-none text-text-faint">/100</span>
       </div>
 
-      {/* Label */}
-      <div className="text-[13px] italic leading-[1.4] min-h-[18px]" style={{ color }}>
+      <div className="text-[24px] font-bold leading-[1.2]" style={glowStyle}>
         {label}
       </div>
 

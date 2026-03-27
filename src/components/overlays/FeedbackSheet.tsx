@@ -64,18 +64,19 @@ export function FeedbackSheet({
 
         <div className="flex items-center justify-between mb-2">
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase">
-            Tell them — required
+            Give them your reasons
           </div>
           <div className="text-[10px] text-text-faint">voice or type</div>
         </div>
 
-        <div className="flex gap-2.5 items-center">
+        <div className="flex gap-2.5 items-start">
           <VoiceButton onRecorded={() => { setHasVoice(true); setShowError(false) }} />
-          <input
-            className={`flex-1 bg-bg-card border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none font-sans transition-colors ${
+          <textarea
+            rows={2}
+            className={`flex-1 bg-bg-card border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none font-sans transition-colors resize-none min-h-[44px] ${
               showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-border'
             }`}
-            placeholder="What did you think?"
+            placeholder="Tell them what you thought. Details matter."
             value={text}
             onChange={(e) => { setText(e.target.value); setShowError(false) }}
           />
