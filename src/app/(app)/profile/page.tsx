@@ -7,6 +7,7 @@ import { CategoryChip } from '@/components/ui/CategoryChip'
 import { createClient } from '@/lib/supabase/client'
 import { initials } from '@/lib/utils'
 import { fetchUserPicks, addPick, updatePick, removePick, type Pick } from '@/lib/data/picks'
+import { fetchAllSinBinnedBy } from '@/lib/data/sinbin'
 import { CATEGORIES, type CategoryId, getCategoryColor, getCategoryLabel } from '@/constants/categories'
 
 type ProfileStats = {
@@ -30,6 +31,8 @@ export default function ProfilePage() {
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [showStinkers, setShowStinkers] = useState(false)
+  const [sinBinStatuses, setSinBinStatuses] = useState<Array<{ category: string; bad_count: number; recipient_name: string; offences: string[] }>>([])
+
 
   // Add pick form
   const [showAddPick, setShowAddPick] = useState(false)
@@ -104,6 +107,14 @@ export default function ProfilePage() {
       }
 
       setPicks(userPicks)
+
+      const sinBinned = await fetchAllSinBinnedBy(user.id)
+      setSinBinStatuses(sinBinned.map((e) => ({
+        category: e.category,
+        bad_count: e.bad_count,
+        recipient_name: e.recipient_name,
+        offences: e.offences,
+      })))
 
       if (prof?.joined_at) {
         const { count } = await supabase
@@ -240,6 +251,26 @@ export default function ProfilePage() {
               <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger onPress={() => setShowStinkers(true)} />
             </div>
           </div>
+
+          {/* Sin bin statuses */}
+          {sinBinStatuses.length > 0 && (
+            <div className="mx-4 mt-4 rounded-card border border-bad/30 bg-bad/5 overflow-hidden">
+              {sinBinStatuses.map((entry, i) => (
+                <div key={i} className="px-4 py-3 border-b border-bad/10 last:border-0">
+                  <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
+                  <div className="text-[13px] text-white leading-[1.5]">
+                    You are in <span className="font-semibold">{entry.recipient_name.split(' ')[0]}'s</span> sin bin for{' '}
+                    <span className="font-semibold">{entry.bad_count} bad {getCategoryLabel(entry.category).toLowerCase()} recos</span>.
+                  </div>
+                  {entry.offences.length > 0 && (
+                    <div className="text-[12px] text-bad/80 mt-1">
+                      {entry.offences.join(', ')}.
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Picks */}
           <div className="px-6 pt-5">

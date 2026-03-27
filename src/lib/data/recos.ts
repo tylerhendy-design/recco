@@ -156,29 +156,65 @@ export async function submitFeedback({
       payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
     })
 
-  // 3. Check if this bad score just triggered a sin bin (bad_count hits exactly 3)
+  // 3. Check if this bad score just triggered a sin bin — count directly, no trigger dependency
   if (score <= SCORE.BAD_MAX && recoCategory) {
-    const { data: sinBinRow } = await supabase
-      .from('sin_bin')
-      .select('bad_count')
+    const { data: senderRecos } = await supabase
+      .from('recommendations')
+      .select('id')
       .eq('sender_id', senderId)
-      .eq('recipient_id', recipientId)
       .eq('category', recoCategory)
-      .eq('is_active', true)
-      .maybeSingle()
 
-    if (sinBinRow?.bad_count === SCORE.SIN_BIN_THRESHOLD) {
-      const offences = await fetchSinBinOffences(senderId, recipientId, recoCategory)
+    const recoIds = senderRecos?.map((r) => r.id) ?? []
 
-      // Notify the person who just got sin-binned
-      await supabase.from('notifications').insert({
-        user_id: senderId,
-        type: 'sin_bin',
-        actor_id: recipientId,
-        payload: { category: recoCategory, bad_count: SCORE.SIN_BIN_THRESHOLD, offences },
-      })
+    if (recoIds.length > 0) {
+      const { count: badCount } = await supabase
+        .from('reco_recipients')
+        .select('*', { count: 'exact', head: true })
+        .eq('recipient_id', recipientId)
+        .lte('score', SCORE.BAD_MAX)
+        .in('reco_id', recoIds)
 
-      return { error: null, sinBinTriggered: { category: recoCategory, offences } }
+      if (badCount !== null && badCount >= SCORE.SIN_BIN_THRESHOLD) {
+        // Ensure sin_bin row exists and is active (belt and suspenders with DB trigger)
+        const { data: existing } = await supabase
+          .from('sin_bin')
+          .select('id, is_active')
+          .eq('sender_id', senderId)
+          .eq('recipient_id', recipientId)
+          .eq('category', recoCategory)
+          .maybeSingle()
+
+        if (existing) {
+          await supabase
+            .from('sin_bin')
+            .update({ bad_count: badCount, is_active: true })
+            .eq('id', existing.id)
+        } else {
+          await supabase.from('sin_bin').insert({
+            sender_id: senderId,
+            recipient_id: recipientId,
+            category: recoCategory,
+            bad_count: badCount,
+            is_active: true,
+            triggered_at: new Date().toISOString(),
+            released_at: null,
+          })
+        }
+
+        // Fire notification + modal only on the exact threshold hit
+        if (badCount === SCORE.SIN_BIN_THRESHOLD) {
+          const offences = await fetchSinBinOffences(senderId, recipientId, recoCategory)
+
+          await supabase.from('notifications').insert({
+            user_id: senderId,
+            type: 'sin_bin',
+            actor_id: recipientId,
+            payload: { category: recoCategory, bad_count: SCORE.SIN_BIN_THRESHOLD, offences },
+          })
+
+          return { error: null, sinBinTriggered: { category: recoCategory, offences } }
+        }
+      }
     }
   }
 

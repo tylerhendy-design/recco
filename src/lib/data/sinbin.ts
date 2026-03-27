@@ -59,6 +59,35 @@ export async function fetchSinBinOffences(senderId: string, recipientId: string,
     .filter(Boolean) as string[]
 }
 
+// All active sin bin entries where userId is the one who was sin-binned (with the recipient's name)
+export async function fetchAllSinBinnedBy(userId: string): Promise<Array<SinBinEntry & { recipient_name: string; offences: string[] }>> {
+  const supabase = createClient()
+
+  const { data: entries } = await supabase
+    .from('sin_bin')
+    .select('*')
+    .eq('sender_id', userId)
+    .eq('is_active', true)
+
+  if (!entries?.length) return []
+
+  const recipientIds = [...new Set(entries.map((e: any) => e.recipient_id))]
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', recipientIds)
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p.display_name]))
+
+  return Promise.all(
+    (entries as SinBinEntry[]).map(async (entry) => ({
+      ...entry,
+      recipient_name: profileMap[entry.recipient_id] ?? 'Someone',
+      offences: await fetchSinBinOffences(userId, entry.recipient_id, entry.category),
+    }))
+  )
+}
+
 // Release a sender from a recipient's sin bin for a given category
 export async function releaseSinBin(senderId: string, recipientId: string, category: string): Promise<void> {
   const supabase = createClient()
