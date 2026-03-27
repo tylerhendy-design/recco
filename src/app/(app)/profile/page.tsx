@@ -34,6 +34,9 @@ export default function ProfilePage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null)
   const [customCategoryName, setCustomCategoryName] = useState('')
   const [newPickTitle, setNewPickTitle] = useState('')
+  const [newPickWhy, setNewPickWhy] = useState('')
+  const [newPickLinks, setNewPickLinks] = useState<string[]>([''])
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const [addingPick, setAddingPick] = useState(false)
 
   // Collapsed state per category (all start collapsed)
@@ -96,18 +99,19 @@ export default function ProfilePage() {
 
   async function handleAddPick() {
     if (!profile || !selectedCategory || !newPickTitle.trim()) return
-    const category = selectedCategory === 'custom'
-      ? customCategoryName.trim()
-      : selectedCategory
+    const category = selectedCategory === 'custom' ? customCategoryName.trim() : selectedCategory
     if (!category) return
     setAddingPick(true)
-    const { error } = await addPick(profile.id, category, newPickTitle)
+    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks)
     if (!error) {
       const updated = await fetchUserPicks(profile.id)
       setPicks(updated)
       setNewPickTitle('')
+      setNewPickWhy('')
+      setNewPickLinks([''])
       setCustomCategoryName('')
       setSelectedCategory(null)
+      setDetailsOpen(false)
       setShowAddPick(false)
     }
     setAddingPick(false)
@@ -205,50 +209,122 @@ export default function ProfilePage() {
 
             {/* Add form */}
             {showAddPick && (
-              <div className="bg-bg-card border border-border rounded-card p-4 mb-4">
-                <div className="flex items-center justify-between mb-2.5">
-                  <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">Category</div>
-                  <button onClick={() => setShowAddPick(false)} className="text-[12px] text-text-faint hover:text-white transition-colors">Cancel</button>
-                </div>
-                <div className="flex flex-wrap gap-[7px] mb-4">
-                  {CATEGORIES.map((cat) => (
-                    <CategoryChip
-                      key={cat.id}
-                      id={cat.id}
-                      selected={selectedCategory === cat.id}
-                      dashed={cat.id === 'custom'}
-                      onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+              <div className="flex flex-col gap-3 mb-4">
+
+                {/* Category */}
+                <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">Category</div>
+                    <button onClick={() => { setShowAddPick(false); setSelectedCategory(null); setNewPickTitle(''); setNewPickWhy(''); setNewPickLinks(['']); setDetailsOpen(false) }} className="text-[12px] text-text-faint hover:text-white transition-colors">Cancel</button>
+                  </div>
+                  <div className="flex flex-wrap gap-[7px]">
+                    {CATEGORIES.map((cat) => (
+                      <CategoryChip
+                        key={cat.id}
+                        id={cat.id}
+                        selected={selectedCategory === cat.id}
+                        dashed={cat.id === 'custom'}
+                        onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
+                      />
+                    ))}
+                  </div>
+                  {selectedCategory === 'custom' && (
+                    <input
+                      value={customCategoryName}
+                      onChange={(e) => setCustomCategoryName(e.target.value)}
+                      placeholder="Category name (e.g. Architects, Barbers…)"
+                      className="w-full mt-3 bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent"
                     />
-                  ))}
+                  )}
                 </div>
 
-                {selectedCategory === 'custom' && (
-                  <input
-                    value={customCategoryName}
-                    onChange={(e) => setCustomCategoryName(e.target.value)}
-                    placeholder="Category name (e.g. Architects, Barbers…)"
-                    className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent mb-3"
-                  />
-                )}
-
+                {/* Name */}
                 {selectedCategory && (
-                  <>
+                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
+                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Name</div>
                     <input
                       autoFocus
                       value={newPickTitle}
                       onChange={(e) => setNewPickTitle(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddPick()}
                       placeholder="Name it…"
-                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[15px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent mb-3"
+                      className="bg-transparent outline-none text-white font-sans text-[17px] w-full tracking-[-0.3px] placeholder:text-[#2a2a30]"
                     />
+                  </div>
+                )}
+
+                {/* Why */}
+                {selectedCategory && (
+                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
+                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Why?</div>
+                    <input
+                      value={newPickWhy}
+                      onChange={(e) => setNewPickWhy(e.target.value)}
+                      placeholder="What makes it worth recommending…"
+                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+                    />
+                  </div>
+                )}
+
+                {/* Links & details — collapsible */}
+                {selectedCategory && (
+                  <div className="bg-bg-card border border-border rounded-card">
                     <button
-                      onClick={handleAddPick}
-                      disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim())}
-                      className="w-full py-3 rounded-btn bg-accent text-accent-fg text-[14px] font-bold disabled:opacity-40 transition-opacity"
+                      onClick={() => setDetailsOpen((o) => !o)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-60 transition-opacity"
                     >
-                      {addingPick ? 'Adding…' : 'Add pick'}
+                      <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">
+                        Links &amp; details
+                        <span className="ml-1.5 normal-case font-normal text-[11px] text-text-faint">optional</span>
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 flex-shrink-0 ${detailsOpen ? 'rotate-180' : ''}`}>
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
                     </button>
-                  </>
+                    {detailsOpen && (
+                      <div className="border-t border-border px-4 pt-4 pb-4 flex flex-col gap-2">
+                        {newPickLinks.map((link, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-1 bg-bg-base border border-border rounded-input px-3 py-2">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
+                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                              </svg>
+                              <input
+                                className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-border font-sans"
+                                placeholder="Paste a URL…"
+                                value={link}
+                                onChange={(e) => { const n = [...newPickLinks]; n[i] = e.target.value; setNewPickLinks(n) }}
+                              />
+                            </div>
+                            {newPickLinks.length > 1 && (
+                              <button onClick={() => setNewPickLinks(newPickLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button onClick={() => setNewPickLinks([...newPickLinks, ''])} className="flex items-center gap-1.5 text-[12px] font-semibold text-text-dim hover:text-text-secondary transition-colors mt-0.5">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                          </svg>
+                          Add another link
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Submit */}
+                {selectedCategory && (
+                  <button
+                    onClick={handleAddPick}
+                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim())}
+                    className="w-full py-4 rounded-btn bg-accent text-accent-fg text-[15px] font-bold disabled:opacity-40 transition-opacity"
+                  >
+                    {addingPick ? 'Adding…' : 'Add pick'}
+                  </button>
                 )}
               </div>
             )}
@@ -285,16 +361,28 @@ export default function ProfilePage() {
                     {isOpen && (
                       <div className="border-t border-border">
                         {items.map((pick) => (
-                          <div key={pick.id} className="flex items-center justify-between px-4 py-3 border-b border-[#0e0e10] last:border-0">
-                            <span className="text-[14px] text-white">{pick.title}</span>
-                            <button
-                              onClick={() => handleRemovePick(pick.id)}
-                              className="text-text-faint hover:text-red-400 transition-colors pl-4 flex-shrink-0"
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                <path d="M18 6L6 18M6 6l12 12"/>
-                              </svg>
-                            </button>
+                          <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                {pick.links.length > 0 && (
+                                  <div className="flex flex-col gap-0.5 mt-1.5">
+                                    {pick.links.map((link, i) => (
+                                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate">{link}</a>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleRemovePick(pick.id)}
+                                className="text-text-faint hover:text-red-400 transition-colors flex-shrink-0 pt-0.5"
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                  <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
