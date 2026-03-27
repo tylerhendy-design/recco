@@ -234,30 +234,31 @@ export default function GetPage() {
             )}
           </div>
 
+          {/* How many recos */}
+          <div className="border-t border-[#0e0e10] pt-4 mb-4">
+            <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-3">How many recos?</div>
+            <div className="flex gap-2">
+              {[1, 3, 5, 10].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setRecoCount(n)}
+                  className="flex-1 py-2 rounded-chip text-[13px] font-bold transition-all"
+                  style={recoCount === n
+                    ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
+                    : { color: '#555', border: '1px solid #222226', background: 'transparent' }
+                  }
+                >
+                  {n}×
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Extra details section */}
           <div className="border-t border-[#0e0e10] pt-4 mb-3">
             <div className="mb-1">
               <div className="text-[17px] font-semibold text-white tracking-[-0.3px]">Extra details</div>
               <div className="text-[12px] text-text-faint mt-0.5">Optional — the more context, the better the reco</div>
-            </div>
-            {/* How many recos */}
-            <div className="mb-4">
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">How many recos?</div>
-              <div className="flex gap-2">
-                {[1, 3, 5, 10].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setRecoCount(n)}
-                    className="flex-1 py-2 rounded-chip text-[13px] font-bold transition-all"
-                    style={recoCount === n
-                      ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
-                      : { color: '#555', border: '1px solid #222226', background: 'transparent' }
-                    }
-                  >
-                    {n}×
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Category-specific lozenges */}
@@ -353,33 +354,6 @@ export default function GetPage() {
                   </button>
                 )
               })}
-            </div>
-          )}
-
-          {filteredFriends.length === 0 ? (
-            <div className="text-[12px] text-text-faint py-1">
-              {friends.length === 0 ? 'No friends yet.' : 'No friends found.'}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-0.5">
-              {filteredFriends.filter((f) => !selectedIds.includes(f.id)).map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => togglePerson(f.id)}
-                  className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-base transition-colors text-left w-full"
-                >
-                  <div className="w-6 h-6 rounded-full bg-bg-base border border-border flex items-center justify-center text-[9px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
-                    {f.avatar_url
-                      ? <img src={f.avatar_url} alt={f.display_name} className="w-full h-full object-cover" />
-                      : initials(f.display_name)
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[12px] font-medium text-text-secondary">{f.display_name}</span>
-                    {f.username && <span className="text-[11px] text-text-faint ml-1.5">@{f.username}</span>}
-                  </div>
-                </button>
-              ))}
             </div>
           )}
         </div>
