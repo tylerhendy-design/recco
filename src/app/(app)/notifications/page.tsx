@@ -98,9 +98,14 @@ function NotifRow({
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
   } else if (notif.type === 'feedback_received') {
     const title = notif.payload?.reco_title
+    const category = notif.payload?.reco_category
     const score = notif.payload?.score
-    const scoreLabel = score != null ? (score >= 70 ? '👍' : score >= 40 ? '😐' : '👎') : ''
-    body = title ? `reviewed your reco: ${title} ${scoreLabel}`.trim() : `reviewed one of your recos. ${scoreLabel}`.trim()
+    const feedbackText = notif.payload?.feedback_text
+    const categoryLabel = category ? `${category} ` : ''
+    body = `gave your ${categoryLabel}reco a ${score}/100.`
+    if (title || feedbackText) {
+      body += `\n${title ? `${title}: ` : ''}${feedbackText ?? ''}`
+    }
   }
 
   return (
@@ -120,7 +125,7 @@ function NotifRow({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] text-white leading-[1.5]">
+          <div className="text-[13px] text-white leading-[1.5] whitespace-pre-line">
             <span className="font-semibold">{actor.display_name}</span>{' '}
             <span className="text-text-muted">{body}</span>
           </div>

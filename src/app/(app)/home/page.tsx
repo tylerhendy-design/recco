@@ -227,6 +227,7 @@ export default function HomePage() {
       score,
       feedbackText: text,
       recoTitle: reco.title,
+      recoCategory: reco.category,
     })
     if (doneRecos.length > 0) loadDone(userId)
   }

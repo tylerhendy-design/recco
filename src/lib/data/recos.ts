@@ -117,6 +117,7 @@ export async function submitFeedback({
   score,
   feedbackText,
   recoTitle,
+  recoCategory,
 }: {
   recoId: string
   recipientId: string
@@ -124,6 +125,7 @@ export async function submitFeedback({
   score: number
   feedbackText: string
   recoTitle?: string
+  recoCategory?: string
 }): Promise<{ error: string | null }> {
   const supabase = createClient()
 
@@ -149,7 +151,7 @@ export async function submitFeedback({
       type: 'feedback_received',
       actor_id: recipientId,
       reco_id: recoId,
-      payload: { score, feedback_text: feedbackText, reco_title: recoTitle },
+      payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
     })
 
   return { error: null }
