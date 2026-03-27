@@ -156,25 +156,21 @@ export async function submitFeedback({
       payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
     })
 
-  // 3. Check if this bad score just triggered a sin bin — count directly, no trigger dependency
+  // 3. Check if this bad score just triggered a sin bin — count via reco_recipients join only
   if (score <= SCORE.BAD_MAX && recoCategory) {
-    const { data: senderRecos } = await supabase
-      .from('recommendations')
-      .select('id')
-      .eq('sender_id', senderId)
-      .eq('category', recoCategory)
+    // Join through recommendations — only reads reco_recipients rows Vanessa (recipientId) owns
+    const { data: badRows } = await supabase
+      .from('reco_recipients')
+      .select('reco_id, recommendations!inner(sender_id, category)')
+      .eq('recipient_id', recipientId)
+      .lte('score', SCORE.BAD_MAX)
+      .not('score', 'is', null)
 
-    const recoIds = senderRecos?.map((r) => r.id) ?? []
+    const badCount = (badRows ?? []).filter(
+      (r: any) => r.recommendations?.sender_id === senderId && r.recommendations?.category === recoCategory
+    ).length
 
-    if (recoIds.length > 0) {
-      const { count: badCount } = await supabase
-        .from('reco_recipients')
-        .select('*', { count: 'exact', head: true })
-        .eq('recipient_id', recipientId)
-        .lte('score', SCORE.BAD_MAX)
-        .in('reco_id', recoIds)
-
-      if (badCount !== null && badCount >= SCORE.SIN_BIN_THRESHOLD) {
+    if (badCount >= SCORE.SIN_BIN_THRESHOLD) {
         // Ensure sin_bin row exists and is active (belt and suspenders with DB trigger)
         const { data: existing } = await supabase
           .from('sin_bin')
@@ -214,10 +210,10 @@ export async function submitFeedback({
 
           return { error: null, sinBinTriggered: { category: recoCategory, offences } }
         }
-      } else if (badCount !== null && badCount > 0 && badCount < SCORE.SIN_BIN_THRESHOLD) {
-        // Below threshold — return a warning with how many remain
-        return { error: null, sinBinWarning: { category: recoCategory, remaining: SCORE.SIN_BIN_THRESHOLD - badCount } }
       }
+    } else if (badCount > 0 && badCount < SCORE.SIN_BIN_THRESHOLD) {
+      // Below threshold — return a warning with how many remain
+      return { error: null, sinBinWarning: { category: recoCategory, remaining: SCORE.SIN_BIN_THRESHOLD - badCount } }
     }
   }
 
