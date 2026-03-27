@@ -18,7 +18,7 @@ const LABELS: Record<number, string> = {
   6:  "There's something here. I'd cautiously recommend it",
   7:  "This is solid overall. I'd recommend it without much hesitation",
   8:  "Very good overall. I'd happily recommend this to people",
-  9:  "Excellent overall. I would strongly recommend this to people",
+  9:  "Unreal. Will recommend this to anyone who'll listen",
   10: "Life changing. I will recommend this to everyone",
 }
 
