@@ -83,6 +83,27 @@ export async function fetchHomeFeed(userId: string): Promise<Reco[]> {
     .filter((r): r is Reco => r !== null)
 }
 
+// ── Fetch completed recos for a user ─────────────────────────────────────────
+export async function fetchDoneRecos(userId: string): Promise<Reco[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('reco_recipients')
+    .select(`
+      id, status, score, feedback_text, rated_at,
+      recommendations (
+        id, sender_id, category, custom_cat, title,
+        why_text, why_audio_url, meta, created_at,
+        profiles (id, display_name, username, avatar_url)
+      )
+    `)
+    .eq('recipient_id', userId)
+    .eq('status', 'done')
+    .order('rated_at', { ascending: false })
+
+  if (error || !data) return []
+  return (data as RecipientRow[]).map(mapRecipientRow).filter((r): r is Reco => r !== null)
+}
+
 // ── Mark a reco as done + save feedback ──────────────────────────────────────
 export async function submitFeedback({
   recoId,
