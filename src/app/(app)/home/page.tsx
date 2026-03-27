@@ -119,6 +119,7 @@ export default function HomePage() {
       senderId: reco.sender_id,
       score,
       feedbackText: text,
+      recoTitle: reco.title,
     })
   }
 

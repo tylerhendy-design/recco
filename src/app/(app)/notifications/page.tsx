@@ -95,9 +95,12 @@ function NotifRow({
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
   else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
-    body = title ? `sent you a reco: ${title}` : 'sent you a reco.'
+    body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
   } else if (notif.type === 'feedback_received') {
-    body = 'left feedback on your reco.'
+    const title = notif.payload?.reco_title
+    const score = notif.payload?.score
+    const scoreLabel = score != null ? (score >= 70 ? '👍' : score >= 40 ? '😐' : '👎') : ''
+    body = title ? `reviewed your reco: ${title} ${scoreLabel}`.trim() : `reviewed one of your recos. ${scoreLabel}`.trim()
   }
 
   return (

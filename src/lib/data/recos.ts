@@ -90,12 +90,14 @@ export async function submitFeedback({
   senderId,
   score,
   feedbackText,
+  recoTitle,
 }: {
   recoId: string
   recipientId: string
   senderId: string
   score: number
   feedbackText: string
+  recoTitle?: string
 }): Promise<{ error: string | null }> {
   const supabase = createClient()
 
@@ -121,7 +123,7 @@ export async function submitFeedback({
       type: 'feedback_received',
       actor_id: recipientId,
       reco_id: recoId,
-      payload: { score, feedback_text: feedbackText },
+      payload: { score, feedback_text: feedbackText, reco_title: recoTitle },
     })
 
   return { error: null }
@@ -190,7 +192,7 @@ export async function sendReco({
     type: 'reco_received' as const,
     actor_id: senderId,
     reco_id: recoId,
-    payload: {},
+    payload: { title },
   }))
 
   await supabase.from('notifications').insert(notifRows)
