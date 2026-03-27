@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
-import { fetchNotifications, markAllRead, type NotificationRow } from '@/lib/data/notifications'
+import { fetchNotifications, markAllRead, markNotificationHandled, type NotificationRow } from '@/lib/data/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
 import { releaseSinBin } from '@/lib/data/sinbin'
 import { initials, formatRelativeTime, getScoreColor } from '@/lib/utils'
@@ -29,6 +29,12 @@ export default function NotificationsPage() {
       setUserId(user.id)
       const data = await fetchNotifications(user.id)
       setNotifs(data)
+      // Seed handled state from persisted payload
+      const persistedHandled: Record<string, 'accepted' | 'declined' | 'released' | 'kept'> = {}
+      for (const n of data) {
+        if (n.payload?.handled) persistedHandled[n.id] = n.payload.handled
+      }
+      setHandled(persistedHandled)
       setLoading(false)
       // Mark all as read once viewed
       markAllRead(user.id)
@@ -65,11 +71,15 @@ export default function NotificationsPage() {
     const { category } = notif.payload ?? {}
     if (!category) return
     setHandled((prev) => ({ ...prev, [notif.id]: 'released' }))
-    await releaseSinBin(notif.actor_id, userId, category)
+    await Promise.all([
+      releaseSinBin(notif.actor_id, userId, category),
+      markNotificationHandled(notif.id, notif.payload, 'released'),
+    ])
   }
 
-  function handleKeepPlea(notifId: string) {
-    setHandled((prev) => ({ ...prev, [notifId]: 'kept' }))
+  async function handleKeepPlea(notif: NotificationRow) {
+    setHandled((prev) => ({ ...prev, [notif.id]: 'kept' }))
+    await markNotificationHandled(notif.id, notif.payload, 'kept')
   }
 
   return (
@@ -99,7 +109,7 @@ export default function NotificationsPage() {
               onAccept={() => handleAccept(n)}
               onDecline={() => handleDecline(n)}
               onReleasePlea={() => handleReleasePlea(n)}
-              onKeepPlea={() => handleKeepPlea(n.id)}
+              onKeepPlea={() => handleKeepPlea(n)}
               onReply={() => setReplyTarget({
                 recipientId: n.actor_id,
                 recipientName: n.actor.display_name,
@@ -140,7 +150,7 @@ function NotifRow({
   onAccept: () => void
   onDecline: () => void
   onReleasePlea: () => void
-  onKeepPlea: () => void
+  onKeepPlea: () => Promise<void> | void
   onReply: () => void
 }) {
   const actor = notif.actor

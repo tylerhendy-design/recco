@@ -36,3 +36,15 @@ export async function markAllRead(userId: string) {
     .eq('user_id', userId)
     .eq('read', false)
 }
+
+export async function markNotificationHandled(
+  notifId: string,
+  currentPayload: Record<string, any>,
+  outcome: 'released' | 'kept',
+) {
+  const supabase = createClient()
+  await supabase
+    .from('notifications')
+    .update({ payload: { ...currentPayload, handled: outcome } })
+    .eq('id', notifId)
+}
