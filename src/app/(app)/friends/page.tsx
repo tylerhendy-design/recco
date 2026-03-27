@@ -31,6 +31,7 @@ export default function FriendsPage() {
   const [requests, setRequests] = useState<RequestRow[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showDunbar, setShowDunbar] = useState(false)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -66,12 +67,12 @@ export default function FriendsPage() {
   )
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden relative">
       <StatusBar />
       <div className="flex items-center justify-between px-6 py-3.5 pb-2.5 flex-shrink-0">
         <div className="flex items-baseline gap-2">
           <span className="text-[22px] font-semibold text-white tracking-[-0.5px]">Friends</span>
-          <span className="text-[13px] font-medium text-text-faint">{friends.length} / 150</span>
+          <button onClick={() => setShowDunbar(true)} className="text-[13px] font-medium text-text-faint hover:text-white transition-colors">{friends.length} / 150</button>
         </div>
         <Link
           href="/friends/add"
@@ -178,6 +179,36 @@ export default function FriendsPage() {
 
 
       </div>
+
+      {/* Dunbar's Number overlay */}
+      {showDunbar && (
+        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowDunbar(false)}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
+            <div className="text-[11px] font-semibold text-accent tracking-[1px] uppercase mb-2">Why 150?</div>
+            <div className="text-[22px] font-bold text-white tracking-[-0.5px] leading-[1.2] mb-4">
+              Dunbar's Number
+            </div>
+            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
+              Robin Dunbar, a British anthropologist, discovered that humans can only maintain around 150 stable social relationships at once. It's a cognitive limit — the number of people you can genuinely keep up with.
+            </p>
+            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
+              That's why 150 is the cap on Reco. Not as a gimmick — because a recommendation only means something when it comes from someone you actually know. The closer the relationship, the better the taste signal.
+            </p>
+            <p className="text-[15px] text-text-muted leading-[1.7]">
+              Understanding someone's taste is everything on Reco. And you can only really understand the taste of people in your 150.
+            </p>
+            <button
+              onClick={() => setShowDunbar(false)}
+              className="w-full mt-7 py-4 rounded-btn bg-bg-card border border-border text-[15px] font-semibold text-white"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

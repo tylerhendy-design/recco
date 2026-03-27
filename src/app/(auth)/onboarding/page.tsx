@@ -6,13 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const SLIDES = [
   {
-    step: '01 / 06',
+    step: '01 / 05',
     headline: 'Your collection of recommendations',
     body: 'Everything your friends have ever told you to watch, eat, listen to — in one place. Human taste, no algorithms.',
     preview: null,
   },
   {
-    step: '02 / 06 — Sending',
+    step: '02 / 05 — Sending',
     headline: 'Tap + to send a reco',
     body: 'Restaurants, TV, music, podcasts, books, films — or create your own category. Add links, locations, Spotify tracks, even images.',
     preview: (
@@ -34,7 +34,7 @@ const SLIDES = [
     ),
   },
   {
-    step: '03 / 06 — Feedback',
+    step: '03 / 05 — Feedback',
     headline: 'Close the loop',
     body: "When you finish a restaurant or show, mark it as done. Slide to rate it. Your friends get notified — that's vicarious joy.",
     preview: (
@@ -52,7 +52,7 @@ const SLIDES = [
     ),
   },
   {
-    step: '04 / 06 — Sin bin',
+    step: '04 / 05 — Sin bin',
     headline: "Three strikes. You're out.",
     body: 'Give someone three bad recos in the same category and you\'re sin-binned. No more restaurant recos for Huckle until he lets you out.',
     preview: (
@@ -83,33 +83,7 @@ const SLIDES = [
     ),
   },
   {
-    step: '05 / 06 — Friends',
-    headline: "Dunbar's Number.",
-    body: "A strict 150-friend limit. If you reach the limit, it's one-in one-out. Harsh but fair.",
-    preview: (
-      <div className="bg-bg-card rounded-card p-4 border border-border flex flex-col gap-2.5">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#2a1010] text-[#F56E6E] flex items-center justify-center text-[10px] font-semibold">BJ</div>
-            <div>
-              <div className="text-[13px] font-semibold text-accent">Big Jimmy</div>
-              <div className="flex gap-1 mt-[3px]">
-                <span className="text-[9px] px-1.5 py-[2px] rounded-chip bg-[#2a1010] text-[#F56E6E] flex items-center gap-1 font-semibold">
-                  <HeartSVG color="#F56E6E" /><HeartSVG color="#F56E6E" /><HeartSVG color="#F56E6E" />Food
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs font-bold text-accent">Perfect</div>
-            <div className="text-[10px] text-text-faint">94%</div>
-          </div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    step: '06 / 06 — Lists',
+    step: '05 / 05 — Lists',
     headline: 'Give and get guides',
     body: 'Create a list — places to eat in Paris, things to do in Tokyo — and send it as a guide. Less curated than a reco, more generous than a link.',
     preview: (

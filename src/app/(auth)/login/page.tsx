@@ -52,15 +52,12 @@ function LoginForm() {
           <Image
             src="/wordmark.svg"
             alt="reco."
-            width={88}
-            height={44}
-            className="mb-12"
+            width={110}
+            height={55}
+            className="mb-10"
           />
 
-          <div className="text-[22px] font-bold text-white tracking-[-0.5px] text-center mb-2">
-            Sign in to Reco
-          </div>
-          <div className="text-[14px] text-text-muted text-center mb-10 leading-[1.6]">
+          <div className="text-[16px] text-text-muted text-center mb-10 leading-[1.6]">
             Human recommendations from people you trust. No algorithms.
           </div>
 
