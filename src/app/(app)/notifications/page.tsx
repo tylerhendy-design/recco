@@ -117,7 +117,11 @@ function NotifRow({
 
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
-  else if (notif.type === 'reco_received') {
+  else if (notif.type === 'request_received') {
+    const q = notif.payload?.query
+    const cat = notif.payload?.category
+    body = `is asking for a reco${cat ? ` — ${cat}` : ''}${q ? `: "${q}"` : '.'}`
+  } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
   } else if (isPlea) {

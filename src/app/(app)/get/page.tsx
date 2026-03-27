@@ -75,11 +75,14 @@ export default function GetPage() {
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
   const [details, setDetails] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
+      setUserId(user.id)
       const data = await fetchFriends(user.id)
       setFriends(data as Friend[])
     })
@@ -118,6 +121,31 @@ export default function GetPage() {
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const canSend = query.trim().length > 0 && selectedIds.length > 0
 
+  async function handleSend() {
+    if (!canSend || !userId || sending) return
+    setSending(true)
+    const supabase = createClient()
+    const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
+    const payload = {
+      query: query.trim(),
+      category: effectiveCat,
+      constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
+      details: details.trim() || null,
+    }
+    await Promise.all(
+      selectedIds.map((friendId) =>
+        supabase.from('notifications').insert({
+          user_id: friendId,
+          type: 'request_received',
+          actor_id: userId,
+          payload,
+        })
+      )
+    )
+    setSending(false)
+    setSent(true)
+  }
+
   if (sent) {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -153,6 +181,19 @@ export default function GetPage() {
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
+          {/* Static title */}
+          <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-3">
+            What are you after?
+          </div>
+
+          {/* Query input */}
+          <input
+            className="w-full bg-transparent outline-none text-[15px] text-text-secondary tracking-[-0.2px] placeholder:text-[#2a2a30] font-sans mb-4"
+            placeholder="e.g. a great Italian, something to watch tonight…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+
           {/* Category chips */}
           <div className="mb-4">
             <div className="flex gap-1.5 flex-wrap">
@@ -173,16 +214,21 @@ export default function GetPage() {
                   </button>
                 )
               })}
+              {/* Custom — dotted border, custom icon */}
               <button
                 onClick={() => setSelectedCat(selectedCat === 'custom' ? null : 'custom')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip border transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
                 style={selectedCat === 'custom'
-                  ? { color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }
-                  : { color: '#444', borderColor: '#222226' }
+                  ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
+                  : { color: '#555', border: '1px dashed #333' }
                 }
               >
-                <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: selectedCat === 'custom' ? '#D4E23A' : '#444' }} />
-                + Custom
+                {/* Pencil/custom icon */}
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Custom
               </button>
             </div>
             {selectedCat === 'custom' && (
@@ -196,27 +242,13 @@ export default function GetPage() {
             )}
           </div>
 
-          {/* Static title */}
-          <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-1">
-            What are you after?
-          </div>
-
-          {/* Query input */}
-          <input
-            className="w-full bg-transparent outline-none text-[15px] text-text-secondary tracking-[-0.2px] placeholder:text-[#2a2a30] font-sans mb-4"
-            placeholder="e.g. a great Italian, something to watch tonight…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-
           {/* Extra details section */}
-          <div className="border-t border-[#0e0e10] pt-3 mb-3">
-            <div className="flex items-baseline gap-2 mb-2.5">
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">
-                Extra details
-              </div>
-              <div className="text-[11px] text-text-faint">— optional, helps get a better reco</div>
+          <div className="border-t border-[#0e0e10] pt-4 mb-3">
+            <div className="mb-1">
+              <div className="text-[17px] font-semibold text-white tracking-[-0.3px]">Extra details</div>
+              <div className="text-[12px] text-text-faint mt-0.5">Optional — the more context, the better the reco</div>
             </div>
+            <div className="mb-3" />
 
             {/* Category-specific lozenges */}
             <div className="flex gap-2 flex-wrap mb-2.5">
@@ -255,13 +287,15 @@ export default function GetPage() {
             )}
 
             {/* Free text details */}
-            <textarea
-              rows={2}
-              className="w-full bg-transparent outline-none text-[13px] text-text-secondary leading-[1.5] placeholder:text-[#2a2a30] font-sans resize-none"
-              placeholder="Anything else — who it's for, what you've already tried, how specific you want them to be…"
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-            />
+            <div className="mt-4">
+              <textarea
+                rows={2}
+                className="w-full bg-transparent outline-none text-[14px] text-text-secondary leading-[1.6] placeholder:text-[#383840] font-sans resize-none"
+                placeholder="Anything else — who it's for, what you've tried, how specific to be…"
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Divider */}
@@ -341,13 +375,13 @@ export default function GetPage() {
         </div>
 
         <button
-          onClick={() => canSend && setSent(true)}
-          disabled={!canSend}
+          onClick={handleSend}
+          disabled={!canSend || sending}
           className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold text-center transition-all ${
-            canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+            canSend && !sending ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
           }`}
         >
-          Request reco
+          {sending ? 'Sending…' : 'Request reco'}
         </button>
       </div>
     </div>
