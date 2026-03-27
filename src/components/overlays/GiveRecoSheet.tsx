@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { CategoryChip } from '@/components/ui/CategoryChip'
 import { VoiceButton } from '@/components/ui/VoiceButton'
-import { CATEGORIES, type CategoryId } from '@/constants/categories'
+import { CATEGORIES, CATEGORY_MAP, type CategoryId, getCategoryLabel } from '@/constants/categories'
 import { sendReco } from '@/lib/data/recos'
 
 function getLinkLabel(url: string): string {
@@ -61,14 +61,17 @@ export function GiveRecoSheet({
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
   const [links, setLinks] = useState<string[]>([''])
-  const [linksOpen, setLinksOpen] = useState(false)
+  const [linksOpen, setLinksOpen] = useState(initialCategory === 'restaurant')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Sync category when sheet opens with a pre-filled category
   useEffect(() => {
-    if (open) setCategory((initialCategory as CategoryId) ?? null)
+    if (open) {
+      setCategory((initialCategory as CategoryId) ?? null)
+      if (initialCategory === 'restaurant') setLinksOpen(true)
+    }
   }, [open, initialCategory])
 
   function reset() {
@@ -77,7 +80,7 @@ export function GiveRecoSheet({
     setTitle('')
     setWhy('')
     setLinks([''])
-    setLinksOpen(false)
+    setLinksOpen(initialCategory === 'restaurant')
     setSending(false)
     setSent(false)
     setError(null)
@@ -153,8 +156,9 @@ export function GiveRecoSheet({
               Give {firstName} a reco
             </div>
             {requestContext && (
-              <div className="mt-1.5 text-[12px] text-text-faint leading-[1.5] italic">
-                They asked: "{requestContext}"
+              <div className="mt-2 px-3 py-2.5 bg-bg-card border border-border rounded-input">
+                <div className="text-[10px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-1">They asked for</div>
+                <div className="text-[13px] text-white leading-[1.5]">{requestContext}</div>
               </div>
             )}
           </div>
@@ -162,28 +166,45 @@ export function GiveRecoSheet({
           {/* Category */}
           <div>
             <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Category</div>
-            <div className="flex flex-wrap gap-[7px]">
-              {CATEGORIES.map((cat) => (
-                <CategoryChip
-                  key={cat.id}
-                  id={cat.id}
-                  selected={category === cat.id}
-                  dashed={cat.id === 'custom'}
-                  onClick={() => {
-                    const next = cat.id === category ? null : cat.id as CategoryId
-                    setCategory(next)
-                    if (next === 'restaurant') setLinksOpen(true)
-                  }}
-                />
-              ))}
-            </div>
-            {category === 'custom' && (
-              <input
-                value={customCat}
-                onChange={(e) => setCustomCat(e.target.value)}
-                placeholder="Category name…"
-                className="w-full mt-2 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-              />
+            {initialCategory ? (
+              (() => {
+                const cat = CATEGORY_MAP[initialCategory as CategoryId]
+                const color = cat?.color ?? '#D4E23A'
+                return (
+                  <div
+                    className="inline-flex items-center px-3 py-1.5 rounded-chip text-[13px] font-semibold"
+                    style={{ color, background: `${color}22`, border: `1px solid ${color}66` }}
+                  >
+                    {cat?.label ?? initialCategory}
+                  </div>
+                )
+              })()
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-[7px]">
+                  {CATEGORIES.map((cat) => (
+                    <CategoryChip
+                      key={cat.id}
+                      id={cat.id}
+                      selected={category === cat.id}
+                      dashed={cat.id === 'custom'}
+                      onClick={() => {
+                        const next = cat.id === category ? null : cat.id as CategoryId
+                        setCategory(next)
+                        if (next === 'restaurant') setLinksOpen(true)
+                      }}
+                    />
+                  ))}
+                </div>
+                {category === 'custom' && (
+                  <input
+                    value={customCat}
+                    onChange={(e) => setCustomCat(e.target.value)}
+                    placeholder="Category name…"
+                    className="w-full mt-2 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                  />
+                )}
+              </>
             )}
             {isCategoryBlocked && (
               <div className="mt-2.5 px-3 py-2.5 bg-bad/10 border border-bad/30 rounded-input">
@@ -200,7 +221,7 @@ export function GiveRecoSheet({
             <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Name</div>
             <input
               className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[15px] text-white placeholder:text-text-faint outline-none focus:border-accent font-sans"
-              placeholder="Name it…"
+              placeholder={category ? `Name of ${getCategoryLabel(category)}…` : 'Name it…'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
