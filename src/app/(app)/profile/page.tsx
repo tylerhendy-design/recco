@@ -387,7 +387,7 @@ export default function ProfilePage() {
                 const color = getCategoryColor(category)
                 const isOpen = expanded[category] ?? false
                 return (
-                  <div key={category} className="mb-1 border border-border rounded-card overflow-hidden mb-2">
+                  <div key={category} className="border border-border rounded-card mb-2">
                     <button
                       onClick={() => toggleExpanded(category)}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
@@ -480,7 +480,7 @@ export default function ProfilePage() {
                                     </svg>
                                   </button>
                                   {menuOpenId === pick.id && (
-                                    <div className="absolute right-0 top-7 z-10 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
+                                    <div className="absolute right-0 top-7 z-50 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
                                       <button
                                         onClick={() => startEdit(pick)}
                                         className="w-full px-4 py-2.5 text-left text-[13px] text-white hover:bg-bg-base transition-colors"
