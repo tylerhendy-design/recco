@@ -193,7 +193,7 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
             <circle cx="8" cy="8" r="7" />
             <path d="M5 8l2.5 2.5L11 5.5" />
           </svg>
-          Mark as done
+          Done? Give them your review
         </button>
       )}
     </div>
