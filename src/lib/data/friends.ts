@@ -99,6 +99,61 @@ export async function fetchFriends(userId: string) {
   }).filter(Boolean)
 }
 
+// ── Fetch a friend's profile + stats ─────────────────────────────────────────
+export async function fetchFriendProfile(friendId: string) {
+  const supabase = createClient()
+  const [
+    { data: prof },
+    { data: sentRecos },
+    { count: friendsCount },
+    { count: recosCompleted },
+  ] = await Promise.all([
+    supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', friendId).single(),
+    supabase.from('recommendations').select('id').eq('sender_id', friendId),
+    supabase.from('friend_connections').select('*', { count: 'exact', head: true })
+      .or(`requester_id.eq.${friendId},addressee_id.eq.${friendId}`)
+      .eq('status', 'accepted'),
+    supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
+      .eq('recipient_id', friendId)
+      .eq('status', 'done'),
+  ])
+
+  const sentIds = sentRecos?.map((r) => r.id) ?? []
+  let stinkersSent = 0
+  if (sentIds.length > 0) {
+    const { count } = await supabase
+      .from('reco_recipients')
+      .select('*', { count: 'exact', head: true })
+      .in('reco_id', sentIds)
+      .eq('status', 'done')
+      .lt('score', 40)
+    stinkersSent = count ?? 0
+  }
+
+  return {
+    profile: prof as { display_name: string; username: string; avatar_url: string | null; joined_at: string } | null,
+    stats: {
+      recos_sent: sentIds.length,
+      friends_count: friendsCount ?? 0,
+      recos_completed: recosCompleted ?? 0,
+      stinkers_sent: stinkersSent,
+    },
+  }
+}
+
+// ── Remove a friend ───────────────────────────────────────────────────────────
+export async function removeFriend(currentUserId: string, friendId: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('friend_connections')
+    .delete()
+    .or(
+      `and(requester_id.eq.${currentUserId},addressee_id.eq.${friendId}),` +
+      `and(requester_id.eq.${friendId},addressee_id.eq.${currentUserId})`
+    )
+  return { error: error?.message ?? null }
+}
+
 // ── Fetch incoming pending requests ──────────────────────────────────────────
 export async function fetchIncomingRequests(userId: string) {
   const supabase = createClient()

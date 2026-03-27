@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { createClient } from '@/lib/supabase/client'
 import { initials } from '@/lib/utils'
+import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 
 type ProfileStats = {
   display_name: string
@@ -17,19 +18,11 @@ type ProfileStats = {
   stinkers_sent: number
 }
 
-type FavouriteReco = {
-  id: string
-  title: string
-  score: number
-  meta: Record<string, string>
-}
-
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
   const [profile, setProfile] = useState<ProfileStats | null>(null)
-  const [topRestaurants, setTopRestaurants] = useState<FavouriteReco[]>([])
-  const [topTV, setTopTV] = useState<FavouriteReco[]>([])
+  const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
 
@@ -43,7 +36,7 @@ export default function ProfilePage() {
         { data: sentRecos },
         { count: friendsCount },
         { count: recosCompleted },
-        { data: doneRecos },
+        userPicks,
       ] = await Promise.all([
         supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', user.id).single(),
         supabase.from('recommendations').select('id').eq('sender_id', user.id),
@@ -53,14 +46,7 @@ export default function ProfilePage() {
         supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
           .eq('recipient_id', user.id)
           .eq('status', 'done'),
-        supabase.from('reco_recipients')
-          .select('score, recommendations(id, title, category, meta)')
-          .eq('recipient_id', user.id)
-          .eq('status', 'done')
-          .not('score', 'is', null)
-          .gte('score', 65)
-          .order('score', { ascending: false })
-          .limit(20),
+        fetchUserPicks(user.id),
       ])
 
       const sentIds = sentRecos?.map((r) => r.id) ?? []
@@ -91,19 +77,7 @@ export default function ProfilePage() {
         })
       }
 
-      if (doneRecos) {
-        const restaurants: FavouriteReco[] = []
-        const tv: FavouriteReco[] = []
-        for (const row of doneRecos as any[]) {
-          const r = row.recommendations
-          if (!r) continue
-          const item = { id: r.id, title: r.title, score: row.score, meta: r.meta ?? {} }
-          if (r.category === 'restaurant' && restaurants.length < 5) restaurants.push(item)
-          if (r.category === 'tv' && tv.length < 5) tv.push(item)
-        }
-        setTopRestaurants(restaurants)
-        setTopTV(tv)
-      }
+      setPicks(userPicks)
 
       setLoading(false)
     }
@@ -167,24 +141,27 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Top restaurants */}
-          <SectionLabel>Top restaurants</SectionLabel>
-          {topRestaurants.length > 0 ? (
-            topRestaurants.map((item, i) => (
-              <FavRow key={item.id} rank={i + 1} title={item.title} sub={item.meta.location ?? ''} score={item.score} />
-            ))
+          {/* Picks */}
+          <SectionLabel>I'd recommend to anyone</SectionLabel>
+          {picks.length === 0 ? (
+            <EmptyFav>Add your favourite restaurants, films, books and more in Edit profile.</EmptyFav>
           ) : (
-            <EmptyFav>Mark restaurant recos as done to build your top 5.</EmptyFav>
-          )}
-
-          {/* Top TV */}
-          <SectionLabel>Top TV series</SectionLabel>
-          {topTV.length > 0 ? (
-            topTV.map((item, i) => (
-              <FavRow key={item.id} rank={i + 1} title={item.title} sub={item.meta.streaming_service ?? ''} score={item.score} />
+            Object.entries(
+              picks.reduce<Record<string, typeof picks>>((acc, p) => {
+                if (!acc[p.category]) acc[p.category] = []
+                acc[p.category].push(p)
+                return acc
+              }, {})
+            ).map(([category, items]) => (
+              <div key={category}>
+                <div className="text-[11px] font-semibold text-accent tracking-[0.5px] uppercase px-6 pt-4 pb-1">{category}</div>
+                {items.map((pick) => (
+                  <div key={pick.id} className="px-6 py-3 border-b border-[#0e0e10]">
+                    <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                  </div>
+                ))}
+              </div>
             ))
-          ) : (
-            <EmptyFav>Mark TV recos as done to build your top 5.</EmptyFav>
           )}
 
           {/* Settings */}
@@ -222,21 +199,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint px-6 pt-5 pb-2">
       {children}
-    </div>
-  )
-}
-
-function FavRow({ rank, title, sub, score }: { rank: number; title: string; sub: string; score: number }) {
-  return (
-    <div className="flex justify-between items-center px-6 py-3 border-b border-[#0e0e10]">
-      <div className="flex items-center gap-3">
-        <span className="text-[13px] font-bold text-text-faint w-4">{rank}</span>
-        <div>
-          <div className="text-[14px] font-medium text-white tracking-[-0.2px]">{title}</div>
-          {sub ? <div className="text-[11px] text-text-faint mt-0.5">{sub}</div> : null}
-        </div>
-      </div>
-      <span className="text-[12px] font-semibold text-accent">{score}</span>
     </div>
   )
 }
