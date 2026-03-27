@@ -42,6 +42,7 @@ interface GiveRecoSheetProps {
   blockedCategories?: string[]
   initialCategory?: string | null
   requestContext?: string | null
+  requestCount?: number
 }
 
 export function GiveRecoSheet({
@@ -53,8 +54,10 @@ export function GiveRecoSheet({
   blockedCategories = [],
   initialCategory,
   requestContext,
+  requestCount = 1,
 }: GiveRecoSheetProps) {
   const firstName = recipientName.split(' ')[0]
+  const total = requestCount ?? 1
 
   const [category, setCategory] = useState<CategoryId | null>((initialCategory as CategoryId) ?? null)
   const [customCat, setCustomCat] = useState('')
@@ -63,31 +66,35 @@ export function GiveRecoSheet({
   const [links, setLinks] = useState<string[]>([''])
   const [linksOpen, setLinksOpen] = useState(initialCategory === 'restaurant')
   const [sending, setSending] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [allDone, setAllDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Sync category when sheet opens with a pre-filled category
+  // Sync when sheet opens
   useEffect(() => {
     if (open) {
       setCategory((initialCategory as CategoryId) ?? null)
       if (initialCategory === 'restaurant') setLinksOpen(true)
+      setCurrentIndex(0)
+      setAllDone(false)
     }
   }, [open, initialCategory])
 
-  function reset() {
-    setCategory((initialCategory as CategoryId) ?? null)
+  function resetForm() {
     setCustomCat('')
     setTitle('')
     setWhy('')
     setLinks([''])
     setLinksOpen(initialCategory === 'restaurant')
     setSending(false)
-    setSent(false)
     setError(null)
+    if (!initialCategory) setCategory(null)
   }
 
   function handleClose() {
-    reset()
+    resetForm()
+    setCurrentIndex(0)
+    setAllDone(false)
     onClose()
   }
 
@@ -122,12 +129,17 @@ export function GiveRecoSheet({
       return
     }
 
-    setSent(true)
+    if (currentIndex + 1 < total) {
+      setCurrentIndex((i) => i + 1)
+      resetForm()
+    } else {
+      setAllDone(true)
+    }
   }
 
   return (
-    <BottomSheet open={open} onClose={sent ? handleClose : onClose} className="max-h-[90vh] overflow-y-auto scrollbar-none">
-      {sent ? (
+    <BottomSheet open={open} onClose={allDone ? handleClose : onClose} className="max-h-[90vh] overflow-y-auto scrollbar-none">
+      {allDone ? (
         <div className="p-6 pt-4 text-center flex flex-col items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-accent/10 border border-accent/30 flex items-center justify-center">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -136,10 +148,10 @@ export function GiveRecoSheet({
           </div>
           <div>
             <div className="text-[19px] font-semibold text-white tracking-[-0.4px] mb-1.5">
-              Reco given. Good job.
+              {total > 1 ? `All ${total} recos given.` : 'Reco given.'} Good job.
             </div>
             <div className="text-[13px] text-text-dim leading-[1.6]">
-              We hope {firstName} loves it.
+              We hope {firstName} loves {total > 1 ? 'them' : 'it'}.
             </div>
           </div>
           <button
@@ -152,8 +164,24 @@ export function GiveRecoSheet({
       ) : (
         <div className="p-5 pt-4 flex flex-col gap-4">
           <div>
-            <div className="text-[17px] font-semibold text-white tracking-[-0.4px]">
-              Give {firstName} a reco
+            <div className="flex items-baseline justify-between gap-2">
+              <div className="text-[17px] font-semibold text-white tracking-[-0.4px]">
+                Give {firstName} a reco
+              </div>
+              {total > 1 && (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {Array.from({ length: total }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-2 h-2 rounded-full transition-colors"
+                      style={{ background: i < currentIndex ? '#D4E23A66' : i === currentIndex ? '#D4E23A' : '#2a2a2e' }}
+                    />
+                  ))}
+                  <span className="text-[12px] font-semibold text-text-muted ml-0.5">
+                    {currentIndex + 1}/{total}
+                  </span>
+                </div>
+              )}
             </div>
             {requestContext && (
               <div className="mt-2 px-3 py-2.5 bg-bg-card border border-border rounded-input">
@@ -315,7 +343,12 @@ export function GiveRecoSheet({
                 canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
               }`}
             >
-              {sending ? 'Giving…' : 'Give reco'}
+              {sending
+                ? 'Giving…'
+                : total > 1
+                  ? `Give reco ${currentIndex + 1} of ${total}`
+                  : 'Give reco'
+              }
             </button>
           </div>
         </div>

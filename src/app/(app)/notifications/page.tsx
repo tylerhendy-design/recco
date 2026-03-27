@@ -21,6 +21,7 @@ export default function NotificationsPage() {
     recipientName: string
     category: string | null
     context: string | null
+    count: number
   } | null>(null)
 
   useEffect(() => {
@@ -115,6 +116,7 @@ export default function NotificationsPage() {
                 recipientName: n.actor.display_name,
                 category: n.payload?.category ?? null,
                 context: buildRequestContext(n.payload),
+                count: n.payload?.count ?? 1,
               })}
             />
           ))
@@ -130,6 +132,7 @@ export default function NotificationsPage() {
           recipientName={replyTarget.recipientName}
           initialCategory={replyTarget.category}
           requestContext={replyTarget.context}
+          requestCount={replyTarget.count}
         />
       )}
     </div>
