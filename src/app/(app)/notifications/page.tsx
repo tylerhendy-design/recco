@@ -92,12 +92,18 @@ function NotifRow({
 
   let body = ''
   let scoreLozenge: { score: number; title?: string; feedbackText?: string; category?: string } | null = null
+  let sinBinOffences: string[] = []
 
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
   else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
+  } else if (notif.type === 'sin_bin') {
+    const category = notif.payload?.category
+    const badCount = notif.payload?.bad_count ?? 3
+    sinBinOffences = notif.payload?.offences ?? []
+    body = `has put you in the sin bin for ${badCount} bad${category ? ` ${category}` : ''} recos.`
   } else if (notif.type === 'feedback_received') {
     const score = notif.payload?.score
     const category = notif.payload?.reco_category
@@ -151,6 +157,16 @@ function NotifRow({
               {scoreLozenge.feedbackText}
             </div>
           ) : null}
+          {sinBinOffences.length > 0 && (
+            <div className="mt-1.5 flex flex-col gap-1">
+              {sinBinOffences.map((title, i) => (
+                <div key={i} className="flex items-center gap-2 text-[12px] text-bad/80">
+                  <span className="w-1 h-1 rounded-full bg-bad flex-shrink-0" />
+                  {title}
+                </div>
+              ))}
+            </div>
+          )}
           <div className="text-[11px] text-text-faint mt-0.5">{time}</div>
 
           {/* Friend request actions */}

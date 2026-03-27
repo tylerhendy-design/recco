@@ -6,6 +6,7 @@ import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { FeedbackSheet } from '@/components/overlays/FeedbackSheet'
 import { SuccessOverlay } from '@/components/overlays/SuccessOverlay'
+import { SinBinModal } from '@/components/overlays/SinBinModal'
 import { MapSheet } from '@/components/overlays/MapSheet'
 import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { SentimentBadge } from '@/components/ui/SentimentBadge'
@@ -80,6 +81,7 @@ export default function HomePage() {
   const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
   const [successState, setSuccessState] = useState<{ reco: Reco; score: number } | null>(null)
+  const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
   const [mapReco, setMapReco] = useState<Reco | null>(null)
   const [manualAddOpen, setManualAddOpen] = useState(false)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
@@ -220,7 +222,7 @@ export default function HomePage() {
     setDoneIds((prev) => new Set(prev).add(reco.id))
     setFeedbackReco(null)
     setSuccessState({ reco, score })
-    await submitFeedback({
+    const result = await submitFeedback({
       recoId: reco.id,
       recipientId: userId,
       senderId: reco.sender_id,
@@ -229,6 +231,14 @@ export default function HomePage() {
       recoTitle: reco.title,
       recoCategory: reco.category,
     })
+    if (result.sinBinTriggered) {
+      setSinBinData({
+        senderId: reco.sender_id,
+        senderName: reco.sender.display_name,
+        category: result.sinBinTriggered.category,
+        offences: result.sinBinTriggered.offences,
+      })
+    }
     if (doneRecos.length > 0) loadDone(userId)
   }
 
@@ -477,6 +487,18 @@ export default function HomePage() {
           onClose={() => setSuccessState(null)}
           score={successState.score}
           recoTitle={successState.reco.title}
+        />
+      )}
+
+      {sinBinData && userId && (
+        <SinBinModal
+          open={!!sinBinData}
+          onClose={() => setSinBinData(null)}
+          senderId={sinBinData.senderId}
+          senderName={sinBinData.senderName}
+          recipientId={userId}
+          category={sinBinData.category}
+          offences={sinBinData.offences}
         />
       )}
 

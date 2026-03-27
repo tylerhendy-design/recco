@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Reco, RecoRecommender } from '@/types/app.types'
+import { SCORE } from '@/constants/tiers'
+import { fetchSinBinOffences } from '@/lib/data/sinbin'
 
 // ── Types returned from Supabase queries ──────────────────────────────────────
 
@@ -126,10 +128,10 @@ export async function submitFeedback({
   feedbackText: string
   recoTitle?: string
   recoCategory?: string
-}): Promise<{ error: string | null }> {
+}): Promise<{ error: string | null; sinBinTriggered?: { category: string; offences: string[] } }> {
   const supabase = createClient()
 
-  // 1. Update recipient row
+  // 1. Update recipient row (DB trigger update_sin_bin fires here)
   const { error: updateError } = await supabase
     .from('reco_recipients')
     .update({
@@ -143,7 +145,7 @@ export async function submitFeedback({
 
   if (updateError) return { error: updateError.message }
 
-  // 2. Create a notification for the sender
+  // 2. Create a feedback notification for the sender
   await supabase
     .from('notifications')
     .insert({
@@ -153,6 +155,32 @@ export async function submitFeedback({
       reco_id: recoId,
       payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
     })
+
+  // 3. Check if this bad score just triggered a sin bin (bad_count hits exactly 3)
+  if (score <= SCORE.BAD_MAX && recoCategory) {
+    const { data: sinBinRow } = await supabase
+      .from('sin_bin')
+      .select('bad_count')
+      .eq('sender_id', senderId)
+      .eq('recipient_id', recipientId)
+      .eq('category', recoCategory)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (sinBinRow?.bad_count === SCORE.SIN_BIN_THRESHOLD) {
+      const offences = await fetchSinBinOffences(senderId, recipientId, recoCategory)
+
+      // Notify the person who just got sin-binned
+      await supabase.from('notifications').insert({
+        user_id: senderId,
+        type: 'sin_bin',
+        actor_id: recipientId,
+        payload: { category: recoCategory, bad_count: SCORE.SIN_BIN_THRESHOLD, offences },
+      })
+
+      return { error: null, sinBinTriggered: { category: recoCategory, offences } }
+    }
+  }
 
   return { error: null }
 }

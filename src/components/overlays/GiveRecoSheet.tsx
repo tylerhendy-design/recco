@@ -39,6 +39,7 @@ interface GiveRecoSheetProps {
   senderId: string
   recipientId: string
   recipientName: string
+  blockedCategories?: string[]
 }
 
 export function GiveRecoSheet({
@@ -47,6 +48,7 @@ export function GiveRecoSheet({
   senderId,
   recipientId,
   recipientName,
+  blockedCategories = [],
 }: GiveRecoSheetProps) {
   const firstName = recipientName.split(' ')[0]
 
@@ -77,7 +79,8 @@ export function GiveRecoSheet({
     onClose()
   }
 
-  const canSend = category !== null && title.trim().length > 0 && !sending
+  const isCategoryBlocked = category !== null && blockedCategories.includes(category)
+  const canSend = category !== null && title.trim().length > 0 && !sending && !isCategoryBlocked
 
   async function handleSend() {
     if (!canSend) return
@@ -157,6 +160,14 @@ export function GiveRecoSheet({
                 placeholder="Category name…"
                 className="w-full mt-2 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
               />
+            )}
+            {isCategoryBlocked && (
+              <div className="mt-2.5 px-3 py-2.5 bg-bad/10 border border-bad/30 rounded-input">
+                <div className="text-[12px] font-semibold text-bad">Sin bin</div>
+                <div className="text-[12px] text-bad/80 mt-0.5 leading-[1.5]">
+                  {firstName} has sin-binned you from giving {category} recos. You can't send recos in this category until they let you out.
+                </div>
+              </div>
             )}
           </div>
 

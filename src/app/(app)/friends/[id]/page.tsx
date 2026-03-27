@@ -8,6 +8,7 @@ import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriendProfile, fetchFriendsList, removeFriend } from '@/lib/data/friends'
 import { fetchUserPicks, type Pick } from '@/lib/data/picks'
+import { fetchBlockedCategories, fetchSinBinnedByFriend, fetchSinBinOffences, type SinBinEntry } from '@/lib/data/sinbin'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
 import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
@@ -55,21 +56,35 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [giveRecoOpen, setGiveRecoOpen] = useState(false)
+  const [blockedCategories, setBlockedCategories] = useState<string[]>([])
+  const [sinBinnedByFriend, setSinBinnedByFriend] = useState<(SinBinEntry & { offences: string[] })[]>([])
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setCurrentUserId(user.id)
-      const [{ profile: prof, stats: s, memberNumber: mn }, p, fl] = await Promise.all([
+      const [{ profile: prof, stats: s, memberNumber: mn }, p, fl, blocked, sinBinned] = await Promise.all([
         fetchFriendProfile(id),
         fetchUserPicks(id),
         fetchFriendsList(id),
+        fetchBlockedCategories(user.id, id),
+        fetchSinBinnedByFriend(user.id, id),
       ])
       if (prof) setProfile(prof)
       setStats({ ...s, friends_count: fl.length })
       setFriendsList(fl)
       setMemberNumber(mn)
       setPicks(p)
+      setBlockedCategories(blocked)
+
+      // Fetch offences for each sin bin entry
+      const sinBinnedWithOffences = await Promise.all(
+        sinBinned.map(async (entry) => ({
+          ...entry,
+          offences: await fetchSinBinOffences(user.id, id, entry.category),
+        }))
+      )
+      setSinBinnedByFriend(sinBinnedWithOffences)
       setLoading(false)
     })
   }, [id])
@@ -149,6 +164,26 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
               <span className="text-[14px] font-semibold text-text-secondary">Get reco</span>
             </Link>
           </div>
+
+          {/* Sin bin status — if I'm in their sin bin */}
+          {sinBinnedByFriend.length > 0 && (
+            <div className="mx-4 mt-4 rounded-card border border-bad/30 bg-bad/5 overflow-hidden">
+              {sinBinnedByFriend.map((entry) => (
+                <div key={entry.category} className="px-4 py-3 border-b border-bad/10 last:border-0">
+                  <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
+                  <div className="text-[13px] text-white leading-[1.5]">
+                    You're in {profile?.display_name.split(' ')[0]}'s sin bin for{' '}
+                    <span className="font-semibold">{entry.bad_count} bad {getCategoryLabel(entry.category).toLowerCase()} recos</span>.
+                  </div>
+                  {entry.offences.length > 0 && (
+                    <div className="text-[12px] text-bad/80 mt-1">
+                      {entry.offences.join(', ')}.
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Stats */}
           <div className="px-6 py-5 border-b border-bg-card">
@@ -274,6 +309,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           senderId={currentUserId}
           recipientId={id}
           recipientName={profile?.display_name ?? ''}
+          blockedCategories={blockedCategories}
         />
       )}
 
