@@ -58,6 +58,23 @@ const TABS = [
       </svg>
     ),
   },
+  {
+    href: '/sinbin',
+    label: 'Sin Bin',
+    icon: (active: boolean) => {
+      const c = active ? '#D4E23A' : '#6e6e78'
+      return (
+        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
+          {/* Bin body */}
+          <path d="M5 8h14l-1.5 11a1 1 0 01-1 .9H7.5a1 1 0 01-1-.9L5 8z" stroke={c} strokeWidth="1.6" strokeLinejoin="round" />
+          {/* Bin lid */}
+          <path d="M3 8h18M9 8V5.5a.5.5 0 01.5-.5h5a.5.5 0 01.5.5V8" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          {/* 666 text inside bin */}
+          <text x="12" y="16.5" textAnchor="middle" fontSize="5.5" fontWeight="800" fontFamily="monospace" fill={c} letterSpacing="-0.5">666</text>
+        </svg>
+      )
+    },
+  },
 ]
 
 export function TabBar() {

@@ -54,7 +54,7 @@ export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderNam
           <div className="text-[13px] text-bad/80 leading-[1.5]">
             {sinBinWarning.remaining === 1
               ? `One more bad ${sinBinWarning.category} reco from ${firstName ?? 'them'} and they're in the sin bin.`
-              : `${sinBinWarning.remaining} more bad ${sinBinWarning.category} recos from ${firstName ?? 'them'} and they're in the sin bin.`
+              : `${sinBinWarning.remaining} more ${sinBinWarning.category} stinkers from ${firstName ?? 'them'} and they're in the sin bin.`
             }
           </div>
         </div>

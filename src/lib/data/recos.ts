@@ -210,7 +210,6 @@ export async function submitFeedback({
 
           return { error: null, sinBinTriggered: { category: recoCategory, offences } }
         }
-      }
     } else if (badCount > 0 && badCount < SCORE.SIN_BIN_THRESHOLD) {
       // Below threshold — return a warning with how many remain
       return { error: null, sinBinWarning: { category: recoCategory, remaining: SCORE.SIN_BIN_THRESHOLD - badCount } }

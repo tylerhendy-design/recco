@@ -260,7 +260,7 @@ export default function ProfilePage() {
                   <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5]">
                     You are in <span className="font-semibold">{entry.recipient_name.split(' ')[0]}'s</span> sin bin for{' '}
-                    <span className="font-semibold">{entry.bad_count} bad {getCategoryLabel(entry.category).toLowerCase()} recos</span>.
+                    <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   {entry.offences.length > 0 && (
                     <div className="text-[12px] text-bad/80 mt-1">

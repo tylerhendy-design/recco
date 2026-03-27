@@ -8,7 +8,7 @@ import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriendProfile, fetchFriendsList, removeFriend } from '@/lib/data/friends'
 import { fetchUserPicks, type Pick } from '@/lib/data/picks'
-import { fetchBlockedCategories, fetchSinBinnedByFriend, fetchSinBinOffences, type SinBinEntry } from '@/lib/data/sinbin'
+import { fetchBlockedCategories, fetchSinBinnedByFriend, fetchSinBinOffences, fetchFriendInMySinBin, releaseSinBin, type SinBinEntry } from '@/lib/data/sinbin'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
 import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
@@ -58,17 +58,19 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [giveRecoOpen, setGiveRecoOpen] = useState(false)
   const [blockedCategories, setBlockedCategories] = useState<string[]>([])
   const [sinBinnedByFriend, setSinBinnedByFriend] = useState<(SinBinEntry & { offences: string[] })[]>([])
+  const [friendInMySinBin, setFriendInMySinBin] = useState<SinBinEntry[]>([])
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setCurrentUserId(user.id)
-      const [{ profile: prof, stats: s, memberNumber: mn }, p, fl, blocked, sinBinned] = await Promise.all([
+      const [{ profile: prof, stats: s, memberNumber: mn }, p, fl, blocked, sinBinned, inMySinBin] = await Promise.all([
         fetchFriendProfile(id),
         fetchUserPicks(id),
         fetchFriendsList(id),
         fetchBlockedCategories(user.id, id),
         fetchSinBinnedByFriend(user.id, id),
+        fetchFriendInMySinBin(user.id, id),
       ])
       if (prof) setProfile(prof)
       setStats({ ...s, friends_count: fl.length })
@@ -85,6 +87,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
         }))
       )
       setSinBinnedByFriend(sinBinnedWithOffences)
+      setFriendInMySinBin(inMySinBin)
       setLoading(false)
     })
   }, [id])
@@ -173,13 +176,38 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                   <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5]">
                     You're in {profile?.display_name.split(' ')[0]}'s sin bin for{' '}
-                    <span className="font-semibold">{entry.bad_count} bad {getCategoryLabel(entry.category).toLowerCase()} recos</span>.
+                    <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   {entry.offences.length > 0 && (
                     <div className="text-[12px] text-bad/80 mt-1">
                       {entry.offences.join(', ')}.
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Friend is in MY sin bin — show release option */}
+          {friendInMySinBin.length > 0 && (
+            <div className="mx-4 mt-4 rounded-card border border-accent/30 bg-accent/5 overflow-hidden">
+              {friendInMySinBin.map((entry) => (
+                <div key={entry.category} className="px-4 py-3 border-b border-accent/10 last:border-0">
+                  <div className="text-[11px] font-semibold text-accent tracking-[0.6px] uppercase mb-1">In your sin bin</div>
+                  <div className="text-[13px] text-white leading-[1.5] mb-2.5">
+                    {profile?.display_name.split(' ')[0]} is in your sin bin for{' '}
+                    <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!currentUserId) return
+                      await releaseSinBin(id, currentUserId, entry.category)
+                      setFriendInMySinBin((prev) => prev.filter((e) => e.category !== entry.category))
+                    }}
+                    className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+                  >
+                    Release from sin bin
+                  </button>
                 </div>
               ))}
             </div>

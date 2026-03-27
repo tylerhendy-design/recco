@@ -88,6 +88,64 @@ export async function fetchAllSinBinnedBy(userId: string): Promise<Array<SinBinE
   )
 }
 
+// People that userId (as recipient) has sin-binned — for the sin bin page "in yours" section
+export async function fetchMySinBin(userId: string): Promise<Array<SinBinEntry & { sender_name: string; sender_username: string; sender_avatar: string | null; offences: string[] }>> {
+  const supabase = createClient()
+
+  const { data: entries } = await supabase
+    .from('sin_bin')
+    .select('*')
+    .eq('recipient_id', userId)
+    .eq('is_active', true)
+
+  if (!entries?.length) return []
+
+  const senderIds = [...new Set(entries.map((e: any) => e.sender_id))]
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, username, avatar_url')
+    .in('id', senderIds)
+
+  const profileMap = Object.fromEntries((profiles ?? []).map((p: any) => [p.id, p]))
+
+  return Promise.all(
+    (entries as SinBinEntry[]).map(async (entry) => {
+      const profile = profileMap[entry.sender_id]
+      return {
+        ...entry,
+        sender_name: profile?.display_name ?? 'Someone',
+        sender_username: profile?.username ?? '',
+        sender_avatar: profile?.avatar_url ?? null,
+        offences: await fetchSinBinOffences(entry.sender_id, userId, entry.category),
+      }
+    })
+  )
+}
+
+// Check if a specific friend (senderId) is in the current user's sin bin
+export async function fetchFriendInMySinBin(recipientId: string, senderId: string): Promise<SinBinEntry[]> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('sin_bin')
+    .select('*')
+    .eq('sender_id', senderId)
+    .eq('recipient_id', recipientId)
+    .eq('is_active', true)
+  return (data ?? []) as SinBinEntry[]
+}
+
+// Send a plea to be released from someone's sin bin
+export async function sendSinBinPlea(fromUserId: string, toUserId: string, category: string, message: string): Promise<{ error: string | null }> {
+  const supabase = createClient()
+  const { error } = await supabase.from('notifications').insert({
+    user_id: toUserId,
+    type: 'sin_bin',
+    actor_id: fromUserId,
+    payload: { subtype: 'plea', category, message },
+  })
+  return { error: error?.message ?? null }
+}
+
 // Release a sender from a recipient's sin bin for a given category
 export async function releaseSinBin(senderId: string, recipientId: string, category: string): Promise<void> {
   const supabase = createClient()

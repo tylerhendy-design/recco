@@ -7,13 +7,14 @@ import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
 import { fetchNotifications, markAllRead, type NotificationRow } from '@/lib/data/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
+import { releaseSinBin } from '@/lib/data/sinbin'
 import { initials, formatRelativeTime, getScoreColor } from '@/lib/utils'
 
 export default function NotificationsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [notifs, setNotifs] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined'>>({})
+  const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept'>>({})
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -42,6 +43,18 @@ export default function NotificationsPage() {
     await declineFriendRequest(connectionId)
   }
 
+  async function handleReleasePlea(notif: NotificationRow) {
+    if (!userId) return
+    const { category } = notif.payload ?? {}
+    if (!category) return
+    setHandled((prev) => ({ ...prev, [notif.id]: 'released' }))
+    await releaseSinBin(notif.actor_id, userId, category)
+  }
+
+  function handleKeepPlea(notifId: string) {
+    setHandled((prev) => ({ ...prev, [notifId]: 'kept' }))
+  }
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
@@ -68,6 +81,8 @@ export default function NotificationsPage() {
               handled={handled[n.id]}
               onAccept={() => handleAccept(n)}
               onDecline={() => handleDecline(n)}
+              onReleasePlea={() => handleReleasePlea(n)}
+              onKeepPlea={() => handleKeepPlea(n.id)}
             />
           ))
         )}
@@ -81,11 +96,15 @@ function NotifRow({
   handled,
   onAccept,
   onDecline,
+  onReleasePlea,
+  onKeepPlea,
 }: {
   notif: NotificationRow
-  handled?: 'accepted' | 'declined'
+  handled?: 'accepted' | 'declined' | 'released' | 'kept'
   onAccept: () => void
   onDecline: () => void
+  onReleasePlea: () => void
+  onKeepPlea: () => void
 }) {
   const actor = notif.actor
   const time = formatRelativeTime(notif.created_at)
@@ -93,11 +112,16 @@ function NotifRow({
   let body = ''
   let scoreLozenge: { score: number; title?: string; feedbackText?: string; category?: string } | null = null
 
+  const isPlea = notif.type === 'sin_bin' && notif.payload?.subtype === 'plea'
+
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
   else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
+  } else if (isPlea) {
+    const category = notif.payload?.category ?? ''
+    body = `is pleading to get out of your sin bin for ${category}.`
   } else if (notif.type === 'sin_bin') {
     const category = notif.payload?.category ?? ''
     const lastReco = notif.payload?.last_reco_title
@@ -179,6 +203,37 @@ function NotifRow({
                     Accept
                   </button>
                 </>
+              )}
+            </div>
+          )}
+
+          {/* Sin bin plea actions */}
+          {isPlea && (
+            <div className="mt-2">
+              {notif.payload?.message && (
+                <div className="text-[12px] text-text-muted bg-bg-card border border-border rounded-input px-3 py-2 mb-2.5 leading-[1.5] italic">
+                  "{notif.payload.message}"
+                </div>
+              )}
+              {handled === 'released' ? (
+                <span className="text-[12px] text-accent font-medium">Released from sin bin.</span>
+              ) : handled === 'kept' ? (
+                <span className="text-[12px] text-text-faint">Kept in sin bin.</span>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={onKeepPlea}
+                    className="px-3 py-1.5 rounded-chip border border-border text-[12px] text-text-faint hover:border-bad/40 hover:text-bad/80 transition-colors"
+                  >
+                    Keep in sin bin
+                  </button>
+                  <button
+                    onClick={onReleasePlea}
+                    className="px-3 py-1.5 rounded-chip border border-accent text-[12px] text-accent font-semibold hover:bg-accent/10 transition-colors"
+                  >
+                    Release them
+                  </button>
+                </div>
               )}
             </div>
           )}
