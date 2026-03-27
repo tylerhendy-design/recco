@@ -247,9 +247,9 @@ export default function ProfilePage() {
 
           {/* Picks */}
           <div className="px-6 pt-5">
-            <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint mb-4">
+            <h1 className="text-[20px] font-bold text-white tracking-[-0.4px] mb-4">
               I'd recommend to anyone
-            </div>
+            </h1>
 
             {/* Add CTA */}
             {!showAddPick && (
@@ -551,11 +551,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Sign out */}
-          <div className="px-6 pt-6">
+          <div className="flex justify-center pt-10 pb-6">
             <button
               onClick={signOut}
               disabled={signingOut}
-              className="w-full py-4 rounded-btn border border-border text-[15px] font-semibold text-red-400 hover:border-red-400 transition-colors disabled:opacity-40"
+              className="text-[14px] text-text-faint hover:text-red-400 transition-colors disabled:opacity-40"
             >
               {signingOut ? 'Signing out…' : 'Sign out'}
             </button>
@@ -570,7 +570,7 @@ export default function ProfilePage() {
 function StatBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
   return (
     <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
-      <div className={`text-[20px] font-bold ${danger ? 'text-red-400' : 'text-white'}`}>{value}</div>
+      <div className={`text-[20px] font-bold ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>
   )

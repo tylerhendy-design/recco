@@ -66,7 +66,7 @@ export function SinBinSheet({
         /* ── Sin bin detail ── */
         <div className="p-6 pt-3">
           <div className="w-[52px] h-[52px] rounded-full bg-bad/10 border border-bad/30 flex items-center justify-center mb-3.5">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="9" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />

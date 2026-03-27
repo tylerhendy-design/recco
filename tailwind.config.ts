@@ -56,8 +56,8 @@ const config: Config = {
           bg: 'rgba(34,197,94,0.1)',
         },
         bad: {
-          DEFAULT: '#ef4444',
-          bg: 'rgba(239,68,68,0.1)',
+          DEFAULT: '#92400e',
+          bg: 'rgba(146,64,14,0.1)',
         },
         meh: {
           DEFAULT: '#888888',

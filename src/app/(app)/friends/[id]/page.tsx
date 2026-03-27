@@ -157,9 +157,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 
           {/* Picks */}
           <div className="px-6 pt-5">
-            <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint mb-4">
+            <h1 className="text-[20px] font-bold text-white tracking-[-0.4px] mb-4">
               I'd recommend to anyone
-            </div>
+            </h1>
 
             {picks.length === 0 ? (
               <p className="text-[13px] text-text-faint leading-[1.5]">
@@ -232,7 +232,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 function StatBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
   return (
     <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
-      <div className={`text-[20px] font-bold ${danger ? 'text-red-400' : 'text-white'}`}>{value}</div>
+      <div className={`text-[20px] font-bold ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>
   )
