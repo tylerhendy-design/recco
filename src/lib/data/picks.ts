@@ -42,6 +42,26 @@ export async function addPick(
   return { error: error?.message ?? null }
 }
 
+export async function updatePick(
+  pickId: string,
+  title: string,
+  why?: string,
+  links?: string[],
+  location?: string,
+) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from('profile_picks')
+    .update({
+      title: title.trim(),
+      why: why?.trim() || null,
+      location: location?.trim() || null,
+      links: (links ?? []).filter((l) => l.trim()),
+    })
+    .eq('id', pickId)
+  return { error: error?.message ?? null }
+}
+
 export async function removePick(pickId: string) {
   const supabase = createClient()
   const { error } = await supabase

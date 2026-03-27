@@ -6,7 +6,7 @@ import { StatusBar } from '@/components/ui/StatusBar'
 import { CategoryChip } from '@/components/ui/CategoryChip'
 import { createClient } from '@/lib/supabase/client'
 import { initials } from '@/lib/utils'
-import { fetchUserPicks, addPick, removePick, type Pick } from '@/lib/data/picks'
+import { fetchUserPicks, addPick, updatePick, removePick, type Pick } from '@/lib/data/picks'
 import { CATEGORIES, type CategoryId, getCategoryColor, getCategoryLabel } from '@/constants/categories'
 
 type ProfileStats = {
@@ -42,6 +42,15 @@ export default function ProfilePage() {
 
   // Collapsed state per category (all start collapsed)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+
+  // Pick menu + edit
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [editingPick, setEditingPick] = useState<Pick | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editWhy, setEditWhy] = useState('')
+  const [editLocation, setEditLocation] = useState('')
+  const [editLinks, setEditLinks] = useState<string[]>([''])
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -122,6 +131,28 @@ export default function ProfilePage() {
   async function handleRemovePick(pickId: string) {
     await removePick(pickId)
     setPicks((prev) => prev.filter((p) => p.id !== pickId))
+    setMenuOpenId(null)
+  }
+
+  function startEdit(pick: Pick) {
+    setEditingPick(pick)
+    setEditTitle(pick.title)
+    setEditWhy(pick.why ?? '')
+    setEditLocation(pick.location ?? '')
+    setEditLinks(pick.links.length > 0 ? pick.links : [''])
+    setMenuOpenId(null)
+  }
+
+  async function handleSaveEdit() {
+    if (!editingPick || !editTitle.trim()) return
+    setSavingEdit(true)
+    const { error } = await updatePick(editingPick.id, editTitle, editWhy, editLinks, editLocation)
+    if (!error && profile) {
+      const updated = await fetchUserPicks(profile.id)
+      setPicks(updated)
+      setEditingPick(null)
+    }
+    setSavingEdit(false)
   }
 
   function toggleExpanded(category: string) {
@@ -379,28 +410,94 @@ export default function ProfilePage() {
                       <div className="border-t border-border">
                         {items.map((pick) => (
                           <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[14px] font-medium text-white">{pick.title}</div>
-                                {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
-                                {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
-                                {pick.links.length > 0 && (
-                                  <div className="flex flex-col gap-0.5 mt-1.5">
-                                    {pick.links.map((link, i) => (
-                                      <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate">{link}</a>
-                                    ))}
-                                  </div>
+                            {editingPick?.id === pick.id ? (
+                              /* Inline edit form */
+                              <div className="flex flex-col gap-2.5">
+                                <input
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent"
+                                />
+                                {pick.category === 'restaurant' && (
+                                  <input
+                                    value={editLocation}
+                                    onChange={(e) => setEditLocation(e.target.value)}
+                                    placeholder="Location"
+                                    className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                  />
                                 )}
+                                <input
+                                  value={editWhy}
+                                  onChange={(e) => setEditWhy(e.target.value)}
+                                  placeholder="Why? (optional)"
+                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                />
+                                {editLinks.map((link, i) => (
+                                  <div key={i} className="flex items-center gap-2">
+                                    <input
+                                      value={link}
+                                      onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }}
+                                      placeholder="Link (optional)"
+                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                    />
+                                    {editLinks.length > 1 && (
+                                      <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                                <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint hover:text-accent transition-colors text-left">+ Add link</button>
+                                <div className="flex gap-2 mt-1">
+                                  <button onClick={() => setEditingPick(null)} className="flex-1 py-2 border border-border rounded-input text-[12px] font-semibold text-text-dim">Cancel</button>
+                                  <button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2 rounded-input bg-accent text-accent-fg text-[12px] font-bold disabled:opacity-40">
+                                    {savingEdit ? 'Saving…' : 'Save'}
+                                  </button>
+                                </div>
                               </div>
-                              <button
-                                onClick={() => handleRemovePick(pick.id)}
-                                className="text-text-faint hover:text-red-400 transition-colors flex-shrink-0 pt-0.5"
-                              >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                  <path d="M18 6L6 18M6 6l12 12"/>
-                                </svg>
-                              </button>
-                            </div>
+                            ) : (
+                              /* Normal view */
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                  {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
+                                  {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                  {pick.links.length > 0 && (
+                                    <div className="flex flex-col gap-0.5 mt-1.5">
+                                      {pick.links.map((link, i) => (
+                                        <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate">{link}</a>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="relative flex-shrink-0">
+                                  <button
+                                    onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)}
+                                    className="text-text-faint hover:text-white transition-colors p-1"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                      <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+                                    </svg>
+                                  </button>
+                                  {menuOpenId === pick.id && (
+                                    <div className="absolute right-0 top-7 z-10 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
+                                      <button
+                                        onClick={() => startEdit(pick)}
+                                        className="w-full px-4 py-2.5 text-left text-[13px] text-white hover:bg-bg-base transition-colors"
+                                      >
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={() => handleRemovePick(pick.id)}
+                                        className="w-full px-4 py-2.5 text-left text-[13px] text-red-400 hover:bg-bg-base transition-colors"
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
