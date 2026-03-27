@@ -130,8 +130,18 @@ export async function fetchFriendProfile(friendId: string) {
     stinkersSent = count ?? 0
   }
 
+  let memberNumber = 1
+  if (prof?.joined_at) {
+    const { count } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .lte('joined_at', prof.joined_at)
+    memberNumber = count ?? 1
+  }
+
   return {
     profile: prof as { display_name: string; username: string; avatar_url: string | null; joined_at: string } | null,
+    memberNumber,
     stats: {
       recos_sent: sentIds.length,
       friends_count: friendsCount ?? 0,

@@ -20,18 +20,20 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
   const [removing, setRemoving] = useState(false)
+  const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setCurrentUserId(user.id)
-      const [{ profile: prof, stats: s }, p] = await Promise.all([
+      const [{ profile: prof, stats: s, memberNumber: mn }, p] = await Promise.all([
         fetchFriendProfile(id),
         fetchUserPicks(id),
       ])
       if (prof) setProfile(prof)
       setStats(s)
+      setMemberNumber(mn)
       setPicks(p)
       setLoading(false)
     })
@@ -84,7 +86,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
               <div>
                 <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
                 <div className="text-[13px] text-text-faint mt-0.5">
-                  @{profile.username}{joinYear ? ` · joined ${joinYear}` : ''}
+                  @{profile.username}{memberNumber ? ` · #${memberNumber}` : ''}{joinYear ? ` · joined ${joinYear}` : ''}
                 </div>
               </div>
             </div>

@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileStats | null>(null)
   const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
+  const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [signingOut, setSigningOut] = useState(false)
 
   // Add pick form
@@ -102,6 +103,15 @@ export default function ProfilePage() {
       }
 
       setPicks(userPicks)
+
+      if (prof?.joined_at) {
+        const { count } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .lte('joined_at', prof.joined_at)
+        setMemberNumber(count ?? 1)
+      }
+
       setLoading(false)
     }
     load()
@@ -206,7 +216,7 @@ export default function ProfilePage() {
               <div>
                 <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
                 <div className="text-[13px] text-text-faint mt-0.5">
-                  @{profile.username}{joinYear ? ` · joined ${joinYear}` : ''}
+                  @{profile.username}{memberNumber ? ` · #${memberNumber}` : ''}{joinYear ? ` · joined ${joinYear}` : ''}
                 </div>
               </div>
             </div>
