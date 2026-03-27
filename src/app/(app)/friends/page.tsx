@@ -1,206 +1,191 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { FilterScroll } from '@/components/ui/FilterScroll'
-import { PersonRow } from '@/components/ui/PersonRow'
-import { SinBinSheet } from '@/components/overlays/SinBinSheet'
-import type { Friend } from '@/types/app.types'
+import { Avatar } from '@/components/ui/Avatar'
+import { createClient } from '@/lib/supabase/client'
+import { fetchFriends, fetchIncomingRequests, acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
+import { initials } from '@/lib/utils'
 
-const SEED_FRIENDS: Friend[] = [
-  {
-    id: 'u5',
-    display_name: 'Big Jimmy',
-    username: 'bigjimmy',
-    avatar_url: null,
-    tier: 'close',
-    taste_alignment: 94,
-    taste_by_category: [{ category: 'restaurant', score: 94, heart_count: 3, is_mismatch: false }],
-    is_sinbinned: false,
-  },
-  {
-    id: 'u1',
-    display_name: 'Sam Huckle',
-    username: 'samhuckle',
-    avatar_url: null,
-    tier: 'close',
-    taste_alignment: 78,
-    taste_by_category: [
-      { category: 'tv', score: 78, heart_count: 1, is_mismatch: false },
-      { category: 'film', score: 70, heart_count: 1, is_mismatch: false },
-      { category: 'restaurant', score: 30, heart_count: 0, is_mismatch: true },
-    ],
-    is_sinbinned: false,
-  },
-  {
-    id: 'u2',
-    display_name: 'Tyler Hendy',
-    username: 'tylerhendy',
-    avatar_url: null,
-    tier: 'close',
-    taste_alignment: 71,
-    taste_by_category: [
-      { category: 'restaurant', score: 71, heart_count: 1, is_mismatch: false },
-      { category: 'tv', score: 65, heart_count: 1, is_mismatch: false },
-    ],
-    is_sinbinned: false,
-  },
-  {
-    id: 'u3',
-    display_name: 'Alex Horlock',
-    username: 'horlock',
-    avatar_url: null,
-    tier: 'clan',
-    taste_alignment: 54,
-    taste_by_category: [
-      { category: 'podcast', score: 70, heart_count: 1, is_mismatch: false },
-      { category: 'film', score: 20, heart_count: 0, is_mismatch: true },
-    ],
-    is_sinbinned: false,
-  },
-  {
-    id: 'u6',
-    display_name: 'Mick Keane',
-    username: 'mick',
-    avatar_url: null,
-    tier: 'sinbin' as any,
-    taste_alignment: 10,
-    taste_by_category: [],
-    is_sinbinned: true,
-    sinbin_category: 'film',
-    sinbin_count: 3,
-  },
-  {
-    id: 'u7',
-    display_name: 'Mum',
-    username: 'mum',
-    avatar_url: null,
-    tier: 'tribe',
-    taste_alignment: 32,
-    taste_by_category: [],
-    is_sinbinned: false,
-  },
-]
+type FriendRow = {
+  id: string
+  display_name: string
+  username: string
+  avatar_url: string | null
+  tier: string
+  connection_id: string
+}
 
-const TIER_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'close', label: 'Close friends' },
-  { value: 'clan', label: 'Clan' },
-  { value: 'tribe', label: 'Tribe' },
-  { value: 'sinbin', label: 'Sin bin' },
-]
-
-const TIER_INFO: Record<string, { title: string; body: string }> = {
-  all: { title: 'All friends', body: '142 people across all groups. Each tier changes how much weight their recos carry.' },
-  close: { title: 'Close friends — up to 15', body: 'Your inner circle. Their recos carry the most weight and appear first.' },
-  clan: { title: 'Clan — up to 50', body: "Good friends whose taste you generally trust. Recos land with context." },
-  tribe: { title: 'Tribe — up to 150', body: 'Your broader network. Recos are surfaced but weighted less.' },
-  sinbin: { title: 'Sin bin', body: 'People blocked from a category after 3 bad recos in a row.' },
+type RequestRow = {
+  id: string
+  display_name: string
+  username: string
+  avatar_url: string | null
+  connection_id: string
 }
 
 export default function FriendsPage() {
-  const [tierFilter, setTierFilter] = useState('all')
-  const [sinbinFriend, setSinbinFriend] = useState<Friend | null>(null)
-  const [friends, setFriends] = useState(SEED_FRIENDS)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [friends, setFriends] = useState<FriendRow[]>([])
+  const [requests, setRequests] = useState<RequestRow[]>([])
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  function releaseFriend(id: string) {
-    setFriends((prev) => prev.map((f) =>
-      f.id === id ? { ...f, is_sinbinned: false, tier: 'clan' as any } : f
-    ))
-    setSinbinFriend(null)
+  useEffect(() => {
+    createClient().auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setUserId(user.id)
+      const [f, r] = await Promise.all([
+        fetchFriends(user.id),
+        fetchIncomingRequests(user.id),
+      ])
+      setFriends(f as FriendRow[])
+      setRequests(r as RequestRow[])
+      setLoading(false)
+    })
+  }, [])
+
+  async function handleAccept(req: RequestRow) {
+    if (!userId) return
+    setRequests((prev) => prev.filter((r) => r.id !== req.id))
+    await acceptFriendRequest(req.connection_id, req.id, userId)
+    // Refresh friends list
+    const updated = await fetchFriends(userId)
+    setFriends(updated as FriendRow[])
   }
 
-  const filtered = friends.filter((f) => {
-    if (tierFilter === 'all') return true
-    if (tierFilter === 'sinbin') return f.is_sinbinned
-    return f.tier === tierFilter && !f.is_sinbinned
-  })
+  async function handleDecline(req: RequestRow) {
+    setRequests((prev) => prev.filter((r) => r.id !== req.id))
+    await declineFriendRequest(req.connection_id)
+  }
 
-  const info = TIER_INFO[tierFilter] ?? TIER_INFO.all
+  const filtered = friends.filter((f) =>
+    f.display_name.toLowerCase().includes(search.toLowerCase()) ||
+    f.username.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden relative">
+    <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
       <NavHeader
-        title="friends"
+        title="Friends"
         rightAction={
           <span className="text-[13px] font-medium text-text-faint px-3 py-1.5 border border-border rounded-chip">
-            142 / 150
+            {friends.length} / 150
           </span>
         }
       />
 
       <input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
         className="mx-6 mt-2.5 px-3.5 py-[11px] bg-bg-card border border-border rounded-input text-sm text-white font-sans outline-none placeholder:text-text-faint"
         placeholder="Search friends..."
       />
 
-      <FilterScroll
-        options={TIER_FILTERS}
-        selected={tierFilter}
-        onSelect={setTierFilter}
-      />
+      <div className="flex-1 overflow-y-auto scrollbar-none">
 
-      {/* Tier description */}
-      <div className="px-6 py-2.5 bg-[#0e0e10] border-b border-bg-card flex-shrink-0">
-        <div className="text-[11px] font-semibold text-accent mb-0.5">{info.title}</div>
-        <div className="text-[11px] text-text-faint leading-[1.5]">{info.body}</div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto scrollbar-none relative">
-        {filtered.map((friend) =>
-          friend.is_sinbinned ? (
-            <PersonRow
-              key={friend.id}
-              friend={friend}
-              onClick={() => setSinbinFriend(friend)}
-              style={undefined}
-            />
-          ) : (
-            <Link key={friend.id} href={`/friends/${friend.id}`}>
-              <PersonRow
-                friend={friend}
-                style={friend.tier === 'close' ? { borderLeft: '2px solid #D4E23A' } : undefined}
-              />
-            </Link>
-          )
-        )}
-
-        {/* Add button — hidden on sin bin filter */}
-        {tierFilter !== 'sinbin' && (
-          <div className="flex justify-center py-5 pb-2">
-            <Link
-              href="/friends/add"
-              className="w-12 h-12 rounded-full border-[1.5px] border-border bg-bg-base flex items-center justify-center cursor-pointer hover:border-accent transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="8" r="4"/>
-                <path d="M20 21a8 8 0 00-16 0"/>
-                <line x1="19" y1="8" x2="19" y2="14"/>
-                <line x1="16" y1="11" x2="22" y2="11"/>
-              </svg>
-            </Link>
+        {/* Incoming requests */}
+        {requests.length > 0 && (
+          <div className="px-6 pt-4 pb-2">
+            <div className="text-[11px] font-semibold text-accent tracking-[0.5px] uppercase mb-3">
+              Friend requests
+            </div>
+            {requests.map((req) => (
+              <div key={req.id} className="flex items-center justify-between py-3 border-b border-[#0e0e10]">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                    {req.avatar_url
+                      ? <img src={req.avatar_url} alt={req.display_name} className="w-full h-full object-cover" />
+                      : initials(req.display_name)
+                    }
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-medium text-white">{req.display_name}</div>
+                    <div className="text-[12px] text-text-faint">@{req.username}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDecline(req)}
+                    className="px-3 py-1.5 rounded-chip border border-border text-[12px] text-text-faint hover:border-red-400 hover:text-red-400 transition-colors"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={() => handleAccept(req)}
+                    className="px-3 py-1.5 rounded-chip border border-accent text-[12px] text-accent font-semibold hover:bg-accent/10 transition-colors"
+                  >
+                    Accept
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </div>
 
-      {/* Sin bin sheet */}
-      {sinbinFriend && (
-        <SinBinSheet
-          open={!!sinbinFriend}
-          onClose={() => setSinbinFriend(null)}
-          onRelease={() => sinbinFriend && releaseFriend(sinbinFriend.id)}
-          friendName={sinbinFriend.display_name}
-          category={sinbinFriend.sinbin_category ?? 'film'}
-          offendingRecos={[
-            { title: 'Tenet', score: 10 },
-            { title: 'The Northman', score: 20 },
-            { title: 'Babylon', score: 15 },
-          ]}
-        />
-      )}
+        {/* Friends list */}
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 && requests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-3">
+            <div className="text-[36px] mb-1">👋</div>
+            <div className="text-[16px] font-semibold text-white">No friends yet</div>
+            <div className="text-[13px] text-text-muted leading-[1.6]">
+              Search for people you know or share your invite link.
+            </div>
+          </div>
+        ) : (
+          <>
+            {filtered.length > 0 && (
+              <div className="px-6 pt-4 pb-1">
+                <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1">
+                  {filtered.length} {filtered.length === 1 ? 'friend' : 'friends'}
+                </div>
+              </div>
+            )}
+            {filtered.map((friend) => (
+              <Link key={friend.id} href={`/friends/${friend.id}`}>
+                <div className="flex items-center gap-3 px-6 py-3.5 border-b border-[#0e0e10] hover:bg-bg-card transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[12px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                    {friend.avatar_url
+                      ? <img src={friend.avatar_url} alt={friend.display_name} className="w-full h-full object-cover" />
+                      : initials(friend.display_name)
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[15px] font-medium text-white">{friend.display_name}</div>
+                    <div className="text-[12px] text-text-faint">@{friend.username}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+              </Link>
+            ))}
+          </>
+        )}
+
+        {/* Add friend button */}
+        <div className="flex justify-center py-6">
+          <Link
+            href="/friends/add"
+            className="w-12 h-12 rounded-full border-[1.5px] border-border bg-bg-base flex items-center justify-center hover:border-accent transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M20 21a8 8 0 00-16 0"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="16" y1="11" x2="22" y2="11"/>
+            </svg>
+          </Link>
+        </div>
+
+      </div>
     </div>
   )
 }
