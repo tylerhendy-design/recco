@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchFriendProfile, removeFriend } from '@/lib/data/friends'
 import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 import { initials } from '@/lib/utils'
+import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
 
 export default function FriendProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -19,6 +20,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
   const [removing, setRemoving] = useState(false)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -111,16 +113,40 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 {profile.display_name.split(' ')[0]} hasn't added any picks yet.
               </p>
             ) : (
-              Object.entries(picksByCategory).map(([category, items]) => (
-                <div key={category} className="mb-5">
-                  <div className="text-[12px] font-semibold text-accent mb-2">{category}</div>
-                  {items.map((pick) => (
-                    <div key={pick.id} className="py-2.5 border-b border-[#0e0e10] last:border-0">
-                      <div className="text-[14px] text-white">{pick.title}</div>
-                    </div>
-                  ))}
-                </div>
-              ))
+              Object.entries(picksByCategory).map(([category, items]) => {
+                const color = getCategoryColor(category)
+                const isOpen = expanded[category] ?? false
+                return (
+                  <div key={category} className="border border-border rounded-card overflow-hidden mb-2">
+                    <button
+                      onClick={() => setExpanded((prev) => ({ ...prev, [category]: !prev[category] }))}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
+                        <span className="text-[11px] text-text-faint">{items.length}</span>
+                      </div>
+                      <svg
+                        width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="#6e6e78" strokeWidth="2" strokeLinecap="round"
+                        className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                      >
+                        <path d="M6 9l6 6 6-6"/>
+                      </svg>
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border">
+                        {items.map((pick) => (
+                          <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
+                            <span className="text-[14px] text-white">{pick.title}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })
             )}
           </div>
 
