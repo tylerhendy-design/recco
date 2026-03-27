@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { CategoryChip } from '@/components/ui/CategoryChip'
 import { VoiceButton } from '@/components/ui/VoiceButton'
@@ -40,6 +40,8 @@ interface GiveRecoSheetProps {
   recipientId: string
   recipientName: string
   blockedCategories?: string[]
+  initialCategory?: string | null
+  requestContext?: string | null
 }
 
 export function GiveRecoSheet({
@@ -49,10 +51,12 @@ export function GiveRecoSheet({
   recipientId,
   recipientName,
   blockedCategories = [],
+  initialCategory,
+  requestContext,
 }: GiveRecoSheetProps) {
   const firstName = recipientName.split(' ')[0]
 
-  const [category, setCategory] = useState<CategoryId | null>(null)
+  const [category, setCategory] = useState<CategoryId | null>((initialCategory as CategoryId) ?? null)
   const [customCat, setCustomCat] = useState('')
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
@@ -62,8 +66,13 @@ export function GiveRecoSheet({
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Sync category when sheet opens with a pre-filled category
+  useEffect(() => {
+    if (open) setCategory((initialCategory as CategoryId) ?? null)
+  }, [open, initialCategory])
+
   function reset() {
-    setCategory(null)
+    setCategory((initialCategory as CategoryId) ?? null)
     setCustomCat('')
     setTitle('')
     setWhy('')
@@ -139,8 +148,15 @@ export function GiveRecoSheet({
         </div>
       ) : (
         <div className="p-5 pt-4 flex flex-col gap-4">
-          <div className="text-[17px] font-semibold text-white tracking-[-0.4px]">
-            Give {firstName} a reco
+          <div>
+            <div className="text-[17px] font-semibold text-white tracking-[-0.4px]">
+              Give {firstName} a reco
+            </div>
+            {requestContext && (
+              <div className="mt-1.5 text-[12px] text-text-faint leading-[1.5] italic">
+                They asked: "{requestContext}"
+              </div>
+            )}
           </div>
 
           {/* Category */}

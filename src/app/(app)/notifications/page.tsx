@@ -9,12 +9,19 @@ import { fetchNotifications, markAllRead, type NotificationRow } from '@/lib/dat
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
 import { releaseSinBin } from '@/lib/data/sinbin'
 import { initials, formatRelativeTime, getScoreColor } from '@/lib/utils'
+import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
 
 export default function NotificationsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [notifs, setNotifs] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
   const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept'>>({})
+  const [replyTarget, setReplyTarget] = useState<{
+    recipientId: string
+    recipientName: string
+    category: string | null
+    context: string | null
+  } | null>(null)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -41,6 +48,16 @@ export default function NotificationsPage() {
     if (!connectionId) return
     setHandled((prev) => ({ ...prev, [notif.id]: 'declined' }))
     await declineFriendRequest(connectionId)
+  }
+
+  function buildRequestContext(payload: Record<string, any>): string | null {
+    const constraints = payload?.constraints as Record<string, string> | undefined
+    const details = payload?.details as string | undefined
+    const parts = [
+      ...(constraints ? Object.values(constraints).filter(Boolean) : []),
+      details,
+    ].filter(Boolean)
+    return parts.length > 0 ? parts.join(' · ') : null
   }
 
   async function handleReleasePlea(notif: NotificationRow) {
@@ -83,10 +100,28 @@ export default function NotificationsPage() {
               onDecline={() => handleDecline(n)}
               onReleasePlea={() => handleReleasePlea(n)}
               onKeepPlea={() => handleKeepPlea(n.id)}
+              onReply={() => setReplyTarget({
+                recipientId: n.actor_id,
+                recipientName: n.actor.display_name,
+                category: n.payload?.category ?? null,
+                context: buildRequestContext(n.payload),
+              })}
             />
           ))
         )}
       </div>
+
+      {userId && replyTarget && (
+        <GiveRecoSheet
+          open={!!replyTarget}
+          onClose={() => setReplyTarget(null)}
+          senderId={userId}
+          recipientId={replyTarget.recipientId}
+          recipientName={replyTarget.recipientName}
+          initialCategory={replyTarget.category}
+          requestContext={replyTarget.context}
+        />
+      )}
     </div>
   )
 }
@@ -98,6 +133,7 @@ function NotifRow({
   onDecline,
   onReleasePlea,
   onKeepPlea,
+  onReply,
 }: {
   notif: NotificationRow
   handled?: 'accepted' | 'declined' | 'released' | 'kept'
@@ -105,6 +141,7 @@ function NotifRow({
   onDecline: () => void
   onReleasePlea: () => void
   onKeepPlea: () => void
+  onReply: () => void
 }) {
   const actor = notif.actor
   const time = formatRelativeTime(notif.created_at)
@@ -218,6 +255,18 @@ function NotifRow({
                   </button>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Reco request — Give reco button */}
+          {notif.type === 'request_received' && (
+            <div className="mt-2.5">
+              <button
+                onClick={onReply}
+                className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+              >
+                Give reco
+              </button>
             </div>
           )}
 
