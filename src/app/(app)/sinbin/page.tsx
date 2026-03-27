@@ -17,6 +17,7 @@ export default function SinBinPage() {
   const [mine, setMine] = useState<MySinBinEntry[]>([])
   const [theirs, setTheirs] = useState<TheirSinBinEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'mine' | 'theirs'>('mine')
   const [pleaTarget, setPleaTarget] = useState<{ toUserId: string; toName: string; category: string } | null>(null)
 
   useEffect(() => {
@@ -44,81 +45,99 @@ export default function SinBinPage() {
       <StatusBar />
       <NavHeader title="Sin bin" />
 
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-8">
+      {/* Toggle */}
+      <div className="flex justify-center px-6 pt-4 pb-2 flex-shrink-0">
+        <div className="flex bg-bg-card border border-border rounded-chip p-0.5">
+          <button
+            onClick={() => setTab('mine')}
+            className={`px-4 py-1.5 rounded-chip text-[12px] font-semibold transition-colors ${
+              tab === 'mine' ? 'bg-accent text-accent-fg' : 'text-text-faint hover:text-white'
+            }`}
+          >
+            Your sin bin
+            {mine.length > 0 && (
+              <span className={`ml-1.5 text-[10px] ${tab === 'mine' ? 'text-accent-fg/70' : 'text-text-faint'}`}>
+                {mine.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setTab('theirs')}
+            className={`px-4 py-1.5 rounded-chip text-[12px] font-semibold transition-colors ${
+              tab === 'theirs' ? 'bg-bad text-white' : 'text-text-faint hover:text-white'
+            }`}
+          >
+            Bins you're in
+            {theirs.length > 0 && (
+              <span className={`ml-1.5 text-[10px] ${tab === 'theirs' ? 'text-white/70' : 'text-text-faint'}`}>
+                {theirs.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-none pb-8 pt-2">
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
           </div>
+        ) : tab === 'mine' ? (
+          mine.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <div className="text-[28px] mb-3">😇</div>
+              <div className="text-[14px] font-semibold text-white mb-1">No one's in your sin bin.</div>
+              <div className="text-[13px] text-text-faint">Lucky you.</div>
+            </div>
+          ) : (
+            mine.map((entry) => (
+              <SinBinCard
+                key={`${entry.sender_id}-${entry.category}`}
+                name={entry.sender_name}
+                username={entry.sender_username}
+                avatarUrl={entry.sender_avatar}
+                badCount={entry.bad_count}
+                category={entry.category}
+                offences={entry.offences}
+                youGave={false}
+                action={
+                  <button
+                    onClick={() => handleRelease(entry)}
+                    className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
+                  >
+                    Release
+                  </button>
+                }
+              />
+            ))
+          )
         ) : (
-          <>
-            {/* In your sin bin */}
-            <div className="px-6 pt-6 pb-2">
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.7px] uppercase mb-3">
-                In your sin bin · {mine.length}
-              </div>
+          theirs.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              <div className="text-[28px] mb-3">🙌</div>
+              <div className="text-[14px] font-semibold text-white mb-1">You're not in anyone's sin bin.</div>
+              <div className="text-[13px] text-text-faint">Keep it that way.</div>
             </div>
-
-            {mine.length === 0 ? (
-              <div className="px-6 py-3 text-[14px] text-text-faint">
-                No one's in your sin bin.
-              </div>
-            ) : (
-              mine.map((entry) => (
-                <SinBinCard
-                  key={`${entry.sender_id}-${entry.category}`}
-                  name={entry.sender_name}
-                  username={entry.sender_username}
-                  avatarUrl={entry.sender_avatar}
-                  badCount={entry.bad_count}
-                  category={entry.category}
-                  offences={entry.offences}
-                  youGave={false}
-                  action={
-                    <button
-                      onClick={() => handleRelease(entry)}
-                      className="px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
-                    >
-                      Release
-                    </button>
-                  }
-                />
-              ))
-            )}
-
-            <div className="mx-6 my-5 border-t border-border" />
-
-            {/* You're in their sin bin */}
-            <div className="px-6 pb-2">
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.7px] uppercase mb-3">
-                You're in their sin bin · {theirs.length}
-              </div>
-            </div>
-
-            {theirs.length === 0 ? (
-              <div className="px-6 py-3 text-[14px] text-text-faint">
-                You're not in anyone's sin bin.
-              </div>
-            ) : (
-              theirs.map((entry) => (
-                <SinBinCard
-                  key={`${entry.recipient_id}-${entry.category}`}
-                  name={entry.recipient_name}
-                  badCount={entry.bad_count}
-                  category={entry.category}
-                  offences={entry.offences}
-                  youGave={true}
-                  action={
-                    <button
-                      onClick={() => setPleaTarget({ toUserId: entry.recipient_id, toName: entry.recipient_name, category: entry.category })}
-                      className="px-3 py-1.5 rounded-chip border border-bad/40 text-[12px] font-semibold text-bad/80 hover:bg-bad/10 transition-colors"
-                    >
-                      Plead to get out
-                    </button>
-                  }
-                />
-              ))
-            )}
-          </>
+          ) : (
+            theirs.map((entry) => (
+              <SinBinCard
+                key={`${entry.recipient_id}-${entry.category}`}
+                name={entry.recipient_name}
+                badCount={entry.bad_count}
+                category={entry.category}
+                offences={entry.offences}
+                youGave={true}
+                action={
+                  <button
+                    onClick={() => setPleaTarget({ toUserId: entry.recipient_id, toName: entry.recipient_name, category: entry.category })}
+                    className="px-3 py-1.5 rounded-chip border border-bad/40 text-[12px] font-semibold text-bad/80 hover:bg-bad/10 transition-colors"
+                  >
+                    Plead to get out
+                  </button>
+                }
+              />
+            ))
+          )
         )}
       </div>
 

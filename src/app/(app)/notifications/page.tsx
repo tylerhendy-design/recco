@@ -113,6 +113,7 @@ function NotifRow({
   let scoreLozenge: { score: number; title?: string; feedbackText?: string; category?: string } | null = null
 
   const isPlea = notif.type === 'sin_bin' && notif.payload?.subtype === 'plea'
+  const isReleased = notif.type === 'sin_bin' && notif.payload?.subtype === 'released'
 
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
@@ -122,6 +123,9 @@ function NotifRow({
   } else if (isPlea) {
     const category = notif.payload?.category ?? ''
     body = `is pleading to get out of your sin bin for ${category}.`
+  } else if (notif.type === 'sin_bin' && notif.payload?.subtype === 'released') {
+    const category = notif.payload?.category ?? ''
+    body = `released you from their sin bin for ${category}. You can send them recos again.`
   } else if (notif.type === 'sin_bin') {
     const category = notif.payload?.category ?? ''
     const lastReco = notif.payload?.last_reco_title

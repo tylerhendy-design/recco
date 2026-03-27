@@ -155,4 +155,12 @@ export async function releaseSinBin(senderId: string, recipientId: string, categ
     .eq('sender_id', senderId)
     .eq('recipient_id', recipientId)
     .eq('category', category)
+
+  // Notify the sender they've been released
+  await supabase.from('notifications').insert({
+    user_id: senderId,
+    type: 'sin_bin',
+    actor_id: recipientId,
+    payload: { subtype: 'released', category },
+  })
 }
