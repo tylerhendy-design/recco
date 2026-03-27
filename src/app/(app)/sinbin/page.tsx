@@ -72,6 +72,7 @@ export default function SinBinPage() {
                   badCount={entry.bad_count}
                   category={entry.category}
                   offences={entry.offences}
+                  youGave={false}
                   action={
                     <button
                       onClick={() => handleRelease(entry)}
@@ -105,6 +106,7 @@ export default function SinBinPage() {
                   badCount={entry.bad_count}
                   category={entry.category}
                   offences={entry.offences}
+                  youGave={true}
                   action={
                     <button
                       onClick={() => setPleaTarget({ toUserId: entry.recipient_id, toName: entry.recipient_name, category: entry.category })}
@@ -142,6 +144,7 @@ function SinBinCard({
   category,
   offences,
   action,
+  youGave,
 }: {
   name: string
   username?: string
@@ -150,8 +153,10 @@ function SinBinCard({
   category: string
   offences: string[]
   action: React.ReactNode
+  youGave?: boolean
 }) {
   const catLabel = getCategoryLabel(category).toLowerCase()
+  const firstName = name.split(' ')[0]
   return (
     <div className="mx-4 mb-3 rounded-card border border-border bg-bg-card overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-3">
@@ -169,7 +174,10 @@ function SinBinCard({
       <div className="px-4 pb-3 border-t border-[#0e0e10] pt-3 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="text-[12px] text-text-muted leading-[1.5]">
-            <span className="font-semibold text-bad">{badCount} stinkers</span> which were {catLabel}
+            {youGave
+              ? <>You gave {firstName} <span className="font-semibold text-bad">{badCount} stinkers</span> which were {catLabel}</>
+              : <>{firstName} gave you <span className="font-semibold text-bad">{badCount} stinkers</span> which were {catLabel}</>
+            }
           </div>
           {offences.length > 0 && (
             <div className="text-[11px] text-text-faint mt-1">

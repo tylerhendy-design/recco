@@ -175,7 +175,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 <div key={entry.category} className="px-4 py-3 border-b border-bad/10 last:border-0">
                   <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5]">
-                    You're in {profile?.display_name.split(' ')[0]}'s sin bin for{' '}
+                    You're in {profile?.display_name.split(' ')[0]}'s sin bin. You gave them{' '}
                     <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   {entry.offences.length > 0 && (
@@ -195,7 +195,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 <div key={entry.category} className="px-4 py-3 border-b border-accent/10 last:border-0">
                   <div className="text-[11px] font-semibold text-accent tracking-[0.6px] uppercase mb-1">In your sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5] mb-2.5">
-                    {profile?.display_name.split(' ')[0]} is in your sin bin for{' '}
+                    {profile?.display_name.split(' ')[0]} is in your sin bin. They gave you{' '}
                     <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   <button

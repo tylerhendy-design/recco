@@ -46,7 +46,7 @@ export function SinBinModal({
             {firstName} is in the sin bin.
           </div>
           <div className="text-[14px] text-text-muted mt-2 leading-[1.6]">
-            You've given them {SCORE_THRESHOLD} bad {catLabel} recos. They can no longer send you{' '}
+            They gave you {SCORE_THRESHOLD} bad {catLabel} recos. They can no longer send you{' '}
             {catLabel} recos until you let them out.
           </div>
         </div>
