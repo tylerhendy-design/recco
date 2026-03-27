@@ -118,9 +118,15 @@ function NotifRow({
   if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
   else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
   else if (notif.type === 'request_received') {
-    const q = notif.payload?.query
     const cat = notif.payload?.category
-    body = `is asking for a reco${cat ? ` — ${cat}` : ''}${q ? `: "${q}"` : '.'}`
+    const count = notif.payload?.count ?? 1
+    const constraints = notif.payload?.constraints as Record<string, string> | undefined
+    const details = notif.payload?.details as string | undefined
+    const constraintStr = constraints && Object.keys(constraints).length > 0
+      ? Object.values(constraints).join(' · ')
+      : null
+    const extra = [constraintStr, details].filter(Boolean).join(' · ')
+    body = `is asking for ${count > 1 ? `${count} ` : ''}${cat ? `${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
   } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'

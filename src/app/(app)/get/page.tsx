@@ -66,7 +66,6 @@ const CATEGORY_CONSTRAINTS: Record<string, ConstraintDef[]> = {
 }
 
 export default function GetPage() {
-  const [query, setQuery] = useState('')
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [customCat, setCustomCat] = useState('')
   const [friends, setFriends] = useState<Friend[]>([])
@@ -75,6 +74,7 @@ export default function GetPage() {
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
   const [details, setDetails] = useState('')
+  const [recoCount, setRecoCount] = useState<number>(1)
   const [userId, setUserId] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
@@ -119,7 +119,7 @@ export default function GetPage() {
   }
 
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
-  const canSend = query.trim().length > 0 && selectedIds.length > 0
+  const canSend = selectedIds.length > 0
 
   async function handleSend() {
     if (!canSend || !userId || sending) return
@@ -127,8 +127,8 @@ export default function GetPage() {
     const supabase = createClient()
     const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
     const payload = {
-      query: query.trim(),
       category: effectiveCat,
+      count: recoCount,
       constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
       details: details.trim() || null,
     }
@@ -182,17 +182,9 @@ export default function GetPage() {
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
           {/* Static title */}
-          <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-3">
+          <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
             What are you after?
           </div>
-
-          {/* Query input */}
-          <input
-            className="w-full bg-transparent outline-none text-[15px] text-text-secondary tracking-[-0.2px] placeholder:text-[#2a2a30] font-sans mb-4"
-            placeholder="e.g. a great Italian, something to watch tonight…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
 
           {/* Category chips */}
           <div className="mb-4">
@@ -248,7 +240,25 @@ export default function GetPage() {
               <div className="text-[17px] font-semibold text-white tracking-[-0.3px]">Extra details</div>
               <div className="text-[12px] text-text-faint mt-0.5">Optional — the more context, the better the reco</div>
             </div>
-            <div className="mb-3" />
+            {/* How many recos */}
+            <div className="mb-4">
+              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">How many recos?</div>
+              <div className="flex gap-2">
+                {[1, 3, 5, 10].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setRecoCount(n)}
+                    className="flex-1 py-2 rounded-chip text-[13px] font-bold transition-all"
+                    style={recoCount === n
+                      ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
+                      : { color: '#555', border: '1px solid #222226', background: 'transparent' }
+                    }
+                  >
+                    {n}×
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Category-specific lozenges */}
             <div className="flex gap-2 flex-wrap mb-2.5">
