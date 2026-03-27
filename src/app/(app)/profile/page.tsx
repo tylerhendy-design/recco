@@ -242,7 +242,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex gap-2.5">
               <StatBox value={String(profile.recos_completed)} label="Completed" />
-              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger={profile.stinkers_sent > 0} onPress={() => setShowStinkers(true)} />
+              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger onPress={() => setShowStinkers(true)} />
             </div>
           </div>
 
