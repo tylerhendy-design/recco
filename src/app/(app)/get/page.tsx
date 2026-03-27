@@ -1,18 +1,23 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { CATEGORIES } from '@/constants/categories'
+import { fetchFriends } from '@/lib/data/friends'
+import { createClient } from '@/lib/supabase/client'
+import { initials } from '@/lib/utils'
 import Link from 'next/link'
 
-const PEOPLE = ['Huckle', 'Tyler', 'Horlock', 'Mum', 'Big Jimmy', 'Sam', 'Jo', 'Priya', 'Marcus']
+type Friend = { id: string; display_name: string; username: string; avatar_url: string | null }
 
 export default function GetPage() {
   const [query, setQuery] = useState('')
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [customCat, setCustomCat] = useState('')
-  const [selectedPeople, setSelectedPeople] = useState<string[]>([])
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [friendSearch, setFriendSearch] = useState('')
   const [constraints, setConstraints] = useState<{ vibes: string; budget: string; location: string }>({
     vibes: '', budget: '', location: '',
   })
@@ -20,16 +25,32 @@ export default function GetPage() {
   const [details, setDetails] = useState('')
   const [sent, setSent] = useState(false)
 
-  const allSelected = selectedPeople.length === PEOPLE.length
+  useEffect(() => {
+    createClient().auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const data = await fetchFriends(user.id)
+      setFriends(data as Friend[])
+    })
+  }, [])
 
-  function togglePerson(name: string) {
-    setSelectedPeople((prev) =>
-      prev.includes(name) ? prev.filter((p) => p !== name) : [...prev, name]
+  const filteredFriends = useMemo(() => {
+    const q = friendSearch.trim().toLowerCase()
+    if (!q) return friends
+    return friends.filter((f) =>
+      f.display_name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q)
+    )
+  }, [friends, friendSearch])
+
+  const allSelected = friends.length > 0 && selectedIds.length === friends.length
+
+  function togglePerson(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     )
   }
 
   function toggleAll() {
-    setSelectedPeople(allSelected ? [] : [...PEOPLE])
+    setSelectedIds(allSelected ? [] : friends.map((f) => f.id))
   }
 
   function toggleConstraint(key: 'vibes' | 'budget' | 'location') {
@@ -38,8 +59,7 @@ export default function GetPage() {
 
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const activeCat = selectedCat ? CATEGORIES.find((c) => c.id === selectedCat) : null
-  const catColor = activeCat?.color ?? '#444'
-  const canSend = query.trim().length > 0 && selectedPeople.length > 0
+  const canSend = query.trim().length > 0 && selectedIds.length > 0
 
   if (sent) {
     return (
@@ -57,7 +77,7 @@ export default function GetPage() {
               Ask and you shall receive.
             </div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              Request sent to {allSelected ? 'everyone' : selectedPeople.length === 1 ? selectedPeople[0] : `${selectedPeople.length} people`}.
+              Request sent to {allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name.split(' ')[0] : `${selectedIds.length} people`}.
             </div>
           </div>
           <Link
@@ -203,30 +223,81 @@ export default function GetPage() {
           <div className="border-t border-[#0e0e10] mb-3" />
 
           {/* Ask section — mimics "Reco'd by" */}
-          <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">
-            Ask
-          </div>
-          <div className="flex flex-wrap gap-[5px] mb-2">
-            {PEOPLE.map((name) => (
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">
+              Ask
+            </div>
+            {friends.length > 0 && (
               <button
-                key={name}
-                onClick={() => togglePerson(name)}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-chip border cursor-pointer transition-all"
-                style={selectedPeople.includes(name)
-                  ? { color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }
-                  : { color: '#909099', borderColor: '#1e1e22' }
-                }
+                onClick={toggleAll}
+                className={`text-[11px] font-semibold transition-colors ${allSelected ? 'text-accent' : 'text-text-faint hover:text-text-muted'}`}
               >
-                {name}
+                {allSelected ? '− Deselect all' : '+ Ask everyone'}
               </button>
-            ))}
+            )}
           </div>
-          <button
-            onClick={toggleAll}
-            className={`text-[11px] font-semibold transition-colors ${allSelected ? 'text-accent' : 'text-text-faint hover:text-text-muted'}`}
-          >
-            {allSelected ? '− Deselect all' : '+ Ask everyone'}
-          </button>
+
+          {/* Search */}
+          <div className="relative mb-2.5">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              className="w-full bg-bg-base border border-border rounded-input pl-7 pr-3 py-1.5 text-[12px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
+              placeholder="Search friends…"
+              value={friendSearch}
+              onChange={(e) => setFriendSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Selected chips at top */}
+          {selectedIds.length > 0 && (
+            <div className="flex flex-wrap gap-[5px] mb-2">
+              {selectedIds.map((id) => {
+                const f = friends.find((fr) => fr.id === id)
+                if (!f) return null
+                return (
+                  <button
+                    key={id}
+                    onClick={() => togglePerson(id)}
+                    className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-chip border transition-all"
+                    style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
+                  >
+                    {f.display_name.split(' ')[0]}
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Friend list */}
+          {filteredFriends.length === 0 ? (
+            <div className="text-[12px] text-text-faint py-1">
+              {friends.length === 0 ? 'No friends yet.' : 'No friends found.'}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {filteredFriends.filter((f) => !selectedIds.includes(f.id)).map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => togglePerson(f.id)}
+                  className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-base transition-colors text-left w-full"
+                >
+                  <div className="w-6 h-6 rounded-full bg-bg-base border border-border flex items-center justify-center text-[9px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                    {f.avatar_url
+                      ? <img src={f.avatar_url} alt={f.display_name} className="w-full h-full object-cover" />
+                      : initials(f.display_name)
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[12px] font-medium text-text-secondary">{f.display_name}</span>
+                    {f.username && <span className="text-[11px] text-text-faint ml-1.5">@{f.username}</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Send button */}
