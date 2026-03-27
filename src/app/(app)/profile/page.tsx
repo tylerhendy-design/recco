@@ -186,22 +186,30 @@ export default function ProfilePage() {
 
           {/* Picks */}
           <div className="px-6 pt-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint">
-                I'd recommend to anyone
-              </div>
-              <button
-                onClick={() => { setShowAddPick((v) => !v); setSelectedCategory(null); setNewPickTitle('') }}
-                className="text-[12px] font-semibold text-accent hover:opacity-70 transition-opacity"
-              >
-                {showAddPick ? 'Cancel' : '+ Add'}
-              </button>
+            <div className="text-[11px] font-semibold tracking-[0.8px] uppercase text-text-faint mb-4">
+              I'd recommend to anyone
             </div>
+
+            {/* Add CTA */}
+            {!showAddPick && (
+              <button
+                onClick={() => { setShowAddPick(true); setSelectedCategory(null); setNewPickTitle('') }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add a pick
+              </button>
+            )}
 
             {/* Add form */}
             {showAddPick && (
               <div className="bg-bg-card border border-border rounded-card p-4 mb-4">
-                <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-2.5">Category</div>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">Category</div>
+                  <button onClick={() => setShowAddPick(false)} className="text-[12px] text-text-faint hover:text-white transition-colors">Cancel</button>
+                </div>
                 <div className="flex flex-wrap gap-[7px] mb-4">
                   {CATEGORIES.map((cat) => (
                     <CategoryChip
@@ -248,7 +256,7 @@ export default function ProfilePage() {
             {/* Picks list */}
             {picks.length === 0 && !showAddPick ? (
               <p className="text-[13px] text-text-faint leading-[1.5] pb-4">
-                Add your favourite restaurants, films, books and more.
+                Add your favourite restaurants, films, books and more. The stuff that shows people who you are. The stuff that changed your life.
               </p>
             ) : (
               Object.entries(picksByCategory).map(([category, items]) => {
