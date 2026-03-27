@@ -38,7 +38,6 @@ export default function ProfilePage() {
   const [newPickTitle, setNewPickTitle] = useState('')
   const [newPickWhy, setNewPickWhy] = useState('')
   const [newPickCity, setNewPickCity] = useState('')
-  const [newPickCountry, setNewPickCountry] = useState('')
   const [newPickLinks, setNewPickLinks] = useState<string[]>([''])
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [addingPick, setAddingPick] = useState(false)
@@ -52,7 +51,6 @@ export default function ProfilePage() {
   const [editTitle, setEditTitle] = useState('')
   const [editWhy, setEditWhy] = useState('')
   const [editCity, setEditCity] = useState('')
-  const [editCountry, setEditCountry] = useState('')
   const [editLinks, setEditLinks] = useState<string[]>([''])
   const [savingEdit, setSavingEdit] = useState(false)
 
@@ -125,7 +123,7 @@ export default function ProfilePage() {
     const category = selectedCategory === 'custom' ? customCategoryName.trim() : selectedCategory
     if (!category) return
     setAddingPick(true)
-    const locationStr = [newPickCity.trim(), newPickCountry.trim()].filter(Boolean).join(', ')
+    const locationStr = newPickCity.trim() ? await geocodeCity(newPickCity.trim()) : ''
     const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks, locationStr)
     if (!error) {
       const updated = await fetchUserPicks(profile.id)
@@ -133,7 +131,6 @@ export default function ProfilePage() {
       setNewPickTitle('')
       setNewPickWhy('')
       setNewPickCity('')
-      setNewPickCountry('')
       setNewPickLinks([''])
       setCustomCategoryName('')
       setSelectedCategory(null)
@@ -153,9 +150,7 @@ export default function ProfilePage() {
     setEditingPick(pick)
     setEditTitle(pick.title)
     setEditWhy(pick.why ?? '')
-    const parts = (pick.location ?? '').split(', ')
-    setEditCity(parts[0] ?? '')
-    setEditCountry(parts.slice(1).join(', ') ?? '')
+    setEditCity(pick.location ? pick.location.split(',')[0].trim() : '')
     setEditLinks(pick.links.length > 0 ? pick.links : [''])
     setMenuOpenId(null)
   }
@@ -163,7 +158,7 @@ export default function ProfilePage() {
   async function handleSaveEdit() {
     if (!editingPick || !editTitle.trim()) return
     setSavingEdit(true)
-    const editLocation = [editCity.trim(), editCountry.trim()].filter(Boolean).join(', ')
+    const editLocation = editCity.trim() ? await geocodeCity(editCity.trim()) : ''
     const { error } = await updatePick(editingPick.id, editTitle, editWhy, editLinks, editLocation)
     if (!error && profile) {
       const updated = await fetchUserPicks(profile.id)
@@ -186,8 +181,10 @@ export default function ProfilePage() {
   const joinYear = profile?.joined_at ? new Date(profile.joined_at).getFullYear() : null
 
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
-    if (!acc[p.category]) acc[p.category] = []
-    acc[p.category].push(p)
+    const city = p.location ? p.location.split(',')[0].trim() : null
+    const key = city ? `${p.category}||${city}` : p.category
+    if (!acc[key]) acc[key] = []
+    acc[key].push(p)
     return acc
   }, {})
 
@@ -314,22 +311,14 @@ export default function ProfilePage() {
                 {selectedCategory === 'restaurant' && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">
-                      Location <span className="normal-case font-normal text-[11px] text-red-400">required</span>
+                      City <span className="normal-case font-normal text-[11px] text-red-400">required</span>
                     </div>
-                    <div className="flex gap-2">
-                      <input
-                        value={newPickCity}
-                        onChange={(e) => setNewPickCity(e.target.value)}
-                        placeholder="City"
-                        className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                      />
-                      <input
-                        value={newPickCountry}
-                        onChange={(e) => setNewPickCountry(e.target.value)}
-                        placeholder="Country"
-                        className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                      />
-                    </div>
+                    <input
+                      value={newPickCity}
+                      onChange={(e) => setNewPickCity(e.target.value)}
+                      placeholder="e.g. London"
+                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                    />
                   </div>
                 )}
 
@@ -417,18 +406,20 @@ export default function ProfilePage() {
                 Add your favourite restaurants, films, books and more. The stuff that shows people who you are. The stuff that changed your life.
               </p>
             ) : (
-              Object.entries(picksByCategory).map(([category, items]) => {
+              Object.entries(picksByCategory).map(([key, items]) => {
+                const [category, city] = key.split('||')
                 const color = getCategoryColor(category)
-                const isOpen = expanded[category] ?? false
+                const label = city ? `${getCategoryLabel(category)} — ${city}` : getCategoryLabel(category)
+                const isOpen = expanded[key] ?? false
                 return (
-                  <div key={category} className="border border-border rounded-card mb-2">
+                  <div key={key} className="border border-border rounded-card mb-2">
                     <button
-                      onClick={() => toggleExpanded(category)}
+                      onClick={() => toggleExpanded(key)}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
+                        <span className="text-[13px] font-semibold text-white">{label}</span>
                         <span className="text-[11px] text-text-faint">{items.length}</span>
                       </div>
                       <svg
@@ -453,20 +444,12 @@ export default function ProfilePage() {
                                   className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent"
                                 />
                                 {pick.category === 'restaurant' && (
-                                  <div className="flex gap-2">
-                                    <input
-                                      value={editCity}
-                                      onChange={(e) => setEditCity(e.target.value)}
-                                      placeholder="City"
-                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                                    />
-                                    <input
-                                      value={editCountry}
-                                      onChange={(e) => setEditCountry(e.target.value)}
-                                      placeholder="Country"
-                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                                    />
-                                  </div>
+                                  <input
+                                    value={editCity}
+                                    onChange={(e) => setEditCity(e.target.value)}
+                                    placeholder="City"
+                                    className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                  />
                                 )}
                                 <textarea
                                   value={editWhy}
@@ -608,6 +591,22 @@ function StatBox({ value, label, danger, onPress }: { value: string; label: stri
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>
   )
+}
+
+async function geocodeCity(city: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1&featuretype=city`,
+      { headers: { 'User-Agent': 'RecoApp/1.0' } }
+    )
+    const data = await res.json()
+    if (data?.[0]?.display_name) {
+      const parts: string[] = data[0].display_name.split(',')
+      const country = parts[parts.length - 1].trim()
+      return `${city.trim()}, ${country}`
+    }
+  } catch {}
+  return city.trim()
 }
 
 function getLinkLabel(url: string): string {

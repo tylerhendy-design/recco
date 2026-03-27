@@ -77,10 +77,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 
   const joinYear = profile?.joined_at ? new Date(profile.joined_at).getFullYear() : null
 
-  // Group picks by category
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
-    if (!acc[p.category]) acc[p.category] = []
-    acc[p.category].push(p)
+    const city = p.location ? p.location.split(',')[0].trim() : null
+    const key = city ? `${p.category}||${city}` : p.category
+    if (!acc[key]) acc[key] = []
+    acc[key].push(p)
     return acc
   }, {})
 
@@ -166,18 +167,20 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 {profile.display_name.split(' ')[0]} hasn't added any picks yet.
               </p>
             ) : (
-              Object.entries(picksByCategory).map(([category, items]) => {
+              Object.entries(picksByCategory).map(([key, items]) => {
+                const [category, city] = key.split('||')
                 const color = getCategoryColor(category)
-                const isOpen = expanded[category] ?? false
+                const label = city ? `${getCategoryLabel(category)} — ${city}` : getCategoryLabel(category)
+                const isOpen = expanded[key] ?? false
                 return (
-                  <div key={category} className="border border-border rounded-card overflow-hidden mb-2">
+                  <div key={key} className="border border-border rounded-card overflow-hidden mb-2">
                     <button
-                      onClick={() => setExpanded((prev) => ({ ...prev, [category]: !prev[category] }))}
+                      onClick={() => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }))}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
+                        <span className="text-[13px] font-semibold text-white">{label}</span>
                         <span className="text-[11px] text-text-faint">{items.length}</span>
                       </div>
                       <svg
