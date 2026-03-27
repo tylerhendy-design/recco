@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
@@ -9,6 +10,34 @@ import { fetchFriendProfile, removeFriend } from '@/lib/data/friends'
 import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
+
+function getLinkLabel(url: string): string {
+  try {
+    const u = new URL(url)
+    const h = u.hostname.replace('www.', '')
+    if (h.includes('instagram.com')) return 'Instagram'
+    if (h.includes('twitter.com') || h.includes('x.com')) return 'X / Twitter'
+    if (h.includes('google.com') && u.pathname.includes('maps')) return 'Google Maps'
+    if (h.includes('maps.google.com') || h.includes('goo.gl')) return 'Google Maps'
+    if (h.includes('maps.apple.com')) return 'Apple Maps'
+    if (h.includes('spotify.com')) return 'Spotify'
+    if (h.includes('youtube.com') || h.includes('youtu.be')) return 'YouTube'
+    if (h.includes('facebook.com')) return 'Facebook'
+    if (h.includes('tiktok.com')) return 'TikTok'
+    if (h.includes('tripadvisor.com')) return 'TripAdvisor'
+    if (h.includes('yelp.com')) return 'Yelp'
+    if (h.includes('opentable.com')) return 'OpenTable'
+    if (h.includes('resy.com')) return 'Resy'
+    if (h.includes('imdb.com')) return 'IMDb'
+    if (h.includes('netflix.com')) return 'Netflix'
+    if (h.includes('goodreads.com')) return 'Goodreads'
+    if (h.includes('amazon.')) return 'Amazon'
+    if (h.includes('apple.com')) return 'Apple'
+    return 'Website'
+  } catch {
+    return 'Link'
+  }
+}
 
 export default function FriendProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -92,6 +121,28 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
+          {/* Give / Get buttons */}
+          <div className="px-6 py-4 border-b border-bg-card flex gap-3">
+            <Link
+              href={`/send?to=${id}`}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+              <span className="text-[14px] font-semibold text-text-secondary">Give reco</span>
+            </Link>
+            <Link
+              href={`/get?from=${id}`}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+              <span className="text-[14px] font-semibold text-text-secondary">Get reco</span>
+            </Link>
+          </div>
+
           {/* Stats */}
           <div className="px-6 py-5 border-b border-bg-card">
             <div className="flex gap-2.5 mb-2.5">
@@ -145,9 +196,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                             {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
                             {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
                             {pick.links.length > 0 && (
-                              <div className="flex flex-col gap-0.5 mt-1.5">
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
                                 {pick.links.map((link, i) => (
-                                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate">{link}</a>
+                                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
                                 ))}
                               </div>
                             )}
@@ -162,11 +213,11 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* Remove friend */}
-          <div className="px-6 pt-8">
+          <div className="px-6 pt-8 pb-2 flex justify-center">
             <button
               onClick={handleRemoveFriend}
               disabled={removing}
-              className="w-full py-4 rounded-btn border border-border text-[15px] font-semibold text-red-400 hover:border-red-400 transition-colors disabled:opacity-40"
+              className="text-[16px] text-red-400 underline underline-offset-2 disabled:opacity-40"
             >
               {removing ? 'Removing…' : 'Remove friend'}
             </button>

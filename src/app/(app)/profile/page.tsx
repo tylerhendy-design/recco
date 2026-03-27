@@ -36,7 +36,8 @@ export default function ProfilePage() {
   const [customCategoryName, setCustomCategoryName] = useState('')
   const [newPickTitle, setNewPickTitle] = useState('')
   const [newPickWhy, setNewPickWhy] = useState('')
-  const [newPickLocation, setNewPickLocation] = useState('')
+  const [newPickCity, setNewPickCity] = useState('')
+  const [newPickCountry, setNewPickCountry] = useState('')
   const [newPickLinks, setNewPickLinks] = useState<string[]>([''])
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [addingPick, setAddingPick] = useState(false)
@@ -49,7 +50,8 @@ export default function ProfilePage() {
   const [editingPick, setEditingPick] = useState<Pick | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editWhy, setEditWhy] = useState('')
-  const [editLocation, setEditLocation] = useState('')
+  const [editCity, setEditCity] = useState('')
+  const [editCountry, setEditCountry] = useState('')
   const [editLinks, setEditLinks] = useState<string[]>([''])
   const [savingEdit, setSavingEdit] = useState(false)
 
@@ -122,13 +124,15 @@ export default function ProfilePage() {
     const category = selectedCategory === 'custom' ? customCategoryName.trim() : selectedCategory
     if (!category) return
     setAddingPick(true)
-    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks, newPickLocation)
+    const locationStr = [newPickCity.trim(), newPickCountry.trim()].filter(Boolean).join(', ')
+    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks, locationStr)
     if (!error) {
       const updated = await fetchUserPicks(profile.id)
       setPicks(updated)
       setNewPickTitle('')
       setNewPickWhy('')
-      setNewPickLocation('')
+      setNewPickCity('')
+      setNewPickCountry('')
       setNewPickLinks([''])
       setCustomCategoryName('')
       setSelectedCategory(null)
@@ -148,7 +152,9 @@ export default function ProfilePage() {
     setEditingPick(pick)
     setEditTitle(pick.title)
     setEditWhy(pick.why ?? '')
-    setEditLocation(pick.location ?? '')
+    const parts = (pick.location ?? '').split(', ')
+    setEditCity(parts[0] ?? '')
+    setEditCountry(parts.slice(1).join(', ') ?? '')
     setEditLinks(pick.links.length > 0 ? pick.links : [''])
     setMenuOpenId(null)
   }
@@ -156,6 +162,7 @@ export default function ProfilePage() {
   async function handleSaveEdit() {
     if (!editingPick || !editTitle.trim()) return
     setSavingEdit(true)
+    const editLocation = [editCity.trim(), editCountry.trim()].filter(Boolean).join(', ')
     const { error } = await updatePick(editingPick.id, editTitle, editWhy, editLinks, editLocation)
     if (!error && profile) {
       const updated = await fetchUserPicks(profile.id)
@@ -213,8 +220,15 @@ export default function ProfilePage() {
                   : initials(profile.display_name)
                 }
               </div>
-              <div>
-                <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
+                  <button onClick={() => router.push('/edit-profile')} className="text-text-faint hover:text-white transition-colors flex-shrink-0">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                    </svg>
+                  </button>
+                </div>
                 <div className="text-[13px] text-text-faint mt-0.5">
                   @{profile.username}{memberNumber ? ` · #${memberNumber}` : ''}{joinYear ? ` · joined ${joinYear}` : ''}
                 </div>
@@ -246,7 +260,7 @@ export default function ProfilePage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Add a pick
+                Add reco
               </button>
             )}
 
@@ -301,12 +315,20 @@ export default function ProfilePage() {
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">
                       Location <span className="normal-case font-normal text-[11px] text-red-400">required</span>
                     </div>
-                    <input
-                      value={newPickLocation}
-                      onChange={(e) => setNewPickLocation(e.target.value)}
-                      placeholder="e.g. Soho, London"
-                      className="bg-transparent outline-none text-white font-sans text-[17px] w-full tracking-[-0.3px] placeholder:text-[#2a2a30]"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        value={newPickCity}
+                        onChange={(e) => setNewPickCity(e.target.value)}
+                        placeholder="City"
+                        className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                      />
+                      <input
+                        value={newPickCountry}
+                        onChange={(e) => setNewPickCountry(e.target.value)}
+                        placeholder="Country"
+                        className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -314,11 +336,12 @@ export default function ProfilePage() {
                 {selectedCategory && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Why?</div>
-                    <input
+                    <textarea
                       value={newPickWhy}
                       onChange={(e) => setNewPickWhy(e.target.value)}
                       placeholder="What makes it worth recommending…"
-                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+                      rows={3}
+                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans resize-none"
                     />
                   </div>
                 )}
@@ -378,10 +401,10 @@ export default function ProfilePage() {
                 {selectedCategory && (
                   <button
                     onClick={handleAddPick}
-                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickLocation.trim())}
+                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickCity.trim())}
                     className="w-full py-4 rounded-btn bg-accent text-accent-fg text-[15px] font-bold disabled:opacity-40 transition-opacity"
                   >
-                    {addingPick ? 'Adding…' : 'Add pick'}
+                    {addingPick ? 'Adding…' : 'Add reco'}
                   </button>
                 )}
               </div>
@@ -429,18 +452,27 @@ export default function ProfilePage() {
                                   className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent"
                                 />
                                 {pick.category === 'restaurant' && (
-                                  <input
-                                    value={editLocation}
-                                    onChange={(e) => setEditLocation(e.target.value)}
-                                    placeholder="Location"
-                                    className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                                  />
+                                  <div className="flex gap-2">
+                                    <input
+                                      value={editCity}
+                                      onChange={(e) => setEditCity(e.target.value)}
+                                      placeholder="City"
+                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                    />
+                                    <input
+                                      value={editCountry}
+                                      onChange={(e) => setEditCountry(e.target.value)}
+                                      placeholder="Country"
+                                      className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                    />
+                                  </div>
                                 )}
-                                <input
+                                <textarea
                                   value={editWhy}
                                   onChange={(e) => setEditWhy(e.target.value)}
                                   placeholder="Why? (optional)"
-                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                                  rows={3}
+                                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans"
                                 />
                                 {editLinks.map((link, i) => (
                                   <div key={i} className="flex items-center gap-2">
@@ -473,9 +505,9 @@ export default function ProfilePage() {
                                   {pick.location && <div className="text-[12px] text-text-faint mt-0.5">{pick.location}</div>}
                                   {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
                                   {pick.links.length > 0 && (
-                                    <div className="flex flex-col gap-0.5 mt-1.5">
+                                    <div className="flex flex-wrap gap-1.5 mt-1.5">
                                       {pick.links.map((link, i) => (
-                                        <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2 truncate">{link}</a>
+                                        <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
                                       ))}
                                     </div>
                                   )}
@@ -518,11 +550,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Settings */}
-          <div className="mt-4">
-            <SettingsRow label="Profile settings" onPress={() => router.push('/edit-profile')} />
-          </div>
-
           {/* Sign out */}
           <div className="px-6 pt-6">
             <button
@@ -549,16 +576,30 @@ function StatBox({ value, label, danger }: { value: string; label: string; dange
   )
 }
 
-function SettingsRow({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <button
-      onClick={onPress}
-      className="w-full flex items-center justify-between px-6 py-4 border-b border-[#0e0e10] hover:bg-bg-card transition-colors"
-    >
-      <span className="text-[15px] text-white">{label}</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round">
-        <path d="M9 18l6-6-6-6"/>
-      </svg>
-    </button>
-  )
+function getLinkLabel(url: string): string {
+  try {
+    const u = new URL(url)
+    const h = u.hostname.replace('www.', '')
+    if (h.includes('instagram.com')) return 'Instagram'
+    if (h.includes('twitter.com') || h.includes('x.com')) return 'X / Twitter'
+    if (h.includes('google.com') && u.pathname.includes('maps')) return 'Google Maps'
+    if (h.includes('maps.google.com') || h.includes('goo.gl')) return 'Google Maps'
+    if (h.includes('maps.apple.com')) return 'Apple Maps'
+    if (h.includes('spotify.com')) return 'Spotify'
+    if (h.includes('youtube.com') || h.includes('youtu.be')) return 'YouTube'
+    if (h.includes('facebook.com')) return 'Facebook'
+    if (h.includes('tiktok.com')) return 'TikTok'
+    if (h.includes('tripadvisor.com')) return 'TripAdvisor'
+    if (h.includes('yelp.com')) return 'Yelp'
+    if (h.includes('opentable.com')) return 'OpenTable'
+    if (h.includes('resy.com')) return 'Resy'
+    if (h.includes('imdb.com')) return 'IMDb'
+    if (h.includes('netflix.com')) return 'Netflix'
+    if (h.includes('goodreads.com')) return 'Goodreads'
+    if (h.includes('amazon.')) return 'Amazon'
+    if (h.includes('apple.com')) return 'Apple'
+    return 'Website'
+  } catch {
+    return 'Link'
+  }
 }

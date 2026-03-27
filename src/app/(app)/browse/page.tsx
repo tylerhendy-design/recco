@@ -80,7 +80,7 @@ export default function BrowsePage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="browse" closeHref="/home" />
+      <NavHeader title="to do" closeHref="/home" />
       <div className="flex-1 overflow-y-auto scrollbar-none">
         {sections.map((section) => {
           const isOpen = !!expanded[section.section]
@@ -219,9 +219,10 @@ export default function BrowsePage() {
             <div className="text-[13px] font-semibold text-text-muted uppercase tracking-[0.3px] mb-2">
               Tell them why (optional)
             </div>
-            <input
-              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans mb-4"
+            <textarea
+              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans mb-4 resize-none"
               placeholder="e.g. Not really my kind of thing..."
+              rows={3}
             />
 
             <button

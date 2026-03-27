@@ -17,7 +17,7 @@ const TABS = [
   },
   {
     href: '/browse',
-    label: 'Browse',
+    label: 'To Do',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke={active ? '#D4E23A' : '#6e6e78'}>
         <circle cx="11" cy="11" r="7" />

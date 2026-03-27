@@ -222,11 +222,12 @@ export default function SendPage() {
 
         {/* Why */}
         <SectionCard label="Why?">
-          <div className="flex gap-2.5 items-center">
+          <div className="flex gap-2.5 items-start">
             <VoiceButton />
-            <input
-              className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+            <textarea
+              className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans resize-none"
               placeholder="Voice or type your reason…"
+              rows={3}
               value={why}
               onChange={(e) => setWhy(e.target.value)}
             />
