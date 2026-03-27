@@ -151,6 +151,24 @@ export async function fetchFriendProfile(friendId: string) {
   }
 }
 
+// ── Fetch friends list for a given user (viewer must share a connection) ─────
+export async function fetchFriendsList(userId: string) {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('friend_connections')
+    .select(`
+      id,
+      requester:profiles!friend_connections_requester_id_fkey(id, display_name, username, avatar_url),
+      addressee:profiles!friend_connections_addressee_id_fkey(id, display_name, username, avatar_url)
+    `)
+    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+    .eq('status', 'accepted')
+  return (data ?? []).map((row: any) => {
+    const friend = row.requester?.id === userId ? row.addressee : row.requester
+    return friend
+  }).filter(Boolean) as { id: string; display_name: string; username: string; avatar_url: string | null }[]
+}
+
 // ── Remove a friend ───────────────────────────────────────────────────────────
 export async function removeFriend(currentUserId: string, friendId: string) {
   const supabase = createClient()

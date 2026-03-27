@@ -6,6 +6,32 @@ import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 import { getCategoryColor } from '@/constants/categories'
 
+function getLinkLabel(url: string): string {
+  try {
+    const u = new URL(url)
+    const h = u.hostname.replace('www.', '')
+    if (h.includes('instagram.com')) return 'Instagram'
+    if (h.includes('twitter.com') || h.includes('x.com')) return 'X / Twitter'
+    if (h.includes('google.com') && u.pathname.includes('maps')) return 'Google Maps'
+    if (h.includes('maps.apple.com')) return 'Apple Maps'
+    if (h.includes('spotify.com')) return 'Spotify'
+    if (h.includes('youtube.com') || h.includes('youtu.be')) return 'YouTube'
+    if (h.includes('facebook.com')) return 'Facebook'
+    if (h.includes('tripadvisor.com')) return 'TripAdvisor'
+    if (h.includes('yelp.com')) return 'Yelp'
+    if (h.includes('opentable.com')) return 'OpenTable'
+    if (h.includes('resy.com')) return 'Resy'
+    if (h.includes('imdb.com')) return 'IMDb'
+    if (h.includes('netflix.com')) return 'Netflix'
+    if (h.includes('goodreads.com')) return 'Goodreads'
+    if (h.includes('amazon.')) return 'Amazon'
+    if (h.includes('apple.com')) return 'Apple'
+    return 'Website'
+  } catch {
+    return 'Link'
+  }
+}
+
 interface RecoCardProps {
   reco: Reco
   rank?: number
@@ -139,6 +165,23 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
         </div>
       )}
       {whyMessages.length <= 1 && <div className="mb-3" />}
+
+      {/* Links */}
+      {(reco.meta.links?.length ?? 0) > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {reco.meta.links!.map((link, i) => (
+            <a
+              key={i}
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-accent underline underline-offset-2"
+            >
+              {getLinkLabel(link)}
+            </a>
+          ))}
+        </div>
+      )}
 
       {/* Done button */}
       {reco.status !== 'done' && (

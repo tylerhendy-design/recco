@@ -1,22 +1,24 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { CategoryChip } from '@/components/ui/CategoryChip'
 import { VoiceButton } from '@/components/ui/VoiceButton'
 import { CATEGORIES, type CategoryId } from '@/constants/categories'
-import { today } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { fetchFriends } from '@/lib/data/friends'
+import { sendReco } from '@/lib/data/recos'
 
-const ALL_FRIENDS = [
-  { id: 'u1', name: 'Sam Huckle', active: false, sinbin: false },
-  { id: 'u2', name: 'Tyler Hendy', active: false, sinbin: false },
-  { id: 'u3', name: 'Alex Horlock', active: false, sinbin: false },
-  { id: 'u4', name: 'Mum', active: false, sinbin: false },
-  { id: 'u5', name: 'Big Jimmy', active: false, sinbin: false },
-  { id: 'u6', name: 'Mick Keane', active: false, sinbin: true },
-]
+interface Friend {
+  id: string
+  name: string
+  username: string
+  avatar_url: string | null
+  active: boolean
+}
 
 interface ExtraPerson { id: string; name: string; contact: string; active: boolean }
 
@@ -31,29 +33,52 @@ function SectionCard({ label, children }: { label: string; children: React.React
   )
 }
 
-export default function SendPage() {
+export default function GivePage() {
+  const searchParams = useSearchParams()
+  const preselectedId = searchParams.get('to')
+
+  const [userId, setUserId] = useState<string | null>(null)
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [loadingFriends, setLoadingFriends] = useState(true)
+
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
-  const [people, setPeople] = useState(ALL_FRIENDS)
   const [extraPeople, setExtraPeople] = useState<ExtraPerson[]>([])
   const [friendSearch, setFriendSearch] = useState('')
 
-  // New person inline form
   const [newName, setNewName] = useState('')
   const [newContact, setNewContact] = useState('')
   const [showNewForm, setShowNewForm] = useState(false)
 
-  // Bonus details
   const [bonusOpen, setBonusOpen] = useState(false)
   const [category, setCategory] = useState<CategoryId | null>(null)
+  const [customCat, setCustomCat] = useState('')
   const [links, setLinks] = useState<string[]>([''])
 
+  const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
 
-  const catDef = CATEGORIES.find((c) => c.id === category)
+  useEffect(() => {
+    createClient().auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setUserId(user.id)
+      const fetched = await fetchFriends(user.id)
+      setFriends(
+        fetched.map((f: any) => ({
+          id: f.id,
+          name: f.display_name,
+          username: f.username,
+          avatar_url: f.avatar_url,
+          active: f.id === preselectedId,
+        }))
+      )
+      setLoadingFriends(false)
+    })
+  }, [preselectedId])
 
-  function togglePerson(id: string) {
-    setPeople((prev) => prev.map((p) => p.id === id ? { ...p, active: !p.active } : p))
+  function toggleFriend(id: string) {
+    setFriends((prev) => prev.map((f) => f.id === id ? { ...f, active: !f.active } : f))
   }
 
   function toggleExtra(id: string) {
@@ -62,9 +87,9 @@ export default function SendPage() {
 
   const filteredFriends = useMemo(() => {
     const q = friendSearch.trim().toLowerCase()
-    if (!q) return people.filter((p) => !p.sinbin)
-    return people.filter((p) => !p.sinbin && p.name.toLowerCase().includes(q))
-  }, [friendSearch, people])
+    if (!q) return friends
+    return friends.filter((f) => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q))
+  }, [friendSearch, friends])
 
   const filteredExtra = useMemo(() => {
     const q = friendSearch.trim().toLowerCase()
@@ -72,11 +97,7 @@ export default function SendPage() {
     return extraPeople.filter((p) => p.name.toLowerCase().includes(q))
   }, [friendSearch, extraPeople])
 
-  const noMatch = friendSearch.trim().length > 0 &&
-    filteredFriends.length === 0 &&
-    filteredExtra.length === 0
-
-  const exactMatch = [...people, ...extraPeople].some(
+  const exactMatch = [...friends, ...extraPeople].some(
     (p) => p.name.toLowerCase() === friendSearch.trim().toLowerCase()
   )
   const showAddOption = friendSearch.trim().length > 0 && !exactMatch && !showNewForm
@@ -89,13 +110,12 @@ export default function SendPage() {
 
   function confirmNewPerson() {
     if (!newName.trim()) return
-    const person: ExtraPerson = {
+    setExtraPeople((prev) => [...prev, {
       id: `new-${Date.now()}`,
       name: newName.trim(),
       contact: newContact.trim(),
       active: true,
-    }
-    setExtraPeople((prev) => [...prev, person])
+    }])
     setNewName('')
     setNewContact('')
     setShowNewForm(false)
@@ -103,16 +123,9 @@ export default function SendPage() {
   }
 
   async function importFromContacts() {
-    if (!('contacts' in navigator)) {
-      // Not supported — open new person form instead
-      setShowNewForm(true)
-      return
-    }
+    if (!('contacts' in navigator)) { setShowNewForm(true); return }
     try {
-      const selected = await (navigator as any).contacts.select(
-        ['name', 'tel', 'email'],
-        { multiple: true }
-      )
+      const selected = await (navigator as any).contacts.select(['name', 'tel', 'email'], { multiple: true })
       const imported: ExtraPerson[] = selected
         .filter((c: any) => c.name?.[0])
         .map((c: any) => ({
@@ -122,22 +135,46 @@ export default function SendPage() {
           active: true,
         }))
       setExtraPeople((prev) => [...prev, ...imported])
-    } catch {
-      // User dismissed
-    }
+    } catch {}
   }
 
-  const anyActive = people.some((p) => p.active) || extraPeople.some((p) => p.active)
-  const canSend = title.trim().length > 0 && anyActive
+  const activeFriends = friends.filter((f) => f.active)
+  const activeExtra = extraPeople.filter((p) => p.active)
+  const anyActive = activeFriends.length > 0 || activeExtra.length > 0
+  const canSend = title.trim().length > 0 && anyActive && category !== null && !sending
 
   const activeNames = [
-    ...people.filter((p) => p.active).map((p) => p.name),
-    ...extraPeople.filter((p) => p.active).map((p) => p.name),
+    ...activeFriends.map((f) => f.name),
+    ...activeExtra.map((p) => p.name),
   ]
 
-  const recentBadRecos = people
-    .filter((p) => p.active && !p.sinbin)
-    .flatMap((p) => p.name === 'Sam Huckle' ? [{ person: 'Huckle', title: 'Padella', score: 34 }] : [])
+  async function handleSend() {
+    if (!canSend || !userId || !category) return
+    setSending(true)
+    setSendError(null)
+
+    const recipientIds = activeFriends.map((f) => f.id)
+    const finalCat = category === 'custom' ? 'custom' : category
+    const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
+
+    const { error } = await sendReco({
+      senderId: userId,
+      category: finalCat,
+      customCat: finalCustomCat,
+      title: title.trim(),
+      whyText: why.trim() || undefined,
+      links: links.filter((l) => l.trim()),
+      recipientIds,
+    })
+
+    if (error) {
+      setSendError(error)
+      setSending(false)
+      return
+    }
+
+    setSent(true)
+  }
 
   if (sent) {
     return (
@@ -152,32 +189,22 @@ export default function SendPage() {
           </div>
           <div>
             <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">
-              Reco sent. Good job.
+              Reco given. Good job.
             </div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              Good luck — we hope {activeNames.length === 1 ? activeNames[0] : 'they'} like{activeNames.length === 1 ? 's' : ''} it.
+              We hope {activeNames.length === 1 ? activeNames[0] : 'they'} love{activeNames.length === 1 ? 's' : ''} it.
             </div>
           </div>
 
-          {/* Invite via text for non-RECO recipients */}
-          {extraPeople.filter((p) => p.active && p.contact).map((p) => (
+          {activeExtra.filter((p) => p.contact).map((p) => (
             <a
               key={p.id}
-              href={`sms:${p.contact}?body=${encodeURIComponent(`Hey! I just sent you a reco for ${title} on RECO — check it out: https://givemeareco.com`)}`}
+              href={`sms:${p.contact}?body=${encodeURIComponent(`Hey! I just gave you a reco for ${title} on Reco — check it out: https://givemeareco.com`)}`}
               className="w-full bg-bg-card border border-border py-3 rounded-btn text-[13px] font-semibold text-text-secondary text-center"
             >
               Text {p.name} the link
             </a>
           ))}
-
-          {recentBadRecos.length > 0 && (
-            <div className="w-full bg-bad/5 border border-bad/20 rounded-card px-4 py-3.5 text-left">
-              <div className="text-[11px] font-semibold text-bad/80 uppercase tracking-[0.5px] mb-2">Heads up</div>
-              <div className="text-[13px] text-text-secondary leading-[1.5]">
-                You recently gave {recentBadRecos[0].person} a bad reco ({recentBadRecos[0].title}). One more and you&apos;re in the sin bin for this category.
-              </div>
-            </div>
-          )}
 
           <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">
             Back home
@@ -203,10 +230,18 @@ export default function SendPage() {
                 id={cat.id}
                 selected={category === cat.id}
                 dashed={cat.id === 'custom'}
-                onClick={() => setCategory(cat.id === category ? null : cat.id)}
+                onClick={() => setCategory(cat.id === category ? null : cat.id as CategoryId)}
               />
             ))}
           </div>
+          {category === 'custom' && (
+            <input
+              value={customCat}
+              onChange={(e) => setCustomCat(e.target.value)}
+              placeholder="Category name…"
+              className="w-full mt-3 bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+            />
+          )}
         </SectionCard>
 
         {/* Name */}
@@ -237,7 +272,6 @@ export default function SendPage() {
         {/* To */}
         <SectionCard label="To">
           <div className="flex items-center gap-2 mb-3">
-            {/* Search */}
             <div className="relative flex-1">
               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.5" strokeLinecap="round">
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -249,7 +283,6 @@ export default function SendPage() {
                 onChange={(e) => { setFriendSearch(e.target.value); setShowNewForm(false) }}
               />
             </div>
-            {/* Import contacts */}
             <button
               onClick={importFromContacts}
               className="flex-shrink-0 flex items-center gap-1 text-[12px] font-semibold text-text-faint hover:text-accent transition-colors px-2 py-1.5 border border-border rounded-input"
@@ -262,46 +295,49 @@ export default function SendPage() {
             </button>
           </div>
 
-          {/* Friend chips */}
-          <div className="flex flex-wrap gap-[7px]">
-            {filteredFriends.map((p) => (
-              <span
-                key={p.id}
-                onClick={() => togglePerson(p.id)}
-                className={`text-[13px] font-medium px-3 py-[7px] rounded-chip border cursor-pointer transition-all ${
-                  p.active ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim hover:border-text-faint'
-                }`}
-              >
-                {p.name}
-              </span>
-            ))}
-            {filteredExtra.map((p) => (
-              <span
-                key={p.id}
-                onClick={() => toggleExtra(p.id)}
-                className={`text-[13px] font-medium px-3 py-[7px] rounded-chip border cursor-pointer transition-all ${
-                  p.active ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim hover:border-text-faint'
-                }`}
-              >
-                {p.name}
-              </span>
-            ))}
+          {loadingFriends ? (
+            <div className="flex justify-center py-3">
+              <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-[7px]">
+              {filteredFriends.map((f) => (
+                <span
+                  key={f.id}
+                  onClick={() => toggleFriend(f.id)}
+                  className={`text-[13px] font-medium px-3 py-[7px] rounded-chip border cursor-pointer transition-all ${
+                    f.active ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim hover:border-text-faint'
+                  }`}
+                >
+                  {f.name}
+                </span>
+              ))}
+              {filteredExtra.map((p) => (
+                <span
+                  key={p.id}
+                  onClick={() => toggleExtra(p.id)}
+                  className={`text-[13px] font-medium px-3 py-[7px] rounded-chip border cursor-pointer transition-all ${
+                    p.active ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim hover:border-text-faint'
+                  }`}
+                >
+                  {p.name}
+                </span>
+              ))}
 
-            {/* Add new person option */}
-            {showAddOption && (
-              <span
-                onClick={startNewPerson}
-                className="text-[13px] font-medium px-3 py-[7px] rounded-chip border border-dashed border-accent/40 text-accent/70 cursor-pointer hover:border-accent hover:text-accent transition-colors flex items-center gap-1"
-              >
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/>
-                </svg>
-                Add &ldquo;{friendSearch.trim()}&rdquo;
-              </span>
-            )}
-          </div>
+              {showAddOption && (
+                <span
+                  onClick={startNewPerson}
+                  className="text-[13px] font-medium px-3 py-[7px] rounded-chip border border-dashed border-accent/40 text-accent/70 cursor-pointer hover:border-accent hover:text-accent transition-colors flex items-center gap-1"
+                >
+                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/>
+                  </svg>
+                  Add &ldquo;{friendSearch.trim()}&rdquo;
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* Inline new person form */}
           {showNewForm && (
             <div className="mt-3 p-3 bg-bg-base border border-border rounded-card flex flex-col gap-2">
               <div className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.4px]">New person</div>
@@ -328,19 +364,19 @@ export default function SendPage() {
 
           {anyActive && (
             <div className="mt-3 text-[12px] text-text-faint">
-              Sending to {activeNames.length === 1 ? activeNames[0] : `${activeNames.length} people`}
+              Giving to {activeNames.length === 1 ? activeNames[0] : `${activeNames.length} people`}
             </div>
           )}
         </SectionCard>
 
-        {/* Bonus details — collapsed by default */}
+        {/* Bonus details */}
         <div className="bg-bg-card border border-border rounded-card">
           <button
             onClick={() => setBonusOpen((o) => !o)}
             className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-60 transition-opacity"
           >
             <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">
-              Links, pics &amp; details
+              Links &amp; details
               <span className="ml-1.5 normal-case font-normal text-[11px] text-text-faint">optional</span>
             </span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 flex-shrink-0 ${bonusOpen ? 'rotate-180' : ''}`}>
@@ -350,27 +386,6 @@ export default function SendPage() {
 
           {bonusOpen && (
             <div className="flex flex-col gap-4 border-t border-border px-4 pt-4 pb-5">
-
-              {/* Photos — always visible */}
-              <div>
-                <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Photos</div>
-                <label className="block cursor-pointer">
-                  <input type="file" accept="image/*" multiple className="sr-only" />
-                  <div className="border-[1.5px] border-dashed border-border rounded-input p-4 text-center active:border-accent/70 transition-colors">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      <div className="text-[12px] text-text-dim">
-                        <span className="text-accent font-semibold">Take a photo</span>
-                        <span className="text-text-faint"> or choose from library</span>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-
-              {/* Links */}
               <div>
                 <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Links</div>
                 <div className="flex flex-col gap-2">
@@ -405,51 +420,24 @@ export default function SendPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Category-specific extra fields */}
-              {catDef && catDef.extraFields.filter(f => f.type !== 'image').length > 0 && (
-                <div className="flex flex-col gap-2.5">
-                  <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase">Details</div>
-                  {catDef.extraFields.filter(f => f.type !== 'image').map((field) => (
-                    <div key={field.id}>
-                      <div className="text-[11px] font-medium text-text-faint uppercase tracking-[0.4px] mb-1.5 flex items-center gap-2">
-                        {field.label}
-                        {field.sublabel && <span className="text-spotify text-[9px] font-normal normal-case">{field.sublabel}</span>}
-                      </div>
-                      <input
-                        className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans"
-                        placeholder={field.placeholder}
-                        defaultValue={field.type === 'date' ? today() : undefined}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-
             </div>
           )}
         </div>
 
+        {sendError && (
+          <div className="text-[13px] text-red-400 text-center">{sendError}</div>
+        )}
+
         {/* Send */}
         <button
-          onClick={() => canSend && setSent(true)}
+          onClick={handleSend}
+          disabled={!canSend}
           className={`w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
             canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
           }`}
         >
-          Send reco
+          {sending ? 'Giving…' : 'Give reco'}
         </button>
-
-        <Link
-          href="/send/qr"
-          className="flex items-center justify-center gap-2 py-3 border border-border rounded-btn text-[13px] font-semibold text-text-dim hover:border-text-faint transition-colors -mt-2"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            <path d="M14 14h1v1h-1zM17 14h1v1h-1zM14 17h1v1h-1zM17 17h3v3h-3z"/>
-          </svg>
-          Create QR code instead
-        </Link>
 
       </div>
     </div>

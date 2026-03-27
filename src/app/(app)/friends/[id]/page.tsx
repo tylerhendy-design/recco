@@ -6,10 +6,11 @@ import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
-import { fetchFriendProfile, removeFriend } from '@/lib/data/friends'
+import { fetchFriendProfile, fetchFriendsList, removeFriend } from '@/lib/data/friends'
 import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
+import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
 
 function getLinkLabel(url: string): string {
   try {
@@ -46,22 +47,27 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<{ display_name: string; username: string; avatar_url: string | null; joined_at: string } | null>(null)
   const [stats, setStats] = useState({ recos_sent: 0, friends_count: 0, recos_completed: 0, stinkers_sent: 0 })
+  const [friendsList, setFriendsList] = useState<{ id: string; display_name: string; username: string; avatar_url: string | null }[]>([])
+  const [showFriends, setShowFriends] = useState(false)
   const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
   const [removing, setRemoving] = useState(false)
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [giveRecoOpen, setGiveRecoOpen] = useState(false)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setCurrentUserId(user.id)
-      const [{ profile: prof, stats: s, memberNumber: mn }, p] = await Promise.all([
+      const [{ profile: prof, stats: s, memberNumber: mn }, p, fl] = await Promise.all([
         fetchFriendProfile(id),
         fetchUserPicks(id),
+        fetchFriendsList(id),
       ])
       if (prof) setProfile(prof)
-      setStats(s)
+      setStats({ ...s, friends_count: fl.length })
+      setFriendsList(fl)
       setMemberNumber(mn)
       setPicks(p)
       setLoading(false)
@@ -86,7 +92,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   }, {})
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden relative">
       <StatusBar />
       <NavHeader
         title={loading ? '…' : (profile?.display_name.split(' ')[0].toLowerCase() ?? 'friend')}
@@ -124,15 +130,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 
           {/* Give / Get buttons */}
           <div className="px-6 py-4 border-b border-bg-card flex gap-3">
-            <Link
-              href={`/send?to=${id}`}
+            <button
+              onClick={() => setGiveRecoOpen(true)}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
               <span className="text-[14px] font-semibold text-text-secondary">Give reco</span>
-            </Link>
+            </button>
             <Link
               href={`/get?from=${id}`}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
@@ -148,7 +154,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           <div className="px-6 py-5 border-b border-bg-card">
             <div className="flex gap-2.5 mb-2.5">
               <StatBox value={String(stats.recos_sent)} label="Recos sent" />
-              <StatBox value={String(stats.friends_count)} label="Friends" />
+              <StatBox value={String(stats.friends_count)} label="Friends" onPress={() => setShowFriends(true)} />
             </div>
             <div className="flex gap-2.5">
               <StatBox value={String(stats.recos_completed)} label="Completed" />
@@ -259,13 +265,62 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 
         </div>
       )}
+
+      {/* Give reco sheet */}
+      {currentUserId && (
+        <GiveRecoSheet
+          open={giveRecoOpen}
+          onClose={() => setGiveRecoOpen(false)}
+          senderId={currentUserId}
+          recipientId={id}
+          recipientName={profile?.display_name ?? ''}
+        />
+      )}
+
+      {/* Friends list overlay */}
+      {showFriends && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowFriends(false)}>
+          <div className="fixed inset-0 bg-black/60" />
+          <div className="relative w-full bg-bg-base rounded-t-[28px] pt-6 pb-10 max-h-[75vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5 flex-shrink-0" />
+            <div className="px-6 mb-4 flex-shrink-0">
+              <div className="text-[18px] font-bold text-white tracking-[-0.4px]">
+                {profile?.display_name.split(' ')[0]}'s friends
+              </div>
+            </div>
+            <div className="overflow-y-auto scrollbar-none">
+              {friendsList.length === 0 ? (
+                <div className="px-6 text-[14px] text-text-faint">No mutual friends visible.</div>
+              ) : (
+                friendsList.map((f) => (
+                  <div key={f.id} className="flex items-center gap-3 px-6 py-3 border-b border-[#0e0e10]">
+                    <div className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                      {f.avatar_url
+                        ? <img src={f.avatar_url} alt={f.display_name} className="w-full h-full object-cover" />
+                        : initials(f.display_name)
+                      }
+                    </div>
+                    <div>
+                      <div className="text-[14px] font-medium text-white">{f.display_name}</div>
+                      <div className="text-[12px] text-text-faint">@{f.username}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function StatBox({ value, label, danger }: { value: string; label: string; danger?: boolean }) {
+function StatBox({ value, label, danger, onPress }: { value: string; label: string; danger?: boolean; onPress?: () => void }) {
   return (
-    <div className="flex-1 bg-bg-card rounded-input p-2.5 text-center">
+    <div
+      className={`flex-1 bg-bg-card rounded-input p-2.5 text-center ${onPress ? 'cursor-pointer active:opacity-70' : ''}`}
+      onClick={onPress}
+    >
       <div className={`text-[20px] font-bold ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
       <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
     </div>

@@ -136,6 +136,7 @@ export async function sendReco({
   customCat,
   title,
   whyText,
+  links,
   meta,
   recipientIds,
 }: {
@@ -144,10 +145,16 @@ export async function sendReco({
   customCat?: string
   title: string
   whyText?: string
+  links?: string[]
   meta?: Record<string, unknown>
   recipientIds: string[]
 }): Promise<{ recoId: string | null; error: string | null }> {
   const supabase = createClient()
+
+  const filteredLinks = (links ?? []).filter((l) => l.trim())
+  const metaWithLinks = filteredLinks.length > 0
+    ? { ...(meta ?? {}), links: filteredLinks }
+    : (meta ?? {})
 
   // 1. Create the recommendation
   const { data: reco, error: recoError } = await supabase
@@ -158,7 +165,7 @@ export async function sendReco({
       custom_cat: customCat ?? null,
       title,
       why_text: whyText ?? null,
-      meta: meta ?? {},
+      meta: metaWithLinks,
     })
     .select('id')
     .single()

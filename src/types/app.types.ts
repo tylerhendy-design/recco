@@ -56,6 +56,8 @@ export interface RecoMeta {
   goodreads_url?: string
   // Film
   director?: string
+  // Generic links
+  links?: string[]
 }
 
 export interface Reco {
