@@ -337,6 +337,34 @@ export default function GetPage() {
             />
           </div>
 
+          {/* Search results — show when typing */}
+          {friendSearch.trim().length > 0 && (
+            <div className="flex flex-col gap-0.5 mb-2">
+              {filteredFriends.filter((f) => !selectedIds.includes(f.id)).length === 0 ? (
+                <div className="text-[12px] text-text-faint px-2 py-1">No friends found.</div>
+              ) : (
+                filteredFriends.filter((f) => !selectedIds.includes(f.id)).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => { togglePerson(f.id); setFriendSearch('') }}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-base transition-colors text-left w-full"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-bg-base border border-border flex items-center justify-center text-[9px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                      {f.avatar_url
+                        ? <img src={f.avatar_url} alt={f.display_name} className="w-full h-full object-cover" />
+                        : initials(f.display_name)
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[12px] font-medium text-text-secondary">{f.display_name}</span>
+                      {f.username && <span className="text-[11px] text-text-faint ml-1.5">@{f.username}</span>}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
           {selectedIds.length > 0 && (
             <div className="flex flex-wrap gap-[5px] mb-2">
               {selectedIds.map((id) => {
