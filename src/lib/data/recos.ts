@@ -56,7 +56,7 @@ function mapRecipientRow(row: RecipientRow): Reco | null {
     feedback_text: row.feedback_text ?? undefined,
     rated_at: row.rated_at ?? undefined,
     recommenders: [{
-      profile: { id: sender.id, display_name: sender.display_name, avatar_url: sender.avatar_url },
+      profile: { id: sender.id, display_name: sender.display_name, username: sender.username, avatar_url: sender.avatar_url },
       why_text: r.why_text ?? undefined,
       tier: 'clan' as const,
     } satisfies RecoRecommender],

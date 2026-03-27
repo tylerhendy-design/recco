@@ -82,7 +82,7 @@ export interface Reco {
 }
 
 export interface RecoRecommender {
-  profile: Pick<Profile, 'id' | 'display_name' | 'avatar_url'>
+  profile: Pick<Profile, 'id' | 'display_name' | 'username' | 'avatar_url'>
   why_text?: string
   tier: TierId
 }

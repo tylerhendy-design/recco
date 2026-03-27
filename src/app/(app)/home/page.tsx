@@ -30,6 +30,7 @@ const CATEGORY_FILTERS = [
 
 const TIME_FILTERS = [
   { value: 'all', label: 'all time' },
+  { value: 'today', label: 'today' },
   { value: 'week', label: 'this week' },
   { value: 'month', label: 'this month' },
   { value: 'year', label: 'this year' },
@@ -142,15 +143,18 @@ export default function HomePage() {
 
   // Derive sender options from grouped recos
   const senderOptions = useMemo(() => {
-    const seen = new Map<string, string>()
+    const seen = new Map<string, { label: string; sub: string }>()
     for (const reco of grouped) {
       for (const rec of reco.recommenders ?? []) {
-        seen.set(rec.profile.id, rec.profile.display_name.split(' ')[0])
+        seen.set(rec.profile.id, {
+          label: rec.profile.display_name.split(' ')[0],
+          sub: `@${rec.profile.username}`,
+        })
       }
     }
     return [
-      { value: 'all', label: 'everyone' },
-      ...Array.from(seen.entries()).map(([id, name]) => ({ value: id, label: name })),
+      { value: 'all', label: 'everyone', sub: '' },
+      ...Array.from(seen.entries()).map(([id, { label, sub }]) => ({ value: id, label, sub })),
     ]
   }, [grouped])
 
@@ -160,6 +164,7 @@ export default function HomePage() {
       .filter((r) => {
         if (timeFilter === 'all') return true
         const ms = Date.now() - new Date(r.created_at).getTime()
+        if (timeFilter === 'today') return ms < 86400000
         if (timeFilter === 'week') return ms < 7 * 86400000
         if (timeFilter === 'month') return ms < 30 * 86400000
         if (timeFilter === 'year') return ms < 365 * 86400000
@@ -205,7 +210,10 @@ export default function HomePage() {
 
   const catLabel = CATEGORY_FILTERS.find((f) => f.value === catFilter)?.label ?? 'all'
   const timeLabel = TIME_FILTERS.find((f) => f.value === timeFilter)?.label ?? 'all time'
-  const senderLabel = senderOptions.find((f) => f.value === senderFilter)?.label ?? 'everyone'
+  const senderOption = senderOptions.find((f) => f.value === senderFilter)
+  const senderLabel = senderOption
+    ? senderOption.sub ? `${senderOption.label} ${senderOption.sub}` : senderOption.label
+    : 'everyone'
 
   return (
     <div className="flex flex-col flex-1 relative overflow-hidden">
@@ -244,7 +252,7 @@ export default function HomePage() {
         </div>
 
         {/* Three-filter line */}
-        <div className="text-[15px] text-text-muted leading-[1.7]" onClick={(e) => e.stopPropagation()}>
+        <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
           Here are{' '}
           {/* Category */}
           <span className="relative inline-block">
@@ -301,14 +309,15 @@ export default function HomePage() {
               {senderLabel}
             </span>
             {senderDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[180px] overflow-hidden shadow-lg">
                 {senderOptions.map((f) => (
                   <div
                     key={f.value}
                     onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
-                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                    className={`px-4 py-2.5 cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
                   >
-                    {f.label}
+                    <div className="text-[13px]">{f.label}</div>
+                    {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
                   </div>
                 ))}
               </div>
