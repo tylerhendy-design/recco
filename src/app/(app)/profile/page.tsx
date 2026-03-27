@@ -242,7 +242,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex gap-2.5">
               <StatBox value={String(profile.recos_completed)} label="Completed" />
-              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger onPress={() => setShowStinkers(true)} />
+              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger={profile.stinkers_sent > 0} onPress={() => setShowStinkers(true)} />
             </div>
           </div>
 
@@ -571,7 +571,7 @@ export default function ProfilePage() {
           <div className="fixed inset-0 bg-black/60" />
           <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
-            <div className="text-[11px] font-semibold text-bad tracking-[1px] uppercase mb-2">Your track record</div>
+            <div className="text-[11px] font-semibold text-[#A07850] tracking-[1px] uppercase mb-2">Your track record</div>
             <div className="text-[22px] font-bold text-white tracking-[-0.5px] leading-[1.2] mb-4">
               What's a stinker?
             </div>
