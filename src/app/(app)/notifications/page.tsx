@@ -172,7 +172,7 @@ function NotifRow({
                   className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-chip text-[11px] font-bold"
                   style={{ color: c, background: `${c}22`, border: `1px solid ${c}44` }}
                 >
-                  {scoreLozenge.score}/100
+                  {scoreLozenge.score}/10
                 </span>
               )
             })()}

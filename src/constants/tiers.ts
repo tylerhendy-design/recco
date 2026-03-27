@@ -55,8 +55,8 @@ export const ALL_FRIEND_INFO = {
 
 /** Score thresholds */
 export const SCORE = {
-  BAD_MAX: 34,
-  MEH_MAX: 64,
+  BAD_MAX: 3,
+  MEH_MAX: 6,
   SIN_BIN_THRESHOLD: 3,
 } as const
 

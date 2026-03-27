@@ -32,7 +32,7 @@ export function formatRelativeTime(dateStr: string): string {
 
 // Gradient: vibrant red-brown (#B83A1A) → brand yellow (#D4E23A)
 export function getScoreColor(score: number): string {
-  const t = Math.max(0, Math.min(100, score)) / 100
+  const t = Math.max(0, Math.min(10, score)) / 10
   const r = Math.round(184 + (212 - 184) * t)
   const g = Math.round(58  + (226 - 58)  * t)
   const b = Math.round(26  + (58  - 26)  * t)
