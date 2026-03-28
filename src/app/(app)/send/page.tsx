@@ -289,9 +289,13 @@ function GivePageInner() {
   }
 
   // ─── Category chip title ──────────────────────────────────────────────────
-  const pageTitle = category
-    ? `Reco ${getCategoryLabel(category).toLowerCase()}`
-    : 'Reco'
+  const SINGULAR: Record<string, string> = {
+    restaurant: 'restaurant', tv: 'TV show', podcast: 'podcast',
+    music: 'album or track', book: 'book', film: 'film', custom: customCat || 'thing',
+  }
+  const singular = category ? (SINGULAR[category] ?? getCategoryLabel(category).toLowerCase()) : ''
+
+  const pageTitle = category ? `Reco ${singular}` : 'Reco'
 
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
 
@@ -436,7 +440,7 @@ function GivePageInner() {
           {/* ── Name input ── */}
           <input
             className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-1"
-            placeholder={category ? `Name of ${getCategoryLabel(category).toLowerCase()}…` : 'Name it…'}
+            placeholder={category ? `Name of ${singular}…` : 'Name it…'}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
