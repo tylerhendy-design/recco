@@ -436,10 +436,10 @@ export default function HomePage() {
           )}
 
           {!loadingDone && Object.entries(doneByCategory).map(([category, recos]) => {
-            const isOpen = doneExpanded[category] ?? true
+            const isOpen = doneExpanded[category] ?? false
             const color = getCategoryColor(category)
             return (
-              <div key={category} className="border-b border-[#0e0e10]">
+              <div key={category} className="border-b border-[#1a1a1e]">
                 <button
                   onClick={() => setDoneExpanded((prev) => ({ ...prev, [category]: !isOpen }))}
                   className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-card/30 transition-colors"
@@ -457,8 +457,8 @@ export default function HomePage() {
                   </svg>
                 </button>
 
-                {isOpen && recos.map((reco) => (
-                  <div key={reco.id} className="flex items-center justify-between px-6 py-3 border-t border-[#0e0e10]">
+                {isOpen && recos.map((reco, i) => (
+                  <div key={reco.id} className={`flex items-center justify-between px-6 py-3 ${i > 0 ? 'border-t border-[#1a1a1e]' : ''}`}>
                     <div className="flex-1 min-w-0 pr-3">
                       <div className="text-[14px] font-medium text-text-secondary truncate">{reco.title}</div>
                       <div className="text-[11px] text-text-faint mt-0.5">

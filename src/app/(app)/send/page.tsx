@@ -217,29 +217,20 @@ function GivePageInner() {
     setImageUploading(true)
 
     try {
-      const supabase = createClient()
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${userId}/${crypto.randomUUID()}.${ext}`
-      const BUCKET = 'reco-images'
 
-      async function tryUpload() {
-        return supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
-      }
+      const form = new FormData()
+      form.append('file', file)
+      form.append('path', path)
 
-      let { error } = await tryUpload()
+      const res = await fetch('/api/upload-image', { method: 'POST', body: form })
+      const json = await res.json()
 
-      // Bucket might not exist yet — try creating it then retry
-      if (error && (error.message?.includes('not found') || error.message?.includes('does not exist') || error.statusCode === '404' || (error as any).statusCode === 404)) {
-        await supabase.storage.createBucket(BUCKET, { public: true })
-        const retry = await tryUpload()
-        error = retry.error
-      }
-
-      if (error) {
-        setImageError(`Upload failed: ${error.message}. Add a "reco-images" public bucket in Supabase Storage.`)
+      if (!res.ok) {
+        setImageError(`Upload failed: ${json.error ?? 'unknown error'}`)
       } else {
-        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
-        setImageUrl(publicUrl)
+        setImageUrl(json.publicUrl)
         setImageUploaded(true)
       }
     } catch (e: any) {
