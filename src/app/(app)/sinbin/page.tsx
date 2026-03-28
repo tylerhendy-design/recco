@@ -87,7 +87,7 @@ export default function SinBinPage() {
             <div className="px-6 py-12 text-center">
               <div className="text-[28px] mb-3">😇</div>
               <div className="text-[14px] font-semibold text-white mb-1">No one's in your sin bin.</div>
-              <div className="text-[13px] text-text-faint">Lucky you.</div>
+              <div className="text-[13px] text-text-faint max-w-[260px] mx-auto leading-[1.6]">When someone's recos consistently miss the mark for you, they land here. Their recommendations still come through — you just see the track record.</div>
             </div>
           ) : (
             mine.map((entry) => (
@@ -116,7 +116,7 @@ export default function SinBinPage() {
             <div className="px-6 py-12 text-center">
               <div className="text-[28px] mb-3">🙌</div>
               <div className="text-[14px] font-semibold text-white mb-1">You're not in anyone's sin bin.</div>
-              <div className="text-[13px] text-text-faint">Keep it that way.</div>
+              <div className="text-[13px] text-text-faint max-w-[260px] mx-auto leading-[1.6]">If your recos aren't landing for someone, they can sin-bin you by category. You won't know unless you end up here — so keep your recommendations good.</div>
             </div>
           ) : (
             theirs.map((entry) => (
