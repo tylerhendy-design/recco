@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { CategoryChip } from '@/components/ui/CategoryChip'
-import { CategoryDot } from '@/components/ui/CategoryDot'
 import { VoiceButton } from '@/components/ui/VoiceButton'
 import { CATEGORIES, type CategoryId, getCategoryLabel } from '@/constants/categories'
 import { createClient } from '@/lib/supabase/client'
@@ -14,46 +12,94 @@ import { fetchFriends } from '@/lib/data/friends'
 import { sendReco } from '@/lib/data/recos'
 import { initials } from '@/lib/utils'
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 interface Friend {
   id: string
   name: string
   username: string
   avatar_url: string | null
-  active: boolean
+  selected: boolean
 }
 
-interface SpotifyMeta {
-  title: string
+interface LinkMeta {
+  type: 'music' | 'podcast' | 'place'
+  title: string | null
   artist: string | null
   artworkUrl: string | null
+  city: string | null
+  country: string | null
+  address: string | null
 }
 
-function getLinkLabel(url: string): string {
-  try {
-    const h = new URL(url).hostname.replace('www.', '')
-    if (h.includes('spotify.com')) return 'Spotify'
-    if (h.includes('instagram.com')) return 'Instagram'
-    if (h.includes('google.com')) return 'Google Maps'
-    if (h.includes('maps.apple.com')) return 'Apple Maps'
-    if (h.includes('youtube.com') || h.includes('youtu.be')) return 'YouTube'
-    if (h.includes('tripadvisor.com')) return 'TripAdvisor'
-    if (h.includes('yelp.com')) return 'Yelp'
-    if (h.includes('opentable.com')) return 'OpenTable'
-    if (h.includes('resy.com')) return 'Resy'
-    if (h.includes('imdb.com')) return 'IMDb'
-    if (h.includes('netflix.com')) return 'Netflix'
-    if (h.includes('goodreads.com')) return 'Goodreads'
-    if (h.includes('amazon.')) return 'Amazon'
-    return 'Website'
-  } catch { return 'Link' }
+type ConstraintDef = { key: string; label: string; placeholder: string; icon: React.ReactNode }
+
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
+const PIN = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+const MONEY = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v1.5m0 9V18m-2.5-8.5c0-1 .9-1.5 2.5-1.5s2.5.8 2.5 2c0 2.5-5 2-5 4.5 0 1.2 1.1 1.5 2.5 1.5s2.5-.4 2.5-1.5"/></svg>
+const STAR = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+const TV = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+const MUSIC = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+const CLOCK = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+const FILM = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M17 7h5M2 17h5M17 17h5"/></svg>
+const BOOK = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+const CAM = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 3l-4 4-4-4"/><circle cx="12" cy="14" r="3"/></svg>
+
+// ─── Category-specific extra detail fields ───────────────────────────────────
+
+const CONSTRAINTS: Record<string, ConstraintDef[]> = {
+  restaurant: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. date night, casual lunch…', icon: STAR },
+    { key: 'price', label: 'Price range', placeholder: 'e.g. under £40, splurge…', icon: MONEY },
+  ],
+  tv: [
+    { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, HBO…', icon: TV },
+    { key: 'genre', label: 'Genre', placeholder: 'e.g. thriller, comedy…', icon: FILM },
+    { key: 'mood', label: 'Mood', placeholder: 'e.g. binge-worthy, light…', icon: STAR },
+  ],
+  podcast: [
+    { key: 'topic', label: 'Topic', placeholder: 'e.g. true crime, business…', icon: MUSIC },
+    { key: 'length', label: 'Episode length', placeholder: 'e.g. short, long-form…', icon: CLOCK },
+    { key: 'mood', label: 'Mood', placeholder: 'e.g. educational, entertaining…', icon: STAR },
+  ],
+  music: [
+    { key: 'genre', label: 'Genre', placeholder: 'e.g. indie, jazz, hip-hop…', icon: MUSIC },
+    { key: 'mood', label: 'Mood', placeholder: 'e.g. workout, late night…', icon: STAR },
+    { key: 'era', label: 'Era', placeholder: 'e.g. 90s, brand new, timeless…', icon: CLOCK },
+  ],
+  book: [
+    { key: 'genre', label: 'Genre', placeholder: 'e.g. thriller, memoir…', icon: BOOK },
+    { key: 'mood', label: 'Mood', placeholder: "e.g. can't put it down…", icon: STAR },
+    { key: 'length', label: 'Length', placeholder: 'e.g. quick read, epic…', icon: CLOCK },
+  ],
+  film: [
+    { key: 'genre', label: 'Genre', placeholder: 'e.g. horror, rom-com…', icon: FILM },
+    { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, cinema…', icon: TV },
+    { key: 'era', label: 'Era', placeholder: 'e.g. classic, 90s, recent…', icon: CLOCK },
+  ],
+  default: [
+    { key: 'vibes', label: 'Vibes', placeholder: 'e.g. cosy, lively, adventurous…', icon: STAR },
+    { key: 'budget', label: 'Budget', placeholder: 'e.g. cheap and cheerful…', icon: MONEY },
+    { key: 'location', label: 'Location', placeholder: 'e.g. central, near me…', icon: PIN },
+  ],
 }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isStreamingUrl(url: string) {
+  return url.includes('spotify.com') || url.includes('music.apple.com') || url.includes('podcasts.apple.com')
+}
+function isMapsUrl(url: string) {
+  return url.includes('google.com/maps') || url.includes('goo.gl/maps') || url.includes('maps.app.goo.gl')
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GivePage() {
-  return (
-    <Suspense>
-      <GivePageInner />
-    </Suspense>
-  )
+  return <Suspense><GivePageInner /></Suspense>
 }
 
 function GivePageInner() {
@@ -65,19 +111,23 @@ function GivePageInner() {
   const [loadingFriends, setLoadingFriends] = useState(true)
   const [friendSearch, setFriendSearch] = useState('')
 
+  // Card fields
   const [category, setCategory] = useState<CategoryId | null>(null)
   const [customCat, setCustomCat] = useState('')
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
-  const [links, setLinks] = useState<string[]>([''])
-  const [linksOpen, setLinksOpen] = useState(false)
+  const [constraints, setConstraints] = useState<Record<string, string>>({})
+  const [openConstraint, setOpenConstraint] = useState<string | null>(null)
+  const [details, setDetails] = useState('')
 
-  // Image / Spotify
+  // Link auto-fill
+  const [linkInput, setLinkInput] = useState('')
+  const [linkMeta, setLinkMeta] = useState<LinkMeta | null>(null)
+  const [linkLoading, setLinkLoading] = useState(false)
+
+  // Image
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
-  const [spotifyInput, setSpotifyInput] = useState('')
-  const [spotifyMeta, setSpotifyMeta] = useState<SpotifyMeta | null>(null)
-  const [spotifyLoading, setSpotifyLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [sending, setSending] = useState(false)
@@ -89,29 +139,26 @@ function GivePageInner() {
       if (!user) return
       setUserId(user.id)
       const fetched = await fetchFriends(user.id)
-      setFriends(
-        fetched.map((f: any) => ({
-          id: f.id,
-          name: f.display_name,
-          username: f.username,
-          avatar_url: f.avatar_url,
-          active: f.id === preselectedId,
-        }))
-      )
+      setFriends(fetched.map((f: any) => ({
+        id: f.id, name: f.display_name, username: f.username,
+        avatar_url: f.avatar_url, selected: f.id === preselectedId,
+      })))
       setLoadingFriends(false)
     })
   }, [preselectedId])
 
-  // Reset category-specific state when category changes
+  // Reset on category change
   useEffect(() => {
-    setSpotifyMeta(null)
-    setSpotifyInput('')
+    setConstraints({})
+    setOpenConstraint(null)
+    setLinkInput('')
+    setLinkMeta(null)
     setImageUrl(null)
-    if (category === 'restaurant') setLinksOpen(true)
+    setTitle('')
   }, [category])
 
   function toggleFriend(id: string) {
-    setFriends((prev) => prev.map((f) => f.id === id ? { ...f, active: !f.active } : f))
+    setFriends((prev) => prev.map((f) => f.id === id ? { ...f, selected: !f.selected } : f))
   }
 
   const filteredFriends = useMemo(() => {
@@ -120,32 +167,37 @@ function GivePageInner() {
     return friends.filter((f) => f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q))
   }, [friendSearch, friends])
 
-  // Spotify auto-fill
-  async function fetchSpotifyMeta(url: string) {
-    if (!url.includes('spotify.com')) return
-    setSpotifyLoading(true)
+  const allSelected = friends.length > 0 && friends.every((f) => f.selected)
+  function toggleAll() {
+    setFriends((prev) => prev.map((f) => ({ ...f, selected: !allSelected })))
+  }
+
+  // Link auto-fill
+  async function fetchLinkMeta(url: string) {
+    setLinkLoading(true)
     try {
-      const res = await fetch(`/api/spotify-meta?url=${encodeURIComponent(url)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setSpotifyMeta(data)
-        if (data.title && !title) setTitle(data.title)
-        if (data.artworkUrl) setImageUrl(data.artworkUrl)
-        // Store the Spotify link
-        setLinks((prev) => {
-          const without = prev.filter((l) => !l.includes('spotify.com'))
-          return [url, ...without].filter(Boolean)
-        })
+      const res = await fetch(`/api/link-meta?url=${encodeURIComponent(url)}`)
+      if (!res.ok) return
+      const data: LinkMeta = await res.json()
+      setLinkMeta(data)
+      if (data.title && !title) setTitle(data.title)
+      if (data.artworkUrl) setImageUrl(data.artworkUrl)
+      // Pre-fill constraints from place data
+      if (data.type === 'place') {
+        const loc = [data.city, data.country].filter(Boolean).join(', ')
+        if (loc) setConstraints((p) => ({ ...p, location: loc }))
+        if (data.address) setConstraints((p) => ({ ...p, address: data.address! }))
       }
     } finally {
-      setSpotifyLoading(false)
+      setLinkLoading(false)
     }
   }
 
-  function handleSpotifyInputChange(val: string) {
-    setSpotifyInput(val)
-    if (val.includes('spotify.com/')) {
-      fetchSpotifyMeta(val.trim())
+  function handleLinkChange(val: string) {
+    setLinkInput(val)
+    const trimmed = val.trim()
+    if (isStreamingUrl(trimmed) || isMapsUrl(trimmed)) {
+      fetchLinkMeta(trimmed)
     }
   }
 
@@ -167,15 +219,16 @@ function GivePageInner() {
     }
   }
 
-  const activeFriends = friends.filter((f) => f.active)
-  const anyActive = activeFriends.length > 0
-  const isSpotifyCategory = category === 'music' || category === 'podcast'
+  const selectedFriends = friends.filter((f) => f.selected)
   const isRestaurant = category === 'restaurant'
-  const hasGoogleMapsLink = links.some((l) => { try { const h = new URL(l).hostname; return h.includes('google.com') || h.includes('maps.apple.com') } catch { return false } })
-  const canSend = category !== null && title.trim().length > 0 && anyActive && !sending && (!isRestaurant || hasGoogleMapsLink)
-  const artwork = spotifyMeta?.artworkUrl ?? imageUrl
+  const isMediaCat = category === 'music' || category === 'podcast'
+  const activeDefs: ConstraintDef[] = category && category !== 'custom'
+    ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
+    : CONSTRAINTS.default
 
-  const activeNames = activeFriends.map((f) => f.name)
+  const hasGoogleMapsLink = linkInput.trim() && isMapsUrl(linkInput)
+  const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
+    && (!isRestaurant || !!hasGoogleMapsLink)
 
   async function handleSend() {
     if (!canSend || !userId || !category) return
@@ -184,9 +237,16 @@ function GivePageInner() {
 
     const finalCat = category === 'custom' ? 'custom' : category
     const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
+
     const meta: Record<string, unknown> = {}
-    if (artwork) meta.artwork_url = artwork
-    if (spotifyMeta?.artist) meta.artist = spotifyMeta.artist
+    if (imageUrl) meta.artwork_url = imageUrl
+    if (linkMeta?.artist) meta.artist = linkMeta.artist
+    if (constraints.location) meta.location = constraints.location
+    if (constraints.address) meta.address = constraints.address
+    if (constraints.streaming) meta.streaming_service = constraints.streaming
+
+    const links: string[] = []
+    if (linkInput.trim()) links.push(linkInput.trim())
 
     const { error } = await sendReco({
       senderId: userId,
@@ -194,16 +254,18 @@ function GivePageInner() {
       customCat: finalCustomCat,
       title: title.trim(),
       whyText: why.trim() || undefined,
-      links: links.filter((l) => l.trim()),
+      links,
       meta,
-      recipientIds: activeFriends.map((f) => f.id),
+      recipientIds: selectedFriends.map((f) => f.id),
     })
 
     if (error) { setSendError(error); setSending(false); return }
     setSent(true)
   }
 
+  // ─── Success screen ────────────────────────────────────────────────────────
   if (sent) {
+    const names = selectedFriends.map((f) => f.name.split(' ')[0])
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
@@ -215,306 +277,334 @@ function GivePageInner() {
             </svg>
           </div>
           <div>
-            <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">
-              Reco given. Good job.
-            </div>
+            <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">Reco given. Good job.</div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              We hope {activeNames.length === 1 ? activeNames[0] : 'they'} love{activeNames.length === 1 ? 's' : ''} it.
+              We hope {names.length === 1 ? names[0] : 'they'} love{names.length === 1 ? 's' : ''} it.
             </div>
           </div>
-          <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">
-            Back home
-          </Link>
+          <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">Back home</Link>
         </div>
       </div>
     )
   }
+
+  // ─── Category chip title ──────────────────────────────────────────────────
+  const pageTitle = category
+    ? `Reco ${getCategoryLabel(category).toLowerCase()}`
+    : 'Reco'
+
+  const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
+
+  // ─── Link input label ──────────────────────────────────────────────────────
+  const linkPlaceholder = isRestaurant
+    ? 'Paste Google Maps link to auto-fill…'
+    : category === 'podcast'
+      ? 'Paste Spotify or Apple Podcasts link…'
+      : 'Paste Spotify or Apple Music link…'
+
+  const linkService = linkMeta
+    ? linkMeta.type === 'place' ? 'Google Maps' : linkMeta.artworkUrl ? 'Streaming' : null
+    : null
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
       <NavHeader title="give a reco" closeHref="/home" />
 
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-8">
+      <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
+        <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
-        {/* Category chips */}
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-            {CATEGORIES.map((cat) => (
-              <CategoryChip
-                key={cat.id}
-                id={cat.id}
-                selected={category === cat.id}
-                dashed={cat.id === 'custom'}
-                onClick={() => setCategory(cat.id === category ? null : cat.id as CategoryId)}
-              />
-            ))}
+          {/* ── Title ── */}
+          <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
+            {pageTitle}
+          </div>
+
+          {/* ── Category chips ── */}
+          <div className="flex gap-1.5 flex-wrap mb-4">
+            {displayedCats.map((cat) => {
+              const active = category === cat.id
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(active ? null : cat.id as CategoryId)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip border transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
+                  style={active
+                    ? { color: cat.color, borderColor: cat.color, background: cat.bgColor }
+                    : { color: '#444', borderColor: '#222226' }
+                  }
+                >
+                  <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: active ? cat.color : '#444' }} />
+                  {cat.label}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => setCategory(category === 'custom' ? null : 'custom')}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
+              style={category === 'custom'
+                ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
+                : { color: '#555', border: '1px dashed #333' }
+              }
+            >
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Custom
+            </button>
           </div>
           {category === 'custom' && (
             <input
+              autoFocus
+              className="mb-4 w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+              placeholder="e.g. Architecture, Coffee, Barbers…"
               value={customCat}
               onChange={(e) => setCustomCat(e.target.value)}
-              placeholder="Category name…"
-              className="w-full mt-2 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
             />
           )}
-        </div>
 
-        {/* THE CARD */}
-        <div className="px-4">
-          <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-5 flex flex-col gap-0">
+          {/* ── Divider ── */}
+          <div className="border-t border-[#0e0e10] mb-4" />
 
-            {/* Category dot */}
-            {category && (
-              <div className="mb-2.5">
-                <CategoryDot category={category} />
-              </div>
-            )}
-
-            {/* Spotify quick-fill (music/podcast) */}
-            {isSpotifyCategory && !spotifyMeta && (
-              <div className="mb-3">
-                <div className="flex items-center gap-2 bg-[#0a1a0e] border border-[#1DB954]/30 rounded-input px-3 py-2.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DB954">
-                    <circle cx="12" cy="12" r="12"/>
-                    <path d="M6 9.6C9.3 7.5 14.9 7.8 18 10l-.9 1.5C15 9.7 10.2 9.4 7.2 11.3L6 9.6zm-.5 3.3C9.8 10.3 16.6 10.7 20 13.5l-.9 1.4C16 12.3 9.9 12 6.7 14.3l-1.2-1.4zm1 3.2c3-2 8.1-1.7 11 .5l-.9 1.3c-2.5-1.9-7-2.1-9.6-.4l-.5-1.4z" fill="#0a1f0e"/>
-                  </svg>
-                  <input
-                    className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#1DB954]/50 font-sans"
-                    placeholder="Paste Spotify link to auto-fill…"
-                    value={spotifyInput}
-                    onChange={(e) => handleSpotifyInputChange(e.target.value)}
-                  />
-                  {spotifyLoading && (
-                    <div className="w-3.5 h-3.5 border-2 border-[#1DB954]/40 border-t-[#1DB954] rounded-full animate-spin flex-shrink-0" />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Artwork + Title */}
-            {isSpotifyCategory ? (
-              // Square artwork left of title (music/podcast style)
-              <div className="flex gap-3 items-start mb-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-[72px] h-[72px] rounded-xl flex-shrink-0 overflow-hidden border border-border relative flex items-center justify-center bg-bg-base"
-                >
-                  {imageUploading ? (
-                    <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
-                  ) : artwork ? (
-                    <img src={artwork} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 text-text-faint">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                        <path d="M9 9a3 3 0 11 6 0 3 3 0 01-6 0z"/><path d="M17.94 16A8 8 0 118 4.06"/><path d="M12 20v-4M12 4V2"/>
-                      </svg>
-                    </div>
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <input
-                    className="text-[22px] font-semibold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
-                    placeholder={spotifyMeta ? spotifyMeta.title : category === 'podcast' ? 'Podcast name…' : 'Album or track…'}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                  {spotifyMeta?.artist && (
-                    <div className="text-[13px] text-text-muted mt-0.5">{spotifyMeta.artist}</div>
-                  )}
-                  {spotifyMeta && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-md bg-[#0a1a0e] text-[#1DB954] mt-1.5">
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="#1DB954"><circle cx="12" cy="12" r="12"/><path d="M6 9.6C9.3 7.5 14.9 7.8 18 10l-.9 1.5C15 9.7 10.2 9.4 7.2 11.3L6 9.6zm-.5 3.3C9.8 10.3 16.6 10.7 20 13.5l-.9 1.4C16 12.3 9.9 12 6.7 14.3l-1.2-1.4zm1 3.2c3-2 8.1-1.7 11 .5l-.9 1.3c-2.5-1.9-7-2.1-9.6-.4l-.5-1.4z" fill="#0a1f0e"/></svg>
-                      Spotify
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              // Banner image above title (restaurant / film / etc)
-              <>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-[160px] rounded-xl mb-3 overflow-hidden border border-dashed border-border relative flex items-center justify-center bg-bg-base"
-                  style={artwork ? { border: 'none' } : {}}
-                >
-                  {imageUploading ? (
-                    <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
-                  ) : artwork ? (
-                    <>
-                      <img src={artwork} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1.5 text-text-faint">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      <span className="text-[12px] font-medium">Add photo</span>
-                    </div>
-                  )}
-                  {artwork && (
+          {/* ── Link auto-fill (restaurant / music / podcast) ── */}
+          {(isRestaurant || isMediaCat) && (
+            <div className="mb-4">
+              {/* Artwork preview for streaming */}
+              {isMediaCat && imageUrl && (
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-[64px] h-[64px] rounded-xl overflow-hidden border border-border flex-shrink-0 relative">
+                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                     <button
-                      onClick={(e) => { e.stopPropagation(); setImageUrl(null); setSpotifyMeta(null) }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white"
+                      onClick={() => { setImageUrl(null); setLinkMeta(null); setLinkInput('') }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center"
                     >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {linkMeta?.title && <div className="text-[15px] font-semibold text-white leading-tight">{linkMeta.title}</div>}
+                    {linkMeta?.artist && <div className="text-[12px] text-text-muted mt-0.5">{linkMeta.artist}</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Link input */}
+              {(!linkMeta || !imageUrl) && (
+                <div className={`flex items-center gap-2 rounded-input px-3 py-2.5 border ${
+                  isRestaurant
+                    ? 'bg-[#0e1a0a] border-[#2a6020]/40'
+                    : 'bg-[#0a1a0e] border-[#1DB954]/30'
+                }`}>
+                  {isRestaurant ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DB954"><circle cx="12" cy="12" r="12"/><path d="M6 9.6C9.3 7.5 14.9 7.8 18 10l-.9 1.5C15 9.7 10.2 9.4 7.2 11.3L6 9.6zm-.5 3.3C9.8 10.3 16.6 10.7 20 13.5l-.9 1.4C16 12.3 9.9 12 6.7 14.3l-1.2-1.4zm1 3.2c3-2 8.1-1.7 11 .5l-.9 1.3c-2.5-1.9-7-2.1-9.6-.4l-.5-1.4z" fill="#0a1f0e"/></svg>
                   )}
-                </button>
+                  <input
+                    className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#444] font-sans"
+                    placeholder={linkPlaceholder}
+                    value={linkInput}
+                    onChange={(e) => handleLinkChange(e.target.value)}
+                  />
+                  {linkLoading && (
+                    <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
+                  )}
+                </div>
+              )}
 
-                <input
-                  className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-1"
-                  placeholder={category ? `Name of ${getCategoryLabel(category)}…` : 'Name it…'}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </>
-            )}
-
-            {/* Why */}
-            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-2">Why?</div>
-            <div className="flex gap-2.5 items-start">
-              <VoiceButton />
-              <textarea
-                className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.5]"
-                placeholder="Voice or type your reason…"
-                rows={3}
-                value={why}
-                onChange={(e) => setWhy(e.target.value)}
-              />
-            </div>
-
-            {/* Links */}
-            <div className="mt-3 border-t border-[#1a1a1e] pt-3">
-              <button
-                onClick={() => setLinksOpen((o) => !o)}
-                className="flex items-center justify-between w-full text-[12px] font-semibold text-text-faint hover:text-text-muted transition-colors"
-              >
-                <span>
-                  Links{' '}
-                  {isRestaurant
-                    ? <span className="font-normal text-accent">— Google Maps required</span>
-                    : <span className="font-normal">— optional</span>
-                  }
-                </span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 ${linksOpen ? 'rotate-180' : ''}`}>
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </button>
-
-              {linksOpen && (
-                <div className="flex flex-col gap-2 mt-2.5">
-                  {links.map((link, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div className="flex items-center gap-2 flex-1 bg-bg-base border border-border rounded-input px-3 py-2">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-                          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                        </svg>
-                        <input
-                          className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-border font-sans"
-                          placeholder={isRestaurant && i === 0 ? 'Paste Google Maps link…' : 'Paste a URL…'}
-                          value={link}
-                          onChange={(e) => { const n = [...links]; n[i] = e.target.value; setLinks(n) }}
-                        />
-                        {link.trim() && (
-                          <span className="text-[10px] text-text-faint flex-shrink-0">{getLinkLabel(link)}</span>
-                        )}
-                      </div>
-                      {links.length > 1 && (
-                        <button onClick={() => setLinks(links.filter((_, j) => j !== i))} className="w-6 h-6 flex items-center justify-center text-text-faint hover:text-bad transition-colors flex-shrink-0">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                          </svg>
-                        </button>
-                      )}
+              {/* Google Maps result preview */}
+              {isRestaurant && linkMeta?.type === 'place' && (
+                <div className="mt-2 px-3 py-2 bg-bg-base border border-border rounded-input">
+                  <div className="text-[13px] font-semibold text-white">{linkMeta.title}</div>
+                  {(linkMeta.city || linkMeta.country) && (
+                    <div className="text-[12px] text-text-muted mt-0.5">
+                      {[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}
                     </div>
-                  ))}
-                  <button onClick={() => setLinks([...links, ''])} className="flex items-center gap-1.5 text-[12px] font-semibold text-text-dim hover:text-text-secondary transition-colors">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    Add another link
+                  )}
+                  {linkMeta.address && <div className="text-[11px] text-text-faint mt-0.5">{linkMeta.address}</div>}
+                  <button
+                    onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }}
+                    className="text-[11px] text-text-faint mt-1.5 hover:text-red-400 transition-colors"
+                  >
+                    Clear
                   </button>
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── Name input ── */}
+          <input
+            className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-1"
+            placeholder={category ? `Name of ${getCategoryLabel(category).toLowerCase()}…` : 'Name it…'}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+
+          {/* ── Divider ── */}
+          <div className="border-t border-[#0e0e10] mt-4 pt-4 mb-1">
+            <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-0.5">Extra details</div>
+            <div className="text-[12px] text-text-faint mb-3">Optional — more context makes a better reco</div>
           </div>
-        </div>
 
-        {/* Send to */}
-        <div className="px-4 mt-4">
-          <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Send to</div>
+          {/* ── Constraint lozenges ── */}
+          <div className="flex gap-2 flex-wrap mb-2.5">
+            {activeDefs.map((def) => {
+              const filled = (constraints[def.key] ?? '').trim().length > 0
+              const isOpen = openConstraint === def.key
+              return (
+                <button
+                  key={def.key}
+                  onClick={() => setOpenConstraint(isOpen ? null : def.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all"
+                  style={filled || isOpen
+                    ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
+                    : { color: '#666', border: '1px dashed #2e2e33' }
+                  }
+                >
+                  {def.icon}
+                  {filled ? constraints[def.key] : `+ ${def.label}`}
+                </button>
+              )
+            })}
 
-          {/* Search */}
-          <div className="flex items-center gap-2 bg-bg-card border border-border rounded-input px-3 py-2 mb-2.5">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2.5" strokeLinecap="round" className="flex-shrink-0">
+            {/* Image lozenge */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all overflow-hidden"
+              style={imageUrl
+                ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
+                : { color: '#666', border: '1px dashed #2e2e33' }
+              }
+            >
+              {imageUploading ? (
+                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
+              ) : imageUrl ? (
+                <>
+                  <img src={imageUrl} alt="" className="w-4 h-4 rounded object-cover flex-shrink-0" />
+                  Photo added
+                </>
+              ) : (
+                <>{CAM} + Photo</>
+              )}
+            </button>
+          </div>
+
+          {/* Expanded constraint input */}
+          {openConstraint && (
+            <div className="mb-2.5">
+              <input
+                autoFocus
+                className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                placeholder={activeDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
+                value={constraints[openConstraint] ?? ''}
+                onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
+                onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
+              />
+            </div>
+          )}
+
+          {/* ── Why ── */}
+          <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-3">Why?</div>
+          <div className="flex gap-2.5 items-start mb-1">
+            <VoiceButton />
+            <textarea
+              className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.5]"
+              placeholder="Voice or type your reason…"
+              rows={3}
+              value={why}
+              onChange={(e) => setWhy(e.target.value)}
+            />
+          </div>
+
+          {/* ── Divider ── */}
+          <div className="border-t border-[#0e0e10] mt-4 mb-3" />
+
+          {/* ── Send to ── */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">Send to</div>
+            {friends.length > 0 && (
+              <button
+                onClick={toggleAll}
+                className={`text-[11px] font-semibold transition-colors ${allSelected ? 'text-accent' : 'text-text-faint hover:text-text-muted'}`}
+              >
+                {allSelected ? '− Deselect all' : '+ Send to everyone'}
+              </button>
+            )}
+          </div>
+
+          <div className="relative mb-2.5">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             <input
-              className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-text-faint font-sans"
+              className="w-full bg-bg-base border border-border rounded-input pl-7 pr-3 py-1.5 text-[12px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
               placeholder="Search friends…"
               value={friendSearch}
               onChange={(e) => setFriendSearch(e.target.value)}
             />
           </div>
 
-          {loadingFriends ? (
-            <div className="flex justify-center py-3">
-              <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
+          {/* Search results */}
+          {friendSearch.trim().length > 0 && (
+            <div className="flex flex-col gap-0.5 mb-2">
+              {filteredFriends.filter((f) => !f.selected).length === 0 ? (
+                <div className="text-[12px] text-text-faint px-2 py-1">No friends found.</div>
+              ) : (
+                filteredFriends.filter((f) => !f.selected).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => { toggleFriend(f.id); setFriendSearch('') }}
+                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-base transition-colors text-left w-full"
+                  >
+                    <div className="w-6 h-6 rounded-full bg-bg-base border border-border flex items-center justify-center text-[9px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                      {f.avatar_url ? <img src={f.avatar_url} alt={f.name} className="w-full h-full object-cover" /> : initials(f.name)}
+                    </div>
+                    <span className="text-[12px] font-medium text-text-secondary">{f.name}</span>
+                    {f.username && <span className="text-[11px] text-text-faint">@{f.username}</span>}
+                  </button>
+                ))
+              )}
             </div>
-          ) : (
-            <div className="flex flex-wrap gap-[7px]">
-              {filteredFriends.map((f) => (
+          )}
+
+          {/* Selected friends chips */}
+          {selectedFriends.length > 0 && (
+            <div className="flex flex-wrap gap-[5px] mb-1">
+              {selectedFriends.map((f) => (
                 <button
                   key={f.id}
                   onClick={() => toggleFriend(f.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-chip border text-[13px] font-medium transition-all ${
-                    f.active ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim hover:border-text-faint'
-                  }`}
+                  className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-chip border transition-all"
+                  style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
                 >
-                  <div className="w-5 h-5 rounded-full bg-bg-card border border-border overflow-hidden flex items-center justify-center text-[8px] font-bold text-text-secondary flex-shrink-0">
-                    {f.avatar_url
-                      ? <img src={f.avatar_url} alt={f.name} className="w-full h-full object-cover" />
-                      : initials(f.name)
-                    }
-                  </div>
                   {f.name.split(' ')[0]}
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               ))}
             </div>
           )}
 
-          {anyActive && (
-            <div className="mt-2.5 text-[12px] text-text-faint">
-              Giving to {activeNames.length === 1 ? activeNames[0] : `${activeNames.length} people`}
+          {loadingFriends && (
+            <div className="flex justify-center py-2">
+              <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
           )}
         </div>
 
         {/* Error */}
-        {sendError && (
-          <div className="px-4 mt-3 text-[13px] text-red-400 text-center">{sendError}</div>
-        )}
+        {sendError && <div className="mt-3 text-[13px] text-red-400 text-center">{sendError}</div>}
 
         {/* Send button */}
-        <div className="px-4 mt-4">
-          <button
-            onClick={handleSend}
-            disabled={!canSend}
-            className={`w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
-              canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
-            }`}
-          >
-            {sending ? 'Giving…' : 'Give reco'}
-          </button>
-        </div>
-
+        <button
+          onClick={handleSend}
+          disabled={!canSend}
+          className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
+            canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+          }`}
+        >
+          {sending ? 'Giving…' : 'Give reco'}
+        </button>
       </div>
 
       {/* Hidden file input */}
