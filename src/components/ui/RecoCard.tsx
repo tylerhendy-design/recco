@@ -170,7 +170,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
       <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 25%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
 
       {/* Content — in normal flow so it stretches the card height; z-index above all overlays */}
-      <div className="relative pt-4 px-4 pb-6 flex flex-col" style={{ zIndex: 10 }}>
+      <div className="relative pt-4 px-4 pb-0 flex flex-col" style={{ zIndex: 10 }}>
         {/* Top row: category pill + dots */}
         <div className="flex items-center justify-between">
           <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
@@ -224,7 +224,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
           </div>
         )}
 
-        {/* Detail pills — 8px below reco'd by, 24px from bottom (pb-6 handles it) */}
+        {/* Detail pills — 8px below reco'd by */}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => (
@@ -235,6 +235,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
             ))}
           </div>
         )}
+        {/* Explicit 24px bottom gap — ensures consistent spacing regardless of last element */}
+        <div style={{ height: 24 }} />
       </div>
     </div>
   ) : (
