@@ -262,11 +262,21 @@ function GivePageInner() {
     const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
 
     const meta: Record<string, unknown> = {}
+
+    // Image
     if (imageUrl) meta.artwork_url = imageUrl
+
+    // Link meta (auto-filled from Spotify / Maps)
     if (linkMeta?.artist) meta.artist = linkMeta.artist
-    if (constraints.location) meta.location = constraints.location
-    if (constraints.address) meta.address = constraints.address
-    if (constraints.streaming) meta.streaming_service = constraints.streaming
+    if (linkMeta?.artworkUrl && !meta.artwork_url) meta.artwork_url = linkMeta.artworkUrl
+    if (linkMeta?.city) meta.location = linkMeta.city + (linkMeta.country ? `, ${linkMeta.country}` : '')
+    if (linkMeta?.address) meta.address = linkMeta.address
+
+    // All constraint fields — map key names to meta field names
+    const KEY_MAP: Record<string, string> = { streaming: 'streaming_service' }
+    for (const [key, val] of Object.entries(constraints)) {
+      if (val) meta[KEY_MAP[key] ?? key] = val
+    }
 
     const links: string[] = []
     if (linkInput.trim()) links.push(linkInput.trim())
