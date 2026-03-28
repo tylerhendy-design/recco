@@ -126,9 +126,9 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
   const dormant = hasImage ? (
     <div
       className="relative rounded-card overflow-hidden cursor-pointer select-none"
-      style={{ height: '300px' }}
       onClick={open}
     >
+      {/* Background image — fills the card height */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={reco.meta.artwork_url!} alt={reco.title} className="absolute inset-0 w-full h-full object-cover" />
 
@@ -146,34 +146,52 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
         }}
       />
 
-      {/* Second darkening pass on blur area */}
+      {/* Darkening pass */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
 
-      {/* Top row */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-        <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
-          {getCategoryLabel(reco.category)}
-        </span>
-        <div className="flex gap-[5px] items-center">
-          {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+      {/* Content — drives card height */}
+      <div className="relative z-10 p-4 flex flex-col">
+        {/* Top row: category pill + dots */}
+        <div className="flex items-center justify-between">
+          <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
+            {getCategoryLabel(reco.category)}
+          </span>
+          <div className="flex gap-[5px] items-center">
+            {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+          </div>
         </div>
-      </div>
 
-      {/* Bottom content */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 z-10">
-        <div className="text-[40px] font-black text-white leading-none tracking-[-1px] mb-1">{reco.title}</div>
+        {/* 64px spacer between pill and title */}
+        <div style={{ height: 64 }} />
+
+        {/* Title */}
+        <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+          {reco.title}
+        </div>
+
+        {/* Reco'd by — 8px below title */}
         {(recommenderNames || when) && (
-          <div className="text-[14px] text-white/75 mb-3">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
+          <div className="text-[14px] text-white/75 mt-2">
+            Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
+          </div>
         )}
+
+        {/* Detail pills — 8px below reco'd by, same bottom padding as top (16px) */}
         {details.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-2 pb-0">
             {details.map((d, i) => (
-              <span key={i} className={cn('text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
+              <span
+                key={i}
+                className="text-[12px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+              >
                 {d}
               </span>
             ))}
           </div>
         )}
+
+        {/* Bottom padding — matches top (16px = p-4) */}
+        <div style={{ height: 16 }} />
       </div>
     </div>
   ) : (
@@ -215,26 +233,41 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               animating ? 'translate-y-0' : 'translate-y-full'
             )}
             style={{ maxHeight: '92dvh' }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={close}
           >
-            {/* Full-width image */}
-            {hasImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover" />
-            )}
+            {/* Image with back button overlaid */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              {hasImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
+              )}
+              {/* Back button — top-left over image */}
+              <button
+                onClick={(e) => { e.stopPropagation(); close() }}
+                className="absolute top-4 left-4 flex items-center gap-1.5 text-[13px] font-semibold text-white bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-chip"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 5l-7 7 7 7" />
+                </svg>
+                Back
+              </button>
+            </div>
 
-            <div className="px-4 pt-4 pb-8">
-              {/* Back button + category */}
-              <div className="flex items-center justify-between mb-3">
+            <div className="px-4 pt-4 pb-8" onClick={(e) => e.stopPropagation()}>
+              {/* Back button when no image */}
+              {!hasImage && (
                 <button
-                  onClick={close}
-                  className="flex items-center gap-1.5 text-[13px] font-medium text-text-secondary hover:text-white transition-colors"
+                  onClick={(e) => { e.stopPropagation(); close() }}
+                  className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary mb-3"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
                   </svg>
                   Back
                 </button>
+              )}
+              {/* Category dot */}
+              <div className="flex justify-end mb-3">
                 <CategoryDot category={reco.category} />
               </div>
 
