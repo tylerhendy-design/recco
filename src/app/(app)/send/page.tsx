@@ -126,8 +126,10 @@ function GivePageInner() {
   const [linkLoading, setLinkLoading] = useState(false)
 
   // Image
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)         // displayed URL (local blob or uploaded)
+  const [imageUploaded, setImageUploaded] = useState(false)              // true = stored in Supabase
   const [imageUploading, setImageUploading] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [sending, setSending] = useState(false)
@@ -154,6 +156,8 @@ function GivePageInner() {
     setLinkInput('')
     setLinkMeta(null)
     setImageUrl(null)
+    setImageUploaded(false)
+    setImageError(null)
     setTitle('')
   }, [category])
 
@@ -203,17 +207,43 @@ function GivePageInner() {
 
   // Image upload
   async function handleImageFile(file: File) {
+    // Show local preview immediately so user gets instant feedback
+    const localUrl = URL.createObjectURL(file)
+    setImageUrl(localUrl)
+    setImageUploaded(false)
+    setImageError(null)
+
     if (!userId) return
     setImageUploading(true)
+
     try {
       const supabase = createClient()
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${userId}/${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage.from('reco-images').upload(path, file, { contentType: file.type })
-      if (!error) {
-        const { data: { publicUrl } } = supabase.storage.from('reco-images').getPublicUrl(path)
-        setImageUrl(publicUrl)
+      const BUCKET = 'reco-images'
+
+      async function tryUpload() {
+        return supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
       }
+
+      let { error } = await tryUpload()
+
+      // Bucket might not exist yet — try creating it then retry
+      if (error && (error.message?.includes('not found') || error.message?.includes('does not exist') || error.statusCode === '404' || (error as any).statusCode === 404)) {
+        await supabase.storage.createBucket(BUCKET, { public: true })
+        const retry = await tryUpload()
+        error = retry.error
+      }
+
+      if (error) {
+        setImageError(`Upload failed: ${error.message}. Add a "reco-images" public bucket in Supabase Storage.`)
+      } else {
+        const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
+        setImageUrl(publicUrl)
+        setImageUploaded(true)
+      }
+    } catch (e: any) {
+      setImageError(`Upload failed: ${e?.message ?? 'unknown error'}`)
     } finally {
       setImageUploading(false)
     }
@@ -230,7 +260,7 @@ function GivePageInner() {
   const hasGoogleMapsLink = linkInput.trim() && isMapsUrl(linkInput)
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
     && (!isRestaurant || !!hasGoogleMapsLink)
-    && (!isRestaurant || !!imageUrl)
+    && (!isRestaurant || imageUploaded)
 
   async function handleSend() {
     if (!canSend || !userId || !category) return
@@ -440,6 +470,39 @@ function GivePageInner() {
             </div>
           )}
 
+          {/* ── Restaurant photo banner ── */}
+          {isRestaurant && imageUrl && (
+            <div className="w-full h-[180px] rounded-xl overflow-hidden mb-3 relative">
+              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+              {imageUploading && (
+                <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
+                  <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span className="text-[11px] text-white font-medium">Uploading…</span>
+                </div>
+              )}
+              {imageUploaded && !imageUploading && (
+                <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span className="text-[11px] text-white font-medium">Photo saved</span>
+                </div>
+              )}
+              <button
+                onClick={() => { setImageUrl(null); setImageUploaded(false); setImageError(null) }}
+                className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          )}
+
+          {/* ── Upload error ── */}
+          {imageError && (
+            <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-input text-[11px] text-red-400 leading-[1.5]">
+              {imageError}
+            </div>
+          )}
+
           {/* ── Name input ── */}
           <input
             className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-1"
@@ -479,20 +542,23 @@ function GivePageInner() {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all overflow-hidden"
-              style={imageUrl
+              style={imageUploaded
                 ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
-                : isRestaurant
-                  ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
-                  : { color: '#666', border: '1px dashed #2e2e33' }
+                : imageUrl && imageUploading
+                  ? { color: '#888', border: '1px solid #333', background: 'transparent' }
+                  : imageError
+                    ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
+                    : isRestaurant
+                      ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
+                      : { color: '#666', border: '1px dashed #2e2e33' }
               }
             >
               {imageUploading ? (
-                <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" />
-              ) : imageUrl ? (
-                <>
-                  <img src={imageUrl} alt="" className="w-4 h-4 rounded object-cover flex-shrink-0" />
-                  Photo added
-                </>
+                <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
+              ) : imageUploaded ? (
+                <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg> Photo saved</>
+              ) : imageError ? (
+                <>{CAM} Retry photo</>
               ) : (
                 <>{CAM} {isRestaurant ? 'Add photo (required)' : '+ Photo'}</>
               )}
