@@ -55,7 +55,9 @@ function getDetailPills(reco: Reco): string[] {
     m.era,
     m.address,
   ]
-  return candidates.filter(Boolean).slice(0, 3) as string[]
+  return candidates
+    .filter((v): v is string => typeof v === 'string' && v.length > 0 && !v.startsWith('http'))
+    .slice(0, 3)
 }
 
 // Full Tailwind class strings per category — must be static for JIT to include them
@@ -200,16 +202,16 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
 
       {expanded && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — only close when tapping the backdrop itself, not children */}
           <div
             className={cn('fixed inset-0 z-40 bg-black transition-opacity duration-300', animating ? 'opacity-60' : 'opacity-0')}
-            onClick={close}
+            onClick={(e) => { if (e.target === e.currentTarget) close() }}
           />
 
-          {/* Sheet */}
+          {/* Sheet — constrained to phone width on desktop */}
           <div
             className={cn(
-              'fixed bottom-0 left-0 right-0 z-50 bg-bg-card rounded-t-[24px] overflow-y-auto transition-transform duration-300 ease-out',
+              'fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] bg-bg-card rounded-t-[24px] overflow-y-auto transition-transform duration-300 ease-out',
               animating ? 'translate-y-0' : 'translate-y-full'
             )}
             style={{ maxHeight: '92dvh' }}
