@@ -133,23 +133,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={reco.meta.artwork_url!} alt={reco.title} className="absolute inset-0 w-full h-full object-cover" style={{ zIndex: 0 }} />
 
-      {/* Gradient */}
-      <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.92) 100%)' }} />
-
-      {/* Backdrop blur — explicit z-index so compositing doesn't override content */}
-      <div
-        className="absolute inset-0"
-        style={{
-          zIndex: 2,
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          maskImage: 'linear-gradient(to bottom, transparent 40%, black 75%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 40%, black 75%)',
-        }}
-      />
-
-      {/* Darkening pass */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
+      {/* Gradient overlay — stronger at bottom for text legibility */}
+      <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 25%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
 
       {/* Content — in normal flow so it stretches the card height; z-index above all overlays */}
       <div className="relative p-4 flex flex-col" style={{ zIndex: 10 }}>
