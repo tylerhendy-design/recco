@@ -141,7 +141,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
     <div
       className="relative rounded-card overflow-hidden cursor-pointer select-none"
       style={{ minHeight: 260 }}
-      onClick={open}
+      onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
       {/* Background image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -195,7 +195,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
 
         {/* Title */}
         {primaryLink ? (
-          <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+          <a href={primaryLink} target="_blank" rel="noopener noreferrer" className="text-[40px] font-black text-white leading-none tracking-[-1px] block">
             {reco.title}
           </a>
         ) : (
@@ -228,12 +228,12 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
     </div>
   ) : (
     // No-image compact dormant
-    <div className="bg-bg-card border border-border rounded-card px-4 py-4 cursor-pointer" onClick={open}>
+    <div className="bg-bg-card border border-border rounded-card px-4 py-4 cursor-pointer" onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="mb-1.5"><CategoryDot category={reco.category} /></div>
           {primaryLink ? (
-            <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1 block">{reco.title}</a>
+            <a href={primaryLink} target="_blank" rel="noopener noreferrer" className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1 block">{reco.title}</a>
           ) : (
             <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
           )}
