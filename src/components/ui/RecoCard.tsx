@@ -42,6 +42,11 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 365)}y ago`
 }
 
+function getPrimaryLink(reco: Reco): string | undefined {
+  const m = reco.meta ?? {}
+  return m.spotify_url || m.goodreads_url || m.website || m.links?.[0] || undefined
+}
+
 function getDetailPills(reco: Reco): string[] {
   const m = reco.meta ?? {}
   const candidates: (string | undefined | null)[] = [
@@ -128,6 +133,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
   const when = reco.created_at ? timeAgo(reco.created_at) : ''
   const details = getDetailPills(reco)
   const pills = pillClasses(reco.category)
+  const primaryLink = getPrimaryLink(reco)
 
   // ─── Dormant card ────────────────────────────────────────────────────────────
 
@@ -188,9 +194,15 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         <div style={{ height: 64 }} />
 
         {/* Title */}
-        <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
-          {reco.title}
-        </div>
+        {primaryLink ? (
+          <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+            {reco.title}
+          </a>
+        ) : (
+          <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+            {reco.title}
+          </div>
+        )}
 
         {/* Reco'd by — 8px below title */}
         {(recommenderNames || when) && (
@@ -220,7 +232,11 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="mb-1.5"><CategoryDot category={reco.category} /></div>
-          <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
+          {primaryLink ? (
+            <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1 block">{reco.title}</a>
+          ) : (
+            <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
+          )}
           {(recommenderNames || when) && (
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
@@ -330,9 +346,15 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
               </div>
 
               {/* Title */}
-              <div className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1">
-                {reco.title}
-              </div>
+              {primaryLink ? (
+                <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1 block">
+                  {reco.title}
+                </a>
+              ) : (
+                <div className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1">
+                  {reco.title}
+                </div>
+              )}
 
               {/* Spotify pill */}
               {(reco.category === 'podcast' || reco.category === 'music') && reco.meta?.artwork_url && (
