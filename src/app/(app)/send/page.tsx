@@ -229,6 +229,7 @@ function GivePageInner() {
   const hasGoogleMapsLink = linkInput.trim() && isMapsUrl(linkInput)
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
     && (!isRestaurant || !!hasGoogleMapsLink)
+    && (!isRestaurant || !!imageUrl)
 
   async function handleSend() {
     if (!canSend || !userId || !category) return
@@ -269,7 +270,7 @@ function GivePageInner() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
-        <NavHeader title="give a reco" closeHref="/home" />
+        <NavHeader title="Give" closeHref="/home" />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
           <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -295,9 +296,9 @@ function GivePageInner() {
   }
   const singular = category ? (SINGULAR[category] ?? getCategoryLabel(category).toLowerCase()) : ''
 
-  const pageTitle = category ? `Reco ${singular}` : 'Reco'
-
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
+  const catColor = category ? CATEGORIES.find((c) => c.id === category)?.color ?? '#D4E23A' : '#D4E23A'
+  const catBgColor = category ? CATEGORIES.find((c) => c.id === category)?.bgColor ?? '#1e1e00' : '#1e1e00'
 
   // ─── Link input label ──────────────────────────────────────────────────────
   const linkPlaceholder = isRestaurant
@@ -313,17 +314,18 @@ function GivePageInner() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="give a reco" closeHref="/home" />
+      <NavHeader title="Give" closeHref="/home" />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
           {/* ── Title ── */}
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
-            {pageTitle}
+            Give
           </div>
 
-          {/* ── Category chips ── */}
+          {/* ── Category label + chips ── */}
+          <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Category</div>
           <div className="flex gap-1.5 flex-wrap mb-4">
             {displayedCats.map((cat) => {
               const active = category === cat.id
@@ -394,16 +396,14 @@ function GivePageInner() {
 
               {/* Link input */}
               {(!linkMeta || !imageUrl) && (
-                <div className={`flex items-center gap-2 rounded-input px-3 py-2.5 border ${
-                  isRestaurant
-                    ? 'bg-[#0e1a0a] border-[#2a6020]/40'
-                    : 'bg-[#0a1a0e] border-[#1DB954]/30'
-                }`}>
-                  {isRestaurant ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DB954"><circle cx="12" cy="12" r="12"/><path d="M6 9.6C9.3 7.5 14.9 7.8 18 10l-.9 1.5C15 9.7 10.2 9.4 7.2 11.3L6 9.6zm-.5 3.3C9.8 10.3 16.6 10.7 20 13.5l-.9 1.4C16 12.3 9.9 12 6.7 14.3l-1.2-1.4zm1 3.2c3-2 8.1-1.7 11 .5l-.9 1.3c-2.5-1.9-7-2.1-9.6-.4l-.5-1.4z" fill="#0a1f0e"/></svg>
-                  )}
+                <div
+                  className="flex items-center gap-2 rounded-input px-3 py-2.5 border"
+                  style={{ background: `${catColor}10`, borderColor: `${catColor}40` }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
                   <input
                     className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#444] font-sans"
                     placeholder={linkPlaceholder}
@@ -478,7 +478,9 @@ function GivePageInner() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all overflow-hidden"
               style={imageUrl
                 ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
-                : { color: '#666', border: '1px dashed #2e2e33' }
+                : isRestaurant
+                  ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
+                  : { color: '#666', border: '1px dashed #2e2e33' }
               }
             >
               {imageUploading ? (
@@ -489,7 +491,7 @@ function GivePageInner() {
                   Photo added
                 </>
               ) : (
-                <>{CAM} + Photo</>
+                <>{CAM} {isRestaurant ? 'Add photo (required)' : '+ Photo'}</>
               )}
             </button>
           </div>
@@ -525,8 +527,8 @@ function GivePageInner() {
           <div className="border-t border-[#0e0e10] mt-4 mb-3" />
 
           {/* ── Send to ── */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">Send to</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[17px] font-semibold text-white tracking-[-0.3px]">Send to</div>
             {friends.length > 0 && (
               <button
                 onClick={toggleAll}
@@ -538,11 +540,12 @@ function GivePageInner() {
           </div>
 
           <div className="relative mb-2.5">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             <input
-              className="w-full bg-bg-base border border-border rounded-input pl-7 pr-3 py-1.5 text-[12px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
+              className="w-full bg-bg-base border border-border rounded-input pl-8 pr-3 text-[13px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
+              style={{ minHeight: '40px' }}
               placeholder="Search friends…"
               value={friendSearch}
               onChange={(e) => setFriendSearch(e.target.value)}
