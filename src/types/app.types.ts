@@ -61,8 +61,14 @@ export interface RecoMeta {
   // Book
   author?: string
   goodreads_url?: string
+  length?: string
   // Film
   director?: string
+  // Podcast
+  topic?: string
+  // Custom / default
+  vibes?: string
+  budget?: string
   // Generic links
   links?: string[]
 }

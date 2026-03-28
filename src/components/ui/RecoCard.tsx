@@ -54,6 +54,10 @@ function getDetailPills(reco: Reco): string[] {
     m.mood,
     m.era,
     m.address,
+    m.topic,
+    m.length,
+    m.vibes,
+    m.budget,
   ]
   return candidates
     .filter((v): v is string => typeof v === 'string' && v.length > 0 && !v.startsWith('http'))
