@@ -84,12 +84,15 @@ interface RecoCardProps {
   rank?: number
   onMarkDone?: (reco: Reco) => void
   onShowMap?: (reco: Reco) => void
+  onBeenThere?: (reco: Reco) => void
+  onNoGo?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
   const hasImage = !!reco.meta?.artwork_url
   const ptrDown = useRef<{ x: number; y: number } | null>(null)
 
@@ -148,8 +151,36 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
           <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
             {getCategoryLabel(reco.category)}
           </span>
-          <div className="flex gap-[5px] items-center">
-            {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+          <div className="relative">
+            <button
+              className="flex gap-[5px] items-center p-1"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+            >
+              {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+            </button>
+            {menuOpen && (
+              <div
+                className="absolute right-0 top-8 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
+                  onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
+                >
+                  <div className="font-semibold text-white">Been there, done that</div>
+                  <div className="text-[11px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
+                </button>
+                <button
+                  className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
+                  onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
+                >
+                  <div className="font-semibold text-bad">No go</div>
+                  <div className="text-[11px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -194,8 +225,36 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
         </div>
-        <div className="flex gap-[4px] items-center pt-1 flex-shrink-0">
-          {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-text-faint" />)}
+        <div className="relative flex-shrink-0">
+          <button
+            className="flex gap-[4px] items-center pt-1 p-1"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+          >
+            {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-text-faint" />)}
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-0 top-7 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
+                onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
+              >
+                <div className="font-semibold text-white">Been there, done that</div>
+                <div className="text-[11px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
+              </button>
+              <button
+                className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
+                onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
+              >
+                <div className="font-semibold text-bad">No go</div>
+                <div className="text-[11px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

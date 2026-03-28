@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { FeedbackSheet } from '@/components/overlays/FeedbackSheet'
+import { BeenThereSheet } from '@/components/overlays/BeenThereSheet'
+import { NoGoSheet } from '@/components/overlays/NoGoSheet'
 import { SuccessOverlay } from '@/components/overlays/SuccessOverlay'
 import { SinBinModal } from '@/components/overlays/SinBinModal'
 import { MapSheet } from '@/components/overlays/MapSheet'
@@ -12,7 +14,7 @@ import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { SentimentBadge } from '@/components/ui/SentimentBadge'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
-import { fetchHomeFeed, fetchDoneRecos, submitFeedback } from '@/lib/data/recos'
+import { fetchHomeFeed, fetchDoneRecos, submitFeedback, markBeenThere, markNoGo, requestNewReco } from '@/lib/data/recos'
 import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import type { Reco, RecoRecommender } from '@/types/app.types'
@@ -84,6 +86,8 @@ export default function HomePage() {
   const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
   const [mapReco, setMapReco] = useState<Reco | null>(null)
   const [manualAddOpen, setManualAddOpen] = useState(false)
+  const [beenThereReco, setBeenThereReco] = useState<Reco | null>(null)
+  const [noGoReco, setNoGoReco] = useState<Reco | null>(null)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -244,6 +248,29 @@ export default function HomePage() {
     if (doneRecos.length > 0) loadDone(userId)
   }
 
+  async function handleBeenThereRate() {
+    if (!beenThereReco || !userId) return
+    await markBeenThere(beenThereReco.id, userId)
+    setBeenThereReco(null)
+    setFeedbackReco(beenThereReco)
+  }
+
+  async function handleBeenThereRequestNew() {
+    if (!beenThereReco || !userId) return
+    await markBeenThere(beenThereReco.id, userId)
+    await requestNewReco(userId, beenThereReco.sender_id, beenThereReco.title, beenThereReco.category)
+    setBeenThereReco(null)
+    setDoneIds((prev) => new Set(prev).add(beenThereReco.id))
+  }
+
+  async function handleNoGoSubmit(reason: string) {
+    if (!noGoReco || !userId) return
+    const reco = noGoReco
+    setNoGoReco(null)
+    setDoneIds((prev) => new Set(prev).add(reco.id))
+    await markNoGo(reco.id, userId, reco.sender_id, reason, reco.title)
+  }
+
   const catLabel = CATEGORY_FILTERS.find((f) => f.value === catFilter)?.label ?? 'all'
   const timeLabel = TIME_FILTERS.find((f) => f.value === timeFilter)?.label ?? 'all time'
   const senderOption = senderOptions.find((f) => f.value === senderFilter)
@@ -398,6 +425,8 @@ export default function HomePage() {
               rank={i + 1}
               onMarkDone={setFeedbackReco}
               onShowMap={setMapReco}
+              onBeenThere={setBeenThereReco}
+              onNoGo={setNoGoReco}
             />
           ))}
 
@@ -514,6 +543,23 @@ export default function HomePage() {
       />
 
       <ManualAddSheet open={manualAddOpen} onClose={() => setManualAddOpen(false)} />
+
+      <BeenThereSheet
+        open={!!beenThereReco}
+        onClose={() => setBeenThereReco(null)}
+        onRate={handleBeenThereRate}
+        onRequestNew={handleBeenThereRequestNew}
+        recoTitle={beenThereReco?.title ?? ''}
+        senderFirstName={beenThereReco?.sender.display_name.split(' ')[0] ?? ''}
+      />
+
+      <NoGoSheet
+        open={!!noGoReco}
+        onClose={() => setNoGoReco(null)}
+        onSubmit={handleNoGoSubmit}
+        recoTitle={noGoReco?.title ?? ''}
+        senderName={noGoReco?.sender.display_name.split(' ')[0] ?? ''}
+      />
     </div>
   )
 }

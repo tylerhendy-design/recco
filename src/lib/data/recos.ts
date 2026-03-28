@@ -80,7 +80,7 @@ export async function fetchHomeFeed(userId: string): Promise<Reco[]> {
       )
     `)
     .eq('recipient_id', userId)
-    .in('status', ['unseen', 'seen'])
+    .in('status', ['unseen', 'seen', 'been_there'])
     .order('created_at', { ascending: false })
 
   if (error || !data) return []
@@ -216,6 +216,46 @@ export async function submitFeedback({
     }
   }
 
+  return { error: null }
+}
+
+// ── Mark a reco as "been there, done that" ───────────────────────────────────
+export async function markBeenThere(recoId: string, recipientId: string): Promise<{ error: string | null }> {
+  const supabase = createClient()
+  const { error } = await (supabase.from('reco_recipients') as any)
+    .update({ status: 'been_there' })
+    .eq('reco_id', recoId)
+    .eq('recipient_id', recipientId)
+  return { error: error?.message ?? null }
+}
+
+// ── Mark a reco as "no go" and notify the sender ─────────────────────────────
+export async function markNoGo(recoId: string, recipientId: string, senderId: string, reason: string, recoTitle: string): Promise<{ error: string | null }> {
+  const supabase = createClient()
+  const { error } = await (supabase.from('reco_recipients') as any)
+    .update({ status: 'no_go', feedback_text: reason, rated_at: new Date().toISOString() })
+    .eq('reco_id', recoId)
+    .eq('recipient_id', recipientId)
+  if (error) return { error: error.message }
+  await (supabase.from('notifications') as any).insert({
+    user_id: senderId,
+    type: 'feedback_received',
+    actor_id: recipientId,
+    reco_id: recoId,
+    payload: { subtype: 'no_go', feedback_text: reason, reco_title: recoTitle },
+  })
+  return { error: null }
+}
+
+// ── Request a new reco from the sender ───────────────────────────────────────
+export async function requestNewReco(recipientId: string, senderId: string, recoTitle: string, category: string): Promise<{ error: string | null }> {
+  const supabase = createClient()
+  await (supabase.from('notifications') as any).insert({
+    user_id: senderId,
+    type: 'request_received',
+    actor_id: recipientId,
+    payload: { subtype: 'new_reco_request', original_title: recoTitle, category },
+  })
   return { error: null }
 }
 

@@ -85,7 +85,7 @@ export interface Reco {
   meta: RecoMeta
   created_at: string
   // Recipient-specific fields (when fetched as a recipient)
-  status?: 'unseen' | 'done'
+  status?: 'unseen' | 'done' | 'been_there' | 'no_go'
   score?: number
   feedback_text?: string
   rated_at?: string
