@@ -61,32 +61,35 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
     setWhyIndex((i) => (i + 1) % whyMessages.length)
   }
 
-  return (
-    <div className="bg-bg-card border border-border rounded-card px-4 py-4 pb-[18px]">
-      {/* Top row */}
-      <div className="mb-2">
-        <CategoryDot category={reco.category} />
-      </div>
+  const hasImage = !!reco.meta.artwork_url
 
-      {/* Podcast / Music artwork + title */}
-      {(reco.category === 'podcast' || reco.category === 'music') && reco.meta.artwork_url ? (
-        <div className="flex gap-2.5 items-start mb-1">
-          <div className="w-12 h-12 rounded-lg bg-bg-card border border-border flex-shrink-0 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={reco.meta.artwork_url} alt={reco.title} className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1">
-            <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1">
-              {reco.title}
-            </div>
-            <SpotifyPill />
-          </div>
+  return (
+    <div className="bg-bg-card border border-border rounded-card overflow-hidden">
+      {/* Full-width image banner */}
+      {hasImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={reco.meta.artwork_url!}
+          alt={reco.title}
+          className="w-full h-[190px] object-cover"
+        />
+      )}
+
+      <div className="px-4 pt-4 pb-[18px]">
+        {/* Top row */}
+        <div className="mb-2">
+          <CategoryDot category={reco.category} />
         </div>
-      ) : (
+
+        {/* Title */}
         <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1">
           {reco.title}
         </div>
-      )}
+
+        {/* Spotify pill for music/podcast */}
+        {(reco.category === 'podcast' || reco.category === 'music') && reco.meta.artwork_url && (
+          <div className="mb-1"><SpotifyPill /></div>
+        )}
 
       {/* Meta pills */}
       <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
@@ -196,6 +199,7 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
           Done? Give them your review
         </button>
       )}
+      </div>
     </div>
   )
 }
