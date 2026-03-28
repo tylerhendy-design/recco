@@ -145,11 +145,11 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
           {/* Top row */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
             <span
-              className="text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border-2"
+              className="text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border"
               style={{
                 color: catColor,
-                borderColor: catColor,
-                background: 'rgba(0,0,0,0.45)',
+                borderColor: `${catColor}80`,
+                background: `${catColor}22`,
               }}
             >
               {getCategoryLabel(reco.category)}
@@ -181,11 +181,11 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 {details.map((d, i) => (
                   <span
                     key={i}
-                    className="text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border-2"
+                    className="text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border"
                     style={{
                       color: catColor,
-                      borderColor: catColor,
-                      background: 'rgba(0,0,0,0.4)',
+                      borderColor: `${catColor}80`,
+                      background: `${catColor}22`,
                     }}
                   >
                     {d}
