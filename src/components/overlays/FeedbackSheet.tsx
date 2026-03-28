@@ -20,7 +20,7 @@ export function FeedbackSheet({
   recoTitle,
   recoCategory,
 }: FeedbackSheetProps) {
-  const [score, setScore] = useState(50)
+  const [score, setScore] = useState(5)
   const [text, setText] = useState('')
   const [hasVoice, setHasVoice] = useState(false)
   const [showError, setShowError] = useState(false)
@@ -35,13 +35,13 @@ export function FeedbackSheet({
     }
     onSubmit(score, text)
     setText('')
-    setScore(50)
+    setScore(5)
     setShowError(false)
   }
 
   function handleClose() {
     setText('')
-    setScore(50)
+    setScore(5)
     setHasVoice(false)
     setShowError(false)
     onClose()
