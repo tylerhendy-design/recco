@@ -4,7 +4,22 @@ import { useState } from 'react'
 import { CategoryDot } from './CategoryDot'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
-import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
+import { getCategoryLabel } from '@/constants/categories'
+
+// Full Tailwind class strings per category — must be static for JIT to include them
+const CAT_PILL: Record<string, { bg: string; border: string; text: string }> = {
+  restaurant: { bg: 'bg-red-900/70',    border: 'border-red-500/50',    text: 'text-red-400'    },
+  tv:         { bg: 'bg-sky-900/70',    border: 'border-sky-500/50',    text: 'text-sky-400'    },
+  podcast:    { bg: 'bg-teal-900/70',   border: 'border-teal-500/50',   text: 'text-teal-400'   },
+  music:      { bg: 'bg-purple-900/70', border: 'border-purple-500/50', text: 'text-purple-400' },
+  book:       { bg: 'bg-orange-900/70', border: 'border-orange-500/50', text: 'text-orange-400' },
+  film:       { bg: 'bg-pink-900/70',   border: 'border-pink-500/50',   text: 'text-pink-400'   },
+  custom:     { bg: 'bg-lime-900/70',   border: 'border-lime-500/50',   text: 'text-lime-400'   },
+}
+
+function pillClasses(category: string) {
+  return CAT_PILL[category] ?? { bg: 'bg-neutral-900/70', border: 'border-neutral-500/50', text: 'text-neutral-400' }
+}
 
 function getLinkLabel(url: string): string {
   try {
@@ -68,7 +83,7 @@ interface RecoCardProps {
 export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
-  const catColor = getCategoryColor(reco.category)
+
   const hasImage = !!reco.meta?.artwork_url
 
   // Build why messages array from recommenders
@@ -145,12 +160,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
           {/* Top row */}
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
             <span
-              className="text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border"
-              style={{
-                color: catColor,
-                borderColor: `${catColor}80`,
-                background: `${catColor}22`,
-              }}
+              className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pillClasses(reco.category).bg, pillClasses(reco.category).border, pillClasses(reco.category).text)}
             >
               {getCategoryLabel(reco.category)}
             </span>
@@ -181,12 +191,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 {details.map((d, i) => (
                   <span
                     key={i}
-                    className="text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border"
-                    style={{
-                      color: catColor,
-                      borderColor: `${catColor}80`,
-                      background: `${catColor}22`,
-                    }}
+                    className={cn('text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border', pillClasses(reco.category).bg, pillClasses(reco.category).border, pillClasses(reco.category).text)}
                   >
                     {d}
                   </span>
