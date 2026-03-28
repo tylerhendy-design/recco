@@ -126,19 +126,21 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
   const dormant = hasImage ? (
     <div
       className="relative rounded-card overflow-hidden cursor-pointer select-none"
+      style={{ minHeight: 260 }}
       onClick={open}
     >
-      {/* Background image — fills the card height */}
+      {/* Background image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={reco.meta.artwork_url!} alt={reco.title} className="absolute inset-0 w-full h-full object-cover" />
+      <img src={reco.meta.artwork_url!} alt={reco.title} className="absolute inset-0 w-full h-full object-cover" style={{ zIndex: 0 }} />
 
       {/* Gradient */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.92) 100%)' }} />
+      <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.92) 100%)' }} />
 
-      {/* Backdrop blur fading in from middle */}
+      {/* Backdrop blur — explicit z-index so compositing doesn't override content */}
       <div
         className="absolute inset-0"
         style={{
+          zIndex: 2,
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
           maskImage: 'linear-gradient(to bottom, transparent 40%, black 75%)',
@@ -147,10 +149,10 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
       />
 
       {/* Darkening pass */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 3, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.45) 100%)' }} />
 
-      {/* Content — drives card height */}
-      <div className="relative z-10 p-4 flex flex-col">
+      {/* Content — in normal flow so it stretches the card height; z-index above all overlays */}
+      <div className="relative p-4 flex flex-col" style={{ zIndex: 10 }}>
         {/* Top row: category pill + dots */}
         <div className="flex items-center justify-between">
           <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
