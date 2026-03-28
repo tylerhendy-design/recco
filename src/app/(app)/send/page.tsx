@@ -222,6 +222,7 @@ function GivePageInner() {
   const selectedFriends = friends.filter((f) => f.selected)
   const isRestaurant = category === 'restaurant'
   const isMediaCat = category === 'music' || category === 'podcast'
+  const isBook = category === 'book'
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
     : CONSTRAINTS.default
@@ -305,7 +306,9 @@ function GivePageInner() {
     ? 'Paste Google Maps link to auto-fill…'
     : category === 'podcast'
       ? 'Paste Spotify or Apple Podcasts link…'
-      : 'Paste Spotify or Apple Music link…'
+      : isBook
+        ? 'Paste Amazon, Goodreads or Bookshop link…'
+        : 'Paste Spotify or Apple Music link…'
 
   const linkService = linkMeta
     ? linkMeta.type === 'place' ? 'Google Maps' : linkMeta.artworkUrl ? 'Streaming' : null
@@ -373,7 +376,7 @@ function GivePageInner() {
           <div className="border-t border-[#0e0e10] mb-4" />
 
           {/* ── Link auto-fill (restaurant / music / podcast) ── */}
-          {(isRestaurant || isMediaCat) && (
+          {(isRestaurant || isMediaCat || isBook) && (
             <div className="mb-4">
               {/* Artwork preview for streaming */}
               {isMediaCat && imageUrl && (
@@ -395,7 +398,7 @@ function GivePageInner() {
               )}
 
               {/* Link input */}
-              {(!linkMeta || !imageUrl) && (
+              {(!linkMeta || !imageUrl || isBook) && (
                 <div
                   className="flex items-center gap-2 rounded-input px-3 py-2.5 border"
                   style={{ background: `${catColor}10`, borderColor: `${catColor}40` }}
