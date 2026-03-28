@@ -47,26 +47,45 @@ function getPrimaryLink(reco: Reco): string | undefined {
   return m.spotify_url || m.goodreads_url || m.website || m.links?.[0] || undefined
 }
 
-function getDetailPills(reco: Reco): string[] {
+type DetailPill = { key: string; value: string }
+
+const DETAIL_ICON: Record<string, React.ReactNode> = {
+  location:          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  address:           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  price:             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v1.5m0 9V18m-2.5-8.5c0-1 .9-1.5 2.5-1.5s2.5.8 2.5 2c0 2.5-5 2-5 4.5 0 1.2 1.1 1.5 2.5 1.5s2.5-.4 2.5-1.5"/></svg>,
+  budget:            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v1.5m0 9V18m-2.5-8.5c0-1 .9-1.5 2.5-1.5s2.5.8 2.5 2c0 2.5-5 2-5 4.5 0 1.2 1.1 1.5 2.5 1.5s2.5-.4 2.5-1.5"/></svg>,
+  occasion:          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+  mood:              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+  vibes:             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+  streaming_service: <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>,
+  artist:            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  topic:             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+  genre:             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M17 7h5M2 17h5M17 17h5"/></svg>,
+  era:               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
+  length:            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>,
+}
+
+function getDetailPills(reco: Reco): DetailPill[] {
   const m = reco.meta ?? {}
-  const candidates: (string | undefined | null)[] = [
-    m.location,
-    m.artist,
-    m.streaming_service,
-    m.occasion,
-    m.price,
-    m.genre,
-    m.mood,
-    m.era,
-    m.address,
-    m.topic,
-    m.length,
-    m.vibes,
-    m.budget,
+  const candidates: [string, string | undefined | null][] = [
+    ['location', m.location],
+    ['artist', m.artist],
+    ['streaming_service', m.streaming_service],
+    ['occasion', m.occasion],
+    ['price', m.price],
+    ['genre', m.genre],
+    ['mood', m.mood],
+    ['era', m.era],
+    ['address', m.address],
+    ['topic', m.topic],
+    ['length', m.length],
+    ['vibes', m.vibes],
+    ['budget', m.budget],
   ]
   return candidates
-    .filter((v): v is string => typeof v === 'string' && v.length > 0 && !v.startsWith('http'))
+    .filter((c): c is [string, string] => typeof c[1] === 'string' && c[1].length > 0 && !c[1].startsWith('http'))
     .slice(0, 3)
+    .map(([key, value]) => ({ key, value }))
 }
 
 // Full Tailwind class strings per category — must be static for JIT to include them
@@ -209,11 +228,9 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => (
-              <span
-                key={i}
-                className="text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-              >
-                {d}
+              <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
+                {DETAIL_ICON[d.key]}
+                {d.value}
               </span>
             ))}
           </div>
@@ -371,17 +388,6 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
                 )}
               </div>
 
-              {/* Detail pills — between meta and Reco'd by */}
-              {details.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {details.map((d, i) => (
-                    <span key={i} className="text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
-                      {d}
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* Reco'd by */}
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Reco'd by</div>
               <div className="flex flex-wrap gap-[5px] mb-3">
@@ -398,7 +404,17 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
               </div>
 
               {/* Why */}
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-[5px]">Why?</div>
+              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Why?</div>
+              {details.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {details.map((d, i) => (
+                    <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
+                      {DETAIL_ICON[d.key]}
+                      {d.value}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>
 
               {/* Why nav dots — stopPropagation so navigation doesn't close sheet */}
