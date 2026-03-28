@@ -64,14 +64,14 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
   const hasImage = !!reco.meta.artwork_url
 
   return (
-    <div className="bg-bg-card border border-border rounded-card overflow-hidden">
+    <div className="bg-bg-card border border-border rounded-card">
       {/* Full-width image banner */}
       {hasImage && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={reco.meta.artwork_url!}
           alt={reco.title}
-          className="w-full h-[190px] object-cover"
+          className="w-full h-[190px] object-cover rounded-t-[16px]"
         />
       )}
 
