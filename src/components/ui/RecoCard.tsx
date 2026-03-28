@@ -194,15 +194,9 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         <div style={{ height: 64 }} />
 
         {/* Title */}
-        {primaryLink ? (
-          <a href={primaryLink} target="_blank" rel="noopener noreferrer" className="text-[40px] font-black text-white leading-none tracking-[-1px] block">
-            {reco.title}
-          </a>
-        ) : (
-          <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
-            {reco.title}
-          </div>
-        )}
+        <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+          {reco.title}
+        </div>
 
         {/* Reco'd by — 8px below title */}
         {(recommenderNames || when) && (
@@ -232,11 +226,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="mb-1.5"><CategoryDot category={reco.category} /></div>
-          {primaryLink ? (
-            <a href={primaryLink} target="_blank" rel="noopener noreferrer" className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1 block">{reco.title}</a>
-          ) : (
-            <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
-          )}
+          <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
           {(recommenderNames || when) && (
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
