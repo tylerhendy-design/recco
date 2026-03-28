@@ -41,16 +41,23 @@ export interface TasteAlignment {
 export interface RecoMeta {
   // Restaurant
   location?: string
+  address?: string
   instagram?: string
   website?: string
   image_url?: string
+  occasion?: string
+  price?: string
   // TV
   streaming_service?: string
   year?: number
+  genre?: string
+  mood?: string
   // Podcast / Music
   spotify_url?: string
   artwork_url?: string
   spotify_title?: string
+  artist?: string
+  era?: string
   // Book
   author?: string
   goodreads_url?: string

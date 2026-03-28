@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { CategoryDot } from './CategoryDot'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
-import { getCategoryColor } from '@/constants/categories'
+import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
 
 function getLinkLabel(url: string): string {
   try {
@@ -32,6 +32,32 @@ function getLinkLabel(url: string): string {
   }
 }
 
+function timeAgo(dateStr: string): string {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
+  if (days === 0) return 'today'
+  if (days === 1) return '1 day ago'
+  if (days < 7) return `${days} days ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`
+  return `${Math.floor(days / 365)}y ago`
+}
+
+function getDetailPills(reco: Reco): string[] {
+  const m = reco.meta ?? {}
+  const candidates: (string | undefined | null)[] = [
+    m.location,
+    m.artist,
+    m.streaming_service,
+    m.occasion,
+    m.price,
+    m.genre,
+    m.mood,
+    m.era,
+    m.address,
+  ]
+  return candidates.filter(Boolean).slice(0, 3) as string[]
+}
+
 interface RecoCardProps {
   reco: Reco
   rank?: number
@@ -39,9 +65,11 @@ interface RecoCardProps {
   onShowMap?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
+  const [expanded, setExpanded] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
   const catColor = getCategoryColor(reco.category)
+  const hasImage = !!reco.meta?.artwork_url
 
   // Build why messages array from recommenders
   const whyMessages = reco.recommenders
@@ -61,7 +89,146 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
     setWhyIndex((i) => (i + 1) % whyMessages.length)
   }
 
-  const hasImage = !!reco.meta.artwork_url
+  // ─── Dormant state ──────────────────────────────────────────────────────────
+
+  if (!expanded) {
+    const recommenderNames = reco.recommenders
+      ?.map((r) => r.profile.display_name.split(' ')[0])
+      .slice(0, 2)
+      .join(' & ') ?? ''
+    const when = reco.created_at ? timeAgo(reco.created_at) : ''
+    const details = getDetailPills(reco)
+
+    if (hasImage) {
+      return (
+        <div
+          className="relative rounded-card overflow-hidden cursor-pointer select-none"
+          style={{ height: '300px' }}
+          onClick={() => setExpanded(true)}
+        >
+          {/* Background image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={reco.meta.artwork_url!}
+            alt={reco.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.65) 60%, rgba(0,0,0,0.92) 100%)',
+            }}
+          />
+
+          {/* Backdrop blur — fades in from middle */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              maskImage: 'linear-gradient(to bottom, transparent 40%, black 75%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 40%, black 75%)',
+            }}
+          />
+
+          {/* Second gradient on top of blur for darkness */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.5) 100%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Top row */}
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
+            <span
+              className="text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border-2"
+              style={{
+                color: catColor,
+                borderColor: catColor,
+                background: 'rgba(0,0,0,0.45)',
+              }}
+            >
+              {getCategoryLabel(reco.category)}
+            </span>
+            <div className="flex gap-[5px] items-center">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom content */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 z-10">
+            {/* Title */}
+            <div className="text-[40px] font-black text-white leading-none tracking-[-1px] mb-1">
+              {reco.title}
+            </div>
+
+            {/* Reco'd by */}
+            {(recommenderNames || when) && (
+              <div className="text-[14px] text-white/75 mb-3">
+                Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
+              </div>
+            )}
+
+            {/* Detail pills */}
+            {details.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {details.map((d, i) => (
+                  <span
+                    key={i}
+                    className="text-[11px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border-2"
+                    style={{
+                      color: catColor,
+                      borderColor: catColor,
+                      background: 'rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // No image — compact dormant card
+    return (
+      <div
+        className="bg-bg-card border border-border rounded-card px-4 py-4 cursor-pointer"
+        onClick={() => setExpanded(true)}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="mb-1.5">
+              <CategoryDot category={reco.category} />
+            </div>
+            <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">
+              {reco.title}
+            </div>
+            {(recommenderNames || when) && (
+              <div className="text-[12px] text-text-faint">
+                Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-[4px] items-center pt-1 flex-shrink-0">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="w-[5px] h-[5px] rounded-full bg-text-faint" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── Expanded state ─────────────────────────────────────────────────────────
 
   return (
     <div className="bg-bg-card border border-border rounded-card">
@@ -76,9 +243,15 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
       )}
 
       <div className="px-4 pt-4 pb-[18px]">
-        {/* Top row */}
-        <div className="mb-2">
+        {/* Top row — collapse button */}
+        <div className="flex items-center justify-between mb-2">
           <CategoryDot category={reco.category} />
+          <button
+            onClick={() => setExpanded(false)}
+            className="text-[11px] text-text-faint hover:text-text-secondary"
+          >
+            ▲ collapse
+          </button>
         </div>
 
         {/* Title */}
@@ -87,118 +260,118 @@ export function RecoCard({ reco, rank, onMarkDone, onShowMap }: RecoCardProps) {
         </div>
 
         {/* Spotify pill for music/podcast */}
-        {(reco.category === 'podcast' || reco.category === 'music') && reco.meta.artwork_url && (
+        {(reco.category === 'podcast' || reco.category === 'music') && reco.meta?.artwork_url && (
           <div className="mb-1"><SpotifyPill /></div>
         )}
 
-      {/* Meta pills */}
-      <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
-        {reco.meta.streaming_service && (
-          <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>
-        )}
-        {reco.created_at && (
-          <MetaPill icon="calendar">
-            {(() => {
-              const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
-              return days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`
-            })()}
-          </MetaPill>
-        )}
-        {reco.meta.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
-        {reco.meta.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
-        {reco.meta.location && onShowMap && (
-          <MetaPill icon="map" onClick={() => onShowMap(reco)}>
-            Map
-          </MetaPill>
-        )}
-      </div>
+        {/* Meta pills */}
+        <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+          {reco.meta?.streaming_service && (
+            <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>
+          )}
+          {reco.created_at && (
+            <MetaPill icon="calendar">
+              {(() => {
+                const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
+                return days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`
+              })()}
+            </MetaPill>
+          )}
+          {reco.meta?.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
+          {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
+          {reco.meta?.location && onShowMap && (
+            <MetaPill icon="map" onClick={() => onShowMap(reco)}>
+              Map
+            </MetaPill>
+          )}
+        </div>
 
-      {/* Reco'd by */}
-      <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">
-        Reco'd by
-      </div>
-      <div className="flex flex-wrap gap-[5px] mb-3">
-        {reco.recommenders?.map((rec) => (
-          <span
-            key={rec.profile.id}
-            className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border cursor-pointer text-text-secondary"
-          >
-            {rec.profile.display_name.split(' ')[0]}
-          </span>
-        ))}
-        {(reco.recommenders?.length ?? 0) > 3 && (
-          <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-[#222226] text-text-faint cursor-pointer">
-            +{(reco.recommenders?.length ?? 0) - 3} others
-          </span>
-        )}
-      </div>
-
-      {/* Why */}
-      <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-[5px]">
-        Why?
-      </div>
-      <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">
-        {currentWhy}
-      </div>
-
-      {/* Why navigation dots */}
-      {whyMessages.length > 1 && (
-        <div className="flex items-center gap-2 mt-1.5 mb-3">
-          <button
-            onClick={prevWhy}
-            className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary"
-          >
-            ‹
-          </button>
-          {whyMessages.map((_, i) => (
+        {/* Reco'd by */}
+        <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">
+          Reco'd by
+        </div>
+        <div className="flex flex-wrap gap-[5px] mb-3">
+          {reco.recommenders?.map((rec) => (
             <span
-              key={i}
-              className={cn(
-                'w-1 h-1 rounded-full transition-colors',
-                i === whyIndex ? 'bg-text-secondary' : 'bg-border'
-              )}
-            />
-          ))}
-          <button
-            onClick={nextWhy}
-            className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary"
-          >
-            ›
-          </button>
-        </div>
-      )}
-      {whyMessages.length <= 1 && <div className="mb-3" />}
-
-      {/* Links */}
-      {(reco.meta.links?.length ?? 0) > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {reco.meta.links!.map((link, i) => (
-            <a
-              key={i}
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-accent underline underline-offset-2"
+              key={rec.profile.id}
+              className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border cursor-pointer text-text-secondary"
             >
-              {getLinkLabel(link)}
-            </a>
+              {rec.profile.display_name.split(' ')[0]}
+            </span>
           ))}
+          {(reco.recommenders?.length ?? 0) > 3 && (
+            <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-[#222226] text-text-faint cursor-pointer">
+              +{(reco.recommenders?.length ?? 0) - 3} others
+            </span>
+          )}
         </div>
-      )}
 
-      {/* Done button */}
-      {reco.status !== 'done' && (
-        <button
-          onClick={() => onMarkDone?.(reco)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-muted hover:border-accent hover:text-accent transition-colors"
-        >
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="8" cy="8" r="7" />
-            <path d="M5 8l2.5 2.5L11 5.5" />
-          </svg>
-          Done? Give them your review
-        </button>
-      )}
+        {/* Why */}
+        <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-[5px]">
+          Why?
+        </div>
+        <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">
+          {currentWhy}
+        </div>
+
+        {/* Why navigation dots */}
+        {whyMessages.length > 1 && (
+          <div className="flex items-center gap-2 mt-1.5 mb-3">
+            <button
+              onClick={prevWhy}
+              className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary"
+            >
+              ‹
+            </button>
+            {whyMessages.map((_, i) => (
+              <span
+                key={i}
+                className={cn(
+                  'w-1 h-1 rounded-full transition-colors',
+                  i === whyIndex ? 'bg-text-secondary' : 'bg-border'
+                )}
+              />
+            ))}
+            <button
+              onClick={nextWhy}
+              className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary"
+            >
+              ›
+            </button>
+          </div>
+        )}
+        {whyMessages.length <= 1 && <div className="mb-3" />}
+
+        {/* Links */}
+        {(reco.meta?.links?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {reco.meta!.links!.map((link, i) => (
+              <a
+                key={i}
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-accent underline underline-offset-2"
+              >
+                {getLinkLabel(link)}
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Done button */}
+        {reco.status !== 'done' && (
+          <button
+            onClick={() => onMarkDone?.(reco)}
+            className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-muted hover:border-accent hover:text-accent transition-colors"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="8" cy="8" r="7" />
+              <path d="M5 8l2.5 2.5L11 5.5" />
+            </svg>
+            Done? Give them your review
+          </button>
+        )}
       </div>
     </div>
   )
