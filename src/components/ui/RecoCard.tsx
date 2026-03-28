@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CategoryDot } from './CategoryDot'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
@@ -91,6 +91,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
   const hasImage = !!reco.meta?.artwork_url
+  const ptrDown = useRef<{ x: number; y: number } | null>(null)
 
   function open() {
     setExpanded(true)
@@ -221,16 +222,23 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               animating ? 'translate-y-0' : 'translate-y-full'
             )}
             style={{ maxHeight: '92dvh' }}
-            onClick={close}
+            onPointerDown={(e) => { ptrDown.current = { x: e.clientX, y: e.clientY } }}
+            onPointerUp={(e) => {
+              if (!ptrDown.current) return
+              const moved = Math.abs(e.clientX - ptrDown.current.x) + Math.abs(e.clientY - ptrDown.current.y)
+              ptrDown.current = null
+              if (moved < 8) close()
+            }}
           >
             {/* Image with back button overlaid */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
               {hasImage && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
               )}
               {/* Back button — top-left over image */}
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); close() }}
                 className="absolute top-4 left-4 flex items-center gap-1.5 text-[13px] font-semibold text-white bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-chip"
               >
@@ -246,6 +254,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               {/* Back button when no image */}
               {!hasImage && (
                 <button
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); close() }}
                   className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary mb-3"
                 >
@@ -285,7 +294,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 {reco.meta?.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
                 {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
                 {reco.meta?.location && onShowMap && (
-                  <span onClick={(e) => e.stopPropagation()}>
+                  <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                     <MetaPill icon="map" onClick={() => onShowMap(reco)}>Map</MetaPill>
                   </span>
                 )}
@@ -324,12 +333,12 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               {/* Why nav dots — stopPropagation so navigation doesn't close sheet */}
               {whyMessages.length > 1 && (
                 <div className="flex items-center gap-2 mt-1.5 mb-3">
-                  <button onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i - 1 + whyMessages.length) % whyMessages.length) }}
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i - 1 + whyMessages.length) % whyMessages.length) }}
                     className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border">‹</button>
                   {whyMessages.map((_, i) => (
                     <span key={i} className={cn('w-1 h-1 rounded-full transition-colors', i === whyIndex ? 'bg-text-secondary' : 'bg-border')} />
                   ))}
-                  <button onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i + 1) % whyMessages.length) }}
+                  <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i + 1) % whyMessages.length) }}
                     className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border">›</button>
                 </div>
               )}
@@ -337,7 +346,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
 
               {/* Links — stopPropagation so tapping a link navigates without closing */}
               {(reco.meta?.links?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                   {reco.meta!.links!.map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">
                       {getLinkLabel(link)}
@@ -349,6 +358,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               {/* Done button — stopPropagation so it runs its action, not just close */}
               {reco.status !== 'done' && (
                 <button
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onMarkDone?.(reco) }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-muted hover:border-accent hover:text-accent transition-colors mt-1"
                 >
