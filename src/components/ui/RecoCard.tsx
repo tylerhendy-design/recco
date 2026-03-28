@@ -163,22 +163,19 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
           </div>
         )}
 
-        {/* Detail pills — 8px below reco'd by, same bottom padding as top (16px) */}
+        {/* Detail pills — 8px below reco'd by, 16px from bottom (p-4 handles it) */}
         {details.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2 pb-0">
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => (
               <span
                 key={i}
-                className="text-[12px] font-bold uppercase tracking-[0.5px] px-3 py-1.5 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+                className="text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
               >
                 {d}
               </span>
             ))}
           </div>
         )}
-
-        {/* Bottom padding — matches top (16px = p-4) */}
-        <div style={{ height: 16 }} />
       </div>
     </div>
   ) : (
@@ -240,7 +237,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               </button>
             </div>
 
-            <div className="px-4 pt-4 pb-8" onClick={(e) => e.stopPropagation()}>
+            {/* Content — no stopPropagation so tapping anywhere closes the sheet */}
+            <div className="px-4 pt-4 pb-8">
               {/* Back button when no image */}
               {!hasImage && (
                 <button
@@ -253,6 +251,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                   Back
                 </button>
               )}
+
               {/* Category dot */}
               <div className="flex justify-end mb-3">
                 <CategoryDot category={reco.category} />
@@ -268,7 +267,7 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 <div className="mb-2"><SpotifyPill /></div>
               )}
 
-              {/* Meta pills */}
+              {/* Meta pills (date, location) */}
               <div className="flex items-center gap-1.5 flex-wrap mb-3">
                 {reco.meta?.streaming_service && <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>}
                 {reco.created_at && (
@@ -282,9 +281,22 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 {reco.meta?.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
                 {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
                 {reco.meta?.location && onShowMap && (
-                  <MetaPill icon="map" onClick={() => onShowMap(reco)}>Map</MetaPill>
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <MetaPill icon="map" onClick={() => onShowMap(reco)}>Map</MetaPill>
+                  </span>
                 )}
               </div>
+
+              {/* Detail pills — between meta and Reco'd by */}
+              {details.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {details.map((d, i) => (
+                    <span key={i} className="text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Reco'd by */}
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Reco'd by</div>
@@ -305,23 +317,23 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-[5px]">Why?</div>
               <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>
 
-              {/* Why nav dots */}
+              {/* Why nav dots — stopPropagation so navigation doesn't close sheet */}
               {whyMessages.length > 1 && (
                 <div className="flex items-center gap-2 mt-1.5 mb-3">
-                  <button onClick={() => setWhyIndex((i) => (i - 1 + whyMessages.length) % whyMessages.length)}
-                    className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary">‹</button>
+                  <button onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i - 1 + whyMessages.length) % whyMessages.length) }}
+                    className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border">‹</button>
                   {whyMessages.map((_, i) => (
                     <span key={i} className={cn('w-1 h-1 rounded-full transition-colors', i === whyIndex ? 'bg-text-secondary' : 'bg-border')} />
                   ))}
-                  <button onClick={() => setWhyIndex((i) => (i + 1) % whyMessages.length)}
-                    className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border hover:text-text-secondary">›</button>
+                  <button onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i + 1) % whyMessages.length) }}
+                    className="text-[15px] text-text-faint w-[22px] h-[22px] flex items-center justify-center rounded-full border border-border">›</button>
                 </div>
               )}
               {whyMessages.length <= 1 && <div className="mb-3" />}
 
-              {/* Links */}
+              {/* Links — stopPropagation so tapping a link navigates without closing */}
               {(reco.meta?.links?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
+                <div className="flex flex-wrap gap-1.5 mb-3" onClick={(e) => e.stopPropagation()}>
                   {reco.meta!.links!.map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">
                       {getLinkLabel(link)}
@@ -330,10 +342,10 @@ export function RecoCard({ reco, onMarkDone, onShowMap }: RecoCardProps) {
                 </div>
               )}
 
-              {/* Done button */}
+              {/* Done button — stopPropagation so it runs its action, not just close */}
               {reco.status !== 'done' && (
                 <button
-                  onClick={() => onMarkDone?.(reco)}
+                  onClick={(e) => { e.stopPropagation(); onMarkDone?.(reco) }}
                   className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-muted hover:border-accent hover:text-accent transition-colors mt-1"
                 >
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
