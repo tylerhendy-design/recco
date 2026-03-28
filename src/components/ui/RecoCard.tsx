@@ -169,15 +169,15 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
                   className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
                   onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
                 >
-                  <div className="font-semibold text-white">Been there, done that</div>
-                  <div className="text-[11px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
+                  <div className="font-semibold text-white">🔄 Been there, done that</div>
+                  <div className="text-[11px] text-white/60 mt-0.5">Already done this — rate it or request something new</div>
                 </button>
                 <button
                   className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
                   onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
                 >
-                  <div className="font-semibold text-bad">No go</div>
-                  <div className="text-[11px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
+                  <div className="font-semibold text-bad">🚫 No go</div>
+                  <div className="text-[11px] text-white/60 mt-0.5">Can't or won't do this — give them a reason</div>
                 </button>
               </div>
             )}
