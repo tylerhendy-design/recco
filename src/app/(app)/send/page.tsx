@@ -53,7 +53,7 @@ const CONSTRAINTS: Record<string, ConstraintDef[]> = {
     { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
     { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
     { key: 'occasion', label: 'Occasion', placeholder: 'e.g. date night, casual lunch…', icon: STAR },
-    { key: 'price', label: 'Price range', placeholder: 'e.g. under £40, splurge…', icon: MONEY },
+    { key: 'price', label: 'Price range', placeholder: '£ e.g. under £40, splurge…', icon: MONEY },
   ],
   tv: [
     { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, HBO…', icon: TV },
@@ -673,10 +673,11 @@ function GivePageInner() {
             {!addingCustomConstraint && (
               <button
                 onClick={() => setAddingCustomConstraint(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
-                style={{ color: '#444', border: '1px dashed #222' }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
+                style={{ color: '#999', border: '1px dashed #555' }}
               >
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
               </button>
             )}
           </div>
