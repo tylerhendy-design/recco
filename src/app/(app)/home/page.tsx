@@ -19,7 +19,7 @@ import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import type { Reco, RecoRecommender } from '@/types/app.types'
 
-type Tab = 'todo' | 'done'
+type Tab = 'todo' | 'done' | 'nogo'
 
 const CATEGORY_FILTERS = [
   { value: 'all', label: 'all' },
@@ -69,6 +69,7 @@ export default function HomePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [dbRecos, setDbRecos] = useState<Reco[]>([])
   const [doneRecos, setDoneRecos] = useState<Reco[]>([])
+  const [noGoRecos, setNoGoRecos] = useState<Reco[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingDone, setLoadingDone] = useState(false)
 
@@ -164,10 +165,17 @@ export default function HomePage() {
     }
   }, [tab, userId])
 
-  // Group duplicates into single cards
+  // Split feed into todo and no-go
   const grouped = useMemo(
-    () => groupRecos([...manualRecos, ...dbRecos].filter((r) => !doneIds.has(r.id))),
+    () => groupRecos([...manualRecos, ...dbRecos].filter((r) => !doneIds.has(r.id) && r.status !== 'no_go')),
     [manualRecos, dbRecos, doneIds]
+  )
+
+  const noGoList = useMemo(
+    () => [...noGoRecos, ...dbRecos.filter((r) => r.status === 'no_go')].filter(
+      (r, i, self) => self.findIndex((x) => x.id === r.id) === i
+    ),
+    [noGoRecos, dbRecos]
   )
 
   // Derive sender options from grouped recos
@@ -269,7 +277,8 @@ export default function HomePage() {
     if (!noGoReco || !userId) return
     const reco = noGoReco
     setNoGoReco(null)
-    setDoneIds((prev) => new Set(prev).add(reco.id))
+    // Move to no-go list (stays in feed as no_go status, filtered out of todo)
+    setNoGoRecos((prev) => [...prev, { ...reco, status: 'no_go' as const, feedback_text: reason }])
     await markNoGo(reco.id, userId, reco.sender_id, reason, reco.title)
   }
 
@@ -390,7 +399,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        {/* To do / Done toggle */}
+        {/* To do / Done / No gos toggle */}
         <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit mt-4">
           <button
             onClick={() => setTab('todo')}
@@ -407,6 +416,14 @@ export default function HomePage() {
             }`}
           >
             Done{doneRecos.length > 0 ? ` · ${doneRecos.length}` : ''}
+          </button>
+          <button
+            onClick={() => setTab('nogo')}
+            className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
+              tab === 'nogo' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
+            }`}
+          >
+            No gos{noGoList.length > 0 ? ` · ${noGoList.length}` : ''}
           </button>
         </div>
       </div>
@@ -504,6 +521,36 @@ export default function HomePage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* ── NO GOS TAB ── */}
+      {tab === 'nogo' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
+          {noGoList.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
+              <div className="text-[36px] mb-1">🚫</div>
+              <div className="text-[17px] font-semibold text-white">No no-gos yet</div>
+              <div className="text-[13px] text-text-muted leading-[1.6]">Recos you can't or won't do will appear here.</div>
+            </div>
+          ) : noGoList.map((reco) => (
+            <div key={reco.id} className="mx-5 mb-3 rounded-card border border-bad/20 bg-bg-card overflow-hidden">
+              <div className="px-4 py-3">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="text-[15px] font-semibold text-white leading-tight">{reco.title}</div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border border-bad/30 text-bad/80 flex-shrink-0">No go</span>
+                </div>
+                <div className="text-[12px] text-text-faint mb-2">
+                  from {reco.sender.display_name.split(' ')[0]} · {getCategoryLabel(reco.category)}
+                </div>
+                {reco.feedback_text && (
+                  <div className="text-[12px] text-text-muted italic leading-[1.5] border-l-2 border-bad/30 pl-2">
+                    "{reco.feedback_text}"
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

@@ -80,7 +80,7 @@ export async function fetchHomeFeed(userId: string): Promise<Reco[]> {
       )
     `)
     .eq('recipient_id', userId)
-    .in('status', ['unseen', 'seen', 'been_there'])
+    .in('status', ['unseen', 'seen', 'been_there', 'no_go'])
     .order('created_at', { ascending: false })
 
   if (error || !data) return []
