@@ -597,17 +597,29 @@ function VoiceNotePlayer({ audioUrl, transcript, waveform, durationSec }: {
     >
       {/* Toggle tabs */}
       {transcript && (
-        <div className="flex border-b border-accent/10">
+        <div className="flex gap-0 p-1.5">
           <button
-            className={cn('flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] transition-colors', mode === 'listen' ? 'text-accent bg-accent/10' : 'text-text-faint')}
+            className={cn(
+              'flex-1 py-2 rounded-lg text-[12px] font-bold uppercase tracking-[0.5px] transition-all flex items-center justify-center gap-1.5',
+              mode === 'listen' ? 'text-accent bg-accent/15 shadow-sm' : 'text-text-faint hover:text-text-muted'
+            )}
             onClick={() => setMode('listen')}
           >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
             Listen
           </button>
           <button
-            className={cn('flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] transition-colors', mode === 'read' ? 'text-accent bg-accent/10' : 'text-text-faint')}
+            className={cn(
+              'flex-1 py-2 rounded-lg text-[12px] font-bold uppercase tracking-[0.5px] transition-all flex items-center justify-center gap-1.5',
+              mode === 'read' ? 'text-accent bg-accent/15 shadow-sm' : 'text-text-faint hover:text-text-muted'
+            )}
             onClick={() => setMode('read')}
           >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+            </svg>
             Read
           </button>
         </div>
