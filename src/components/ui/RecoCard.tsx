@@ -156,18 +156,20 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
 
   // ─── Dormant card ────────────────────────────────────────────────────────────
 
+  const cardHeight = details.length > 0 ? 320 : 280
+
   const dormant = hasImage ? (
     <div
       className="rounded-card overflow-hidden cursor-pointer select-none"
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', height: cardHeight }}
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
-      {/* Image in normal flow — its height IS the card height */}
+      {/* Image — absolute, fills the fixed-height wrapper */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={reco.meta.artwork_url!}
         alt={reco.title}
-        style={{ display: 'block', width: '100%', height: details.length > 0 ? 320 : 280, objectFit: 'cover' }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
 
       {/* Everything else is layered absolutely on top of the image */}
