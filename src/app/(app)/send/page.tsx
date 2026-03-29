@@ -125,7 +125,7 @@ function GivePageInner() {
   const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [manualMode, setManualMode] = useState(false)
+  const [showLinkInput, setShowLinkInput] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
@@ -162,7 +162,7 @@ function GivePageInner() {
     setImageUploaded(false)
     setImageError(null)
     setTitle('')
-    setManualMode(false)
+    setShowLinkInput(false)
     setSuggestions([])
     setManualArtist('')
   }, [category])
@@ -435,103 +435,15 @@ function GivePageInner() {
             <>
               <div className="border-t border-[#0e0e10] mb-4" />
 
-              {/* ── Primary: link input ── */}
-              {!linkMeta && !manualMode && (
-                <div className="mb-0">
-                  <div
-                    className="flex items-center gap-2.5 rounded-input px-3 py-3 border"
-                    style={{ background: `${catColor}0d`, borderColor: `${catColor}44` }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                    </svg>
-                    <input
-                      autoFocus
-                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white placeholder:opacity-100 font-sans"
-                      placeholder="Paste a link to auto-fill…"
-                      value={linkInput}
-                      onChange={(e) => handleLinkChange(e.target.value)}
-                    />
-                    {linkLoading && (
-                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setManualMode(true)}
-                    className="mt-4 text-[14px] text-text-muted hover:text-white transition-colors"
-                  >
-                    Don't have a link? Type the name →
-                  </button>
-                </div>
-              )}
-
-              {/* ── Link resolved: result card ── */}
-              {linkMeta && (
-                <div className="mb-4">
-                  {/* Artwork (music / podcast) */}
-                  {imageUrl && (linkMeta.type === 'music' || linkMeta.type === 'podcast') && (
-                    <div className="flex items-center gap-3 px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[14px] font-semibold text-white truncate">{linkMeta.title}</div>
-                        {linkMeta.artist && <div className="text-[12px] text-text-muted">{linkMeta.artist}</div>}
-                      </div>
-                      <button onClick={() => { setLinkMeta(null); setLinkInput(''); setImageUrl(null); setTitle('') }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                      </button>
-                    </div>
-                  )}
-                  {/* Place result (Maps) */}
-                  {linkMeta.type === 'place' && (
-                    <div className="px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          {linkMeta.title ? (
-                            <div className="text-[14px] font-semibold text-white">{linkMeta.title}</div>
-                          ) : (
-                            <input
-                              autoFocus
-                              className="w-full bg-transparent outline-none text-[14px] font-semibold text-white placeholder:text-[#555] font-sans"
-                              placeholder="What's it called?"
-                              value={title}
-                              onChange={(e) => setTitle(e.target.value)}
-                            />
-                          )}
-                          {linkMeta.address && <div className="text-[12px] text-text-faint mt-0.5">{linkMeta.address}</div>}
-                          {(linkMeta.city || linkMeta.country) && (
-                            <div className="text-[11px] text-text-faint mt-0.5">{[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}</div>
-                          )}
-                        </div>
-                        <button onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }} className="flex-shrink-0 mt-0.5">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* ── Manual: title input + autocomplete ── */}
-              {manualMode && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      autoFocus
-                      className="flex-1 text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
-                      placeholder={`Name of ${singular}…`}
-                      value={title}
-                      onChange={(e) => handleTitleChange(e.target.value)}
-                    />
-                    <button
-                      onClick={() => { setManualMode(false); setTitle(''); setSuggestions([]) }}
-                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-bg-base border border-border"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
+              {/* ── Primary: title input + autocomplete ── */}
+              <div className="mb-4">
+                <input
+                  autoFocus
+                  className="text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                  placeholder={`Name of ${singular}…`}
+                  value={title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                />
 
                   {/* Suggestions dropdown */}
                   {(suggestions.length > 0 || suggestionsLoading) && (
@@ -573,6 +485,91 @@ function GivePageInner() {
                           </button>
                         </>
                       )}
+                    </div>
+                  )}
+                </div>
+
+              {/* ── Secondary: autofill with a link ── */}
+              {!linkMeta && !showLinkInput && (
+                <button
+                  onClick={() => setShowLinkInput(true)}
+                  className="mb-4 text-[14px] text-text-muted hover:text-white transition-colors"
+                >
+                  Autofill with a link →
+                </button>
+              )}
+
+              {showLinkInput && !linkMeta && (
+                <div className="mb-4">
+                  <div
+                    className="flex items-center gap-2.5 rounded-input px-3 py-3 border"
+                    style={{ background: `${catColor}0d`, borderColor: `${catColor}44` }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <input
+                      autoFocus
+                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white placeholder:opacity-100 font-sans"
+                      placeholder="Paste a link to auto-fill…"
+                      value={linkInput}
+                      onChange={(e) => handleLinkChange(e.target.value)}
+                    />
+                    {linkLoading && (
+                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => { setShowLinkInput(false); setLinkInput('') }}
+                    className="mt-2 text-[13px] text-text-faint hover:text-text-muted transition-colors"
+                  >
+                    ← Cancel
+                  </button>
+                </div>
+              )}
+
+              {/* ── Link resolved: result card ── */}
+              {linkMeta && (
+                <div className="mb-4">
+                  {imageUrl && (linkMeta.type === 'music' || linkMeta.type === 'podcast') && (
+                    <div className="flex items-center gap-3 px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[14px] font-semibold text-white truncate">{linkMeta.title}</div>
+                        {linkMeta.artist && <div className="text-[12px] text-text-muted">{linkMeta.artist}</div>}
+                      </div>
+                      <button onClick={() => { setLinkMeta(null); setLinkInput(''); setImageUrl(null); setTitle(''); setShowLinkInput(false) }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  )}
+                  {linkMeta.type === 'place' && (
+                    <div className="px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {linkMeta.title ? (
+                            <div className="text-[14px] font-semibold text-white">{linkMeta.title}</div>
+                          ) : (
+                            <input
+                              autoFocus
+                              className="w-full bg-transparent outline-none text-[14px] font-semibold text-white placeholder:text-[#555] font-sans"
+                              placeholder="What's it called?"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                            />
+                          )}
+                          {linkMeta.address && <div className="text-[12px] text-text-faint mt-0.5">{linkMeta.address}</div>}
+                          {(linkMeta.city || linkMeta.country) && (
+                            <div className="text-[11px] text-text-faint mt-0.5">{[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}</div>
+                          )}
+                        </div>
+                        <button onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}); setShowLinkInput(false) }} className="flex-shrink-0 mt-0.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
