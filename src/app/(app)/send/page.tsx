@@ -543,16 +543,17 @@ function GivePageInner() {
                       value={linkInput}
                       onChange={(e) => handleLinkChange(e.target.value)}
                     />
-                    {linkLoading && (
+                    {linkLoading ? (
                       <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
+                    ) : (
+                      <button
+                        onClick={() => { setShowLinkInput(false); setLinkInput('') }}
+                        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
                     )}
                   </div>
-                  <button
-                    onClick={() => { setShowLinkInput(false); setLinkInput('') }}
-                    className="mt-2 text-[13px] text-text-faint hover:text-text-muted transition-colors"
-                  >
-                    ← Cancel
-                  </button>
                 </div>
               )}
 
