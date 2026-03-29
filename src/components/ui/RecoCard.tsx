@@ -107,12 +107,11 @@ interface RecoCardProps {
   reco: Reco
   rank?: number
   onMarkDone?: (reco: Reco) => void
-  onShowMap?: (reco: Reco) => void
   onBeenThere?: (reco: Reco) => void
   onNoGo?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
@@ -231,12 +230,15 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         )}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {details.map((d, i) => (
-              <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
-                {DETAIL_ICON[d.key]}
-                {d.value}
-              </span>
-            ))}
+            {details.map((d, i) => {
+              const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+              const mapsHref = d.key === 'address'
+                ? `https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
+                : null
+              return mapsHref
+                ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
+                : <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
+            })}
           </div>
         )}
       </div>
@@ -385,10 +387,16 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
                 )}
                 {reco.meta?.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
                 {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
-                {reco.meta?.location && onShowMap && (
-                  <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                    <MetaPill icon="map" onClick={() => onShowMap(reco)}>Map</MetaPill>
-                  </span>
+                {(reco.meta?.location || reco.meta?.address) && (
+                  <a
+                    href={`https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MetaPill icon="map">Map</MetaPill>
+                  </a>
                 )}
               </div>
 

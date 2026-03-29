@@ -496,7 +496,6 @@ export default function HomePage() {
               reco={reco}
               rank={i + 1}
               onMarkDone={setFeedbackReco}
-              onShowMap={setMapReco}
               onBeenThere={setBeenThereReco}
               onNoGo={setNoGoReco}
             />
