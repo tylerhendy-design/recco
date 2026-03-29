@@ -69,6 +69,10 @@ export interface RecoMeta {
   // Custom / default
   vibes?: string
   budget?: string
+  // Voice note
+  why_audio_transcript?: string
+  why_audio_waveform?: number[]
+  why_audio_duration?: number
   // Generic links
   links?: string[]
 }

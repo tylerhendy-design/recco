@@ -427,7 +427,17 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProp
                   ))}
                 </div>
               )}
-              <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>
+              {currentWhy && <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>}
+
+              {/* Voice note */}
+              {reco.why_audio_url && (
+                <VoiceNotePlayer
+                  audioUrl={reco.why_audio_url}
+                  transcript={reco.meta?.why_audio_transcript as string | undefined}
+                  waveform={reco.meta?.why_audio_waveform as number[] | undefined}
+                  durationSec={reco.meta?.why_audio_duration as number | undefined}
+                />
+              )}
 
               {/* Why nav dots — stopPropagation so navigation doesn't close sheet */}
               {whyMessages.length > 1 && (
@@ -514,5 +524,133 @@ function SpotifyPill() {
       </svg>
       Open in Spotify
     </span>
+  )
+}
+
+// ─── Voice note player (recipient side) ──────────────────────────────────────
+
+function VoiceNotePlayer({ audioUrl, transcript, waveform, durationSec }: {
+  audioUrl: string
+  transcript?: string
+  waveform?: number[]
+  durationSec?: number
+}) {
+  const [mode, setMode] = useState<'listen' | 'read'>(transcript ? 'read' : 'listen')
+  const [playing, setPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function fmtTime(sec: number): string {
+    const m = Math.floor(sec / 60)
+    const s = Math.floor(sec % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  function togglePlay() {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(audioUrl)
+      audioRef.current.onended = () => {
+        setPlaying(false)
+        setProgress(0)
+        if (intervalRef.current) clearInterval(intervalRef.current)
+      }
+    }
+    if (playing) {
+      audioRef.current.pause()
+      if (intervalRef.current) clearInterval(intervalRef.current)
+      setPlaying(false)
+    } else {
+      audioRef.current.play()
+      setPlaying(true)
+      intervalRef.current = setInterval(() => {
+        if (audioRef.current && (durationSec ?? 0) > 0) {
+          setProgress(audioRef.current.currentTime / (durationSec ?? 1))
+        }
+      }, 50)
+    }
+  }
+
+  // Generate fallback bars if no waveform stored
+  const bars = waveform && waveform.length > 0
+    ? waveform
+    : Array.from({ length: 30 }, (_, i) => 0.15 + Math.abs(Math.sin(i * 0.7)) * 0.6)
+
+  return (
+    <div
+      className="mt-2 rounded-xl border border-accent/20 bg-accent/5 overflow-hidden"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Toggle tabs */}
+      {transcript && (
+        <div className="flex border-b border-accent/10">
+          <button
+            className={cn('flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] transition-colors', mode === 'listen' ? 'text-accent bg-accent/10' : 'text-text-faint')}
+            onClick={() => setMode('listen')}
+          >
+            Listen
+          </button>
+          <button
+            className={cn('flex-1 py-1.5 text-[10px] font-semibold uppercase tracking-[0.5px] transition-colors', mode === 'read' ? 'text-accent bg-accent/10' : 'text-text-faint')}
+            onClick={() => setMode('read')}
+          >
+            Read
+          </button>
+        </div>
+      )}
+
+      <div className="px-3 py-2.5">
+        {mode === 'listen' ? (
+          <div className="flex items-center gap-2.5">
+            {/* Play / pause */}
+            <button
+              onClick={togglePlay}
+              className="w-[28px] h-[28px] rounded-full bg-accent flex items-center justify-center flex-shrink-0"
+            >
+              {playing ? (
+                <svg width="9" height="10" viewBox="0 0 10 12" fill="none">
+                  <rect x="1" y="0" width="3" height="12" rx="1" fill="#111" />
+                  <rect x="6" y="0" width="3" height="12" rx="1" fill="#111" />
+                </svg>
+              ) : (
+                <svg width="9" height="10" viewBox="0 0 10 12" fill="none">
+                  <polygon points="1,0 10,6 1,12" fill="#111" />
+                </svg>
+              )}
+            </button>
+
+            {/* Waveform */}
+            <div className="flex-1 flex items-center gap-[1.5px] h-[24px]">
+              {bars.map((v, i) => {
+                const filled = i / bars.length < progress
+                return (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-full"
+                    style={{
+                      height: `${Math.max(3, v * 20)}px`,
+                      backgroundColor: filled ? '#D4E23A' : 'rgba(212,226,58,0.25)',
+                      transition: 'background-color 0.1s',
+                    }}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Duration */}
+            {(durationSec ?? 0) > 0 && (
+              <span className="text-[10px] font-medium text-accent/70 tabular-nums flex-shrink-0">
+                {fmtTime(durationSec!)}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="text-[13px] text-text-secondary leading-[1.6]">
+            &ldquo;{transcript}&rdquo;
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

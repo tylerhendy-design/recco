@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { VoiceButton } from '@/components/ui/VoiceButton'
+import { VoiceButton, type VoiceResult } from '@/components/ui/VoiceButton'
 import { CATEGORIES, type CategoryId, getCategoryLabel } from '@/constants/categories'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriends } from '@/lib/data/friends'
@@ -148,7 +148,7 @@ function GivePageInner() {
   const [customConstraintInput, setCustomConstraintInput] = useState('')
 
   // Voice note
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [voiceResult, setVoiceResult] = useState<VoiceResult | null>(null)
 
   // Request geolocation once on mount — used to bias restaurant search
   useEffect(() => {
@@ -188,7 +188,7 @@ function GivePageInner() {
     setCustomConstraintDefs([])
     setAddingCustomConstraint(false)
     setCustomConstraintInput('')
-    setAudioBlob(null)
+    setVoiceResult(null)
   }, [category])
 
   function handleTitleChange(val: string) {
@@ -367,12 +367,34 @@ function GivePageInner() {
     const links: string[] = []
     if (linkInput.trim()) links.push(linkInput.trim())
 
+    // Upload voice note if present
+    let whyAudioUrl: string | undefined
+    if (voiceResult?.blob) {
+      try {
+        const ext = voiceResult.blob.type.includes('webm') ? 'webm' : 'ogg'
+        const audioPath = `${userId}/${crypto.randomUUID()}.${ext}`
+        const form = new FormData()
+        form.append('file', voiceResult.blob, `voice.${ext}`)
+        form.append('path', audioPath)
+        const uploadRes = await fetch('/api/upload-audio', { method: 'POST', body: form })
+        const uploadJson = await uploadRes.json()
+        if (uploadRes.ok && uploadJson.publicUrl) {
+          whyAudioUrl = uploadJson.publicUrl
+        }
+      } catch {} // voice upload failed — send without it
+    }
+
+    if (voiceResult?.transcript) meta.why_audio_transcript = voiceResult.transcript
+    if (voiceResult?.waveform) meta.why_audio_waveform = voiceResult.waveform
+    if (voiceResult?.durationSec) meta.why_audio_duration = Math.round(voiceResult.durationSec)
+
     const { error } = await sendReco({
       senderId: userId,
       category: finalCat,
       customCat: finalCustomCat,
       title: title.trim(),
       whyText: why.trim() || undefined,
+      whyAudioUrl,
       links,
       meta,
       recipientIds: selectedFriends.map((f) => f.id),
@@ -788,9 +810,9 @@ function GivePageInner() {
               if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }
             }}
           />
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-[11px] text-text-faint">CBF typing? Yap instead.</span>
-            <VoiceButton onRecorded={(blob) => setAudioBlob(blob)} />
+          <div className="mt-2">
+            {!voiceResult && <div className="text-[11px] text-text-faint mb-2">CBF typing? Yap instead.</div>}
+            <VoiceButton onRecorded={(r) => setVoiceResult(r)} onClear={() => setVoiceResult(null)} />
           </div>
           </div>{/* end group 2 */}
 

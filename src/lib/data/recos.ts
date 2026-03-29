@@ -335,6 +335,7 @@ export async function sendReco({
   customCat,
   title,
   whyText,
+  whyAudioUrl,
   links,
   meta,
   recipientIds,
@@ -344,6 +345,7 @@ export async function sendReco({
   customCat?: string
   title: string
   whyText?: string
+  whyAudioUrl?: string
   links?: string[]
   meta?: Record<string, unknown>
   recipientIds: string[]
@@ -367,6 +369,7 @@ export async function sendReco({
       custom_cat: customCat ?? null,
       title,
       why_text: whyText ?? null,
+      why_audio_url: whyAudioUrl ?? null,
       meta: metaWithLinks,
     })
 
