@@ -159,7 +159,6 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
   const dormant = hasImage ? (
     <div
       className="relative rounded-card overflow-hidden cursor-pointer select-none"
-      style={{ minHeight: 260 }}
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
       {/* Background image */}
