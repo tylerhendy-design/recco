@@ -168,8 +168,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
       {/* Gradient overlay — stronger at bottom for text legibility */}
       <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 25%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
 
-      {/* Content — drives card height; flex-1 spacer pushes content to bottom */}
-      <div className="relative pt-4 px-4 pb-0 flex flex-col" style={{ zIndex: 10, minHeight: 260 }}>
+      {/* Content div drives the card height. Image fills it via absolute inset-0. */}
+      <div className="relative pt-4 px-4 pb-0 flex flex-col" style={{ zIndex: 10 }}>
         {/* Top row: category pill + dots */}
         <div className="flex items-center justify-between">
           <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
@@ -208,8 +208,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
           </div>
         </div>
 
-        {/* Flexible spacer — absorbs extra height so dead space never appears at bottom */}
-        <div className="flex-1" style={{ minHeight: 48 }} />
+        {/* Fixed spacer between pill and title — always 64px of image shows */}
+        <div style={{ height: 64 }} />
 
         {/* Title — scales down for longer names, max 2 lines */}
         <div
