@@ -51,14 +51,17 @@ export async function GET(req: NextRequest) {
 
     // ── Google Maps ──────────────────────────────────────────────────────────
     if (url.includes('google.com/maps') || url.includes('goo.gl/maps') || url.includes('maps.app.goo.gl')) {
-      let resolvedUrl = url
-      let pageHtml: string | null = null
+      // Use a full desktop Chrome UA — Google serves different redirects based on UA
+      const DESKTOP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-      // Follow short URL redirect and grab the HTML in one request
+      let resolvedUrl = url
+
+      // Follow short URL redirect with desktop UA to get the full /maps/place/ URL
       if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-        const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0' } })
-        resolvedUrl = r.url
-        try { pageHtml = await r.text() } catch {}
+        try {
+          const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': DESKTOP_UA } })
+          resolvedUrl = r.url
+        } catch {}
       }
 
       // Extract place name from URL path /maps/place/NAME/@lat,lon
@@ -67,24 +70,19 @@ export async function GET(req: NextRequest) {
         ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
         : null
 
-      // Fallback: try OG title from the page HTML
-      if (!placeName && pageHtml) {
-        const og = await extractOgTags(pageHtml)
-        // OG title on Maps is usually "Place Name - Google Maps"
-        placeName = og.title?.replace(/\s*[-–|].*Google Maps.*$/i, '').trim() ?? null
-      }
-
-      // Fallback: fetch the long URL page if we only have the redirect target
-      if (!placeName && resolvedUrl.includes('google.com/maps')) {
+      // Fallback: fetch the page and strip "… - Google Maps" from the OG title
+      if (!placeName) {
         try {
-          const r2 = await fetch(resolvedUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+          const r2 = await fetch(resolvedUrl, { headers: { 'User-Agent': DESKTOP_UA } })
           const html = await r2.text()
           const og = await extractOgTags(html)
-          placeName = og.title?.replace(/\s*[-–|].*Google Maps.*$/i, '').trim() ?? null
+          const raw = og.title?.replace(/\s*[-–]\s*Google Maps\s*$/i, '').trim() ?? ''
+          // Reject if we just got "Google Maps" with no place name
+          placeName = raw && raw.toLowerCase() !== 'google maps' ? raw : null
         } catch {}
       }
 
-      // Extract coordinates
+      // Extract coordinates for reverse geocoding
       const coordMatch = resolvedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
       let city: string | null = null
       let country: string | null = null
