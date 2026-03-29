@@ -158,27 +158,29 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
 
   const dormant = hasImage ? (
     <div
-      className="relative rounded-card overflow-hidden cursor-pointer select-none"
+      className="rounded-card overflow-hidden cursor-pointer select-none"
+      style={{ position: 'relative' }}
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
-      {/* Image — fixed height drives the card height */}
+      {/* Image in normal flow — its height IS the card height */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={reco.meta.artwork_url!}
         alt={reco.title}
-        className="w-full object-cover block"
-        style={{ height: details.length > 0 ? 320 : 280 }}
+        style={{ display: 'block', width: '100%', height: details.length > 0 ? 320 : 280, objectFit: 'cover' }}
       />
 
-      {/* Gradient — absolute over image */}
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
+      {/* Everything else is layered absolutely on top of the image */}
 
-      {/* Top row: category pill + dots — absolute top */}
-      <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ zIndex: 10 }}>
+      {/* Gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)', pointerEvents: 'none' }} />
+
+      {/* Category pill + dots — top left/right */}
+      <div style={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
         <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
           {getCategoryLabel(reco.category)}
         </span>
-        <div className="relative">
+        <div style={{ position: 'relative' }}>
           <button
             className="flex gap-[5px] items-center p-1"
             onPointerDown={(e) => e.stopPropagation()}
@@ -211,9 +213,8 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         </div>
       </div>
 
-      {/* Bottom content — absolute, sits above gradient */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-6" style={{ zIndex: 10 }}>
-        {/* Title */}
+      {/* Title + Reco'd by + pills — bottom */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 16px 24px', zIndex: 10 }}>
         <div className={`font-black text-white leading-[1.05] tracking-[-1px] line-clamp-2 ${
           reco.title.length > 30 ? 'text-[26px]' :
           reco.title.length > 18 ? 'text-[32px]' :
@@ -221,15 +222,11 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         }`}>
           {reco.title}
         </div>
-
-        {/* Reco'd by */}
         {(recommenderNames || when) && (
           <div className="text-[14px] text-white/75 mt-2">
             Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
           </div>
         )}
-
-        {/* Detail pills */}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => (
