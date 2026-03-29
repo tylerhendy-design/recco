@@ -89,6 +89,7 @@ export default function HomePage() {
   const [manualAddOpen, setManualAddOpen] = useState(false)
   const [beenThereReco, setBeenThereReco] = useState<Reco | null>(null)
   const [noGoReco, setNoGoReco] = useState<Reco | null>(null)
+  const [noGoSuccess, setNoGoSuccess] = useState<{ senderName: string } | null>(null)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -277,8 +278,9 @@ export default function HomePage() {
     if (!noGoReco || !userId) return
     const reco = noGoReco
     setNoGoReco(null)
-    // Move to no-go list (stays in feed as no_go status, filtered out of todo)
+    setDoneIds((prev) => new Set(prev).add(reco.id))
     setNoGoRecos((prev) => [...prev, { ...reco, status: 'no_go' as const, feedback_text: reason }])
+    setNoGoSuccess({ senderName: reco.sender.display_name.split(' ')[0] })
     await markNoGo(reco.id, userId, reco.sender_id, reason, reco.title)
   }
 
@@ -610,6 +612,29 @@ export default function HomePage() {
         recoTitle={noGoReco?.title ?? ''}
         senderName={noGoReco?.sender.display_name.split(' ')[0] ?? ''}
       />
+
+      {noGoSuccess && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70"
+          onClick={() => setNoGoSuccess(null)}
+        >
+          <div className="bg-bg-elevated border border-border rounded-card px-8 py-10 text-center mx-6 max-w-[320px]">
+            <div className="text-[40px] mb-4">🚫</div>
+            <div className="text-[18px] font-semibold text-white mb-2 tracking-[-0.4px]">
+              Got it
+            </div>
+            <div className="text-[14px] text-text-muted leading-[1.6]">
+              You told {noGoSuccess.senderName} you aren't interested. They'll see your reason.
+            </div>
+            <button
+              className="mt-6 px-6 py-2.5 rounded-input bg-bg-card border border-border text-[13px] font-semibold text-text-secondary hover:border-text-faint transition-colors"
+              onClick={() => setNoGoSuccess(null)}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
