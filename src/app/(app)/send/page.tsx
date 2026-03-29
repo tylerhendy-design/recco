@@ -89,12 +89,6 @@ const CONSTRAINTS: Record<string, ConstraintDef[]> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function isStreamingUrl(url: string) {
-  return url.includes('spotify.com') || url.includes('music.apple.com') || url.includes('podcasts.apple.com')
-}
-function isMapsUrl(url: string) {
-  return url.includes('google.com/maps') || url.includes('goo.gl/maps') || url.includes('maps.app.goo.gl')
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -244,7 +238,6 @@ function GivePageInner() {
 
   const selectedFriends = friends.filter((f) => f.selected)
   const isRestaurant = category === 'restaurant'
-  const isMediaCat = category === 'music' || category === 'podcast'
   const isBook = category === 'book'
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
@@ -330,14 +323,6 @@ function GivePageInner() {
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const catColor = category ? CATEGORIES.find((c) => c.id === category)?.color ?? '#D4E23A' : '#D4E23A'
 
-  // ─── Link input label ──────────────────────────────────────────────────────
-  const linkPlaceholder = isRestaurant
-    ? 'Paste Google Maps link to auto-fill…'
-    : category === 'podcast'
-      ? 'Paste Spotify or Apple Podcasts link…'
-      : isBook
-        ? 'Paste Amazon, Goodreads or Bookshop link…'
-        : 'Paste Spotify or Apple Music link…'
 
 
   return (
@@ -451,17 +436,29 @@ function GivePageInner() {
                   )}
                   {/* Place result (Maps) */}
                   {linkMeta.type === 'place' && (
-                    <div className="flex items-start justify-between px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
-                      <div>
-                        <div className="text-[14px] font-semibold text-white">{linkMeta.title}</div>
-                        {linkMeta.address && <div className="text-[12px] text-text-faint mt-0.5">{linkMeta.address}</div>}
-                        {(linkMeta.city || linkMeta.country) && (
-                          <div className="text-[11px] text-text-faint mt-0.5">{[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}</div>
-                        )}
+                    <div className="px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {linkMeta.title ? (
+                            <div className="text-[14px] font-semibold text-white">{linkMeta.title}</div>
+                          ) : (
+                            <input
+                              autoFocus
+                              className="w-full bg-transparent outline-none text-[14px] font-semibold text-white placeholder:text-[#555] font-sans"
+                              placeholder="What's it called?"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                            />
+                          )}
+                          {linkMeta.address && <div className="text-[12px] text-text-faint mt-0.5">{linkMeta.address}</div>}
+                          {(linkMeta.city || linkMeta.country) && (
+                            <div className="text-[11px] text-text-faint mt-0.5">{[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}</div>
+                          )}
+                        </div>
+                        <button onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }} className="flex-shrink-0 mt-0.5">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                       </div>
-                      <button onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }} className="ml-3 flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                      </button>
                     </div>
                   )}
                 </div>

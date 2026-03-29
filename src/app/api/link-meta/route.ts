@@ -52,17 +52,37 @@ export async function GET(req: NextRequest) {
     // ── Google Maps ──────────────────────────────────────────────────────────
     if (url.includes('google.com/maps') || url.includes('goo.gl/maps') || url.includes('maps.app.goo.gl')) {
       let resolvedUrl = url
-      // Follow short URL redirect
+      let pageHtml: string | null = null
+
+      // Follow short URL redirect and grab the HTML in one request
       if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
         const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0' } })
         resolvedUrl = r.url
+        try { pageHtml = await r.text() } catch {}
       }
 
       // Extract place name from URL path /maps/place/NAME/@lat,lon
       const placeMatch = resolvedUrl.match(/\/maps\/place\/([^/@?]+)/)
-      const placeName = placeMatch
+      let placeName: string | null = placeMatch
         ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
         : null
+
+      // Fallback: try OG title from the page HTML
+      if (!placeName && pageHtml) {
+        const og = await extractOgTags(pageHtml)
+        // OG title on Maps is usually "Place Name - Google Maps"
+        placeName = og.title?.replace(/\s*[-–|].*Google Maps.*$/i, '').trim() ?? null
+      }
+
+      // Fallback: fetch the long URL page if we only have the redirect target
+      if (!placeName && resolvedUrl.includes('google.com/maps')) {
+        try {
+          const r2 = await fetch(resolvedUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+          const html = await r2.text()
+          const og = await extractOgTags(html)
+          placeName = og.title?.replace(/\s*[-–|].*Google Maps.*$/i, '').trim() ?? null
+        } catch {}
+      }
 
       // Extract coordinates
       const coordMatch = resolvedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
@@ -81,7 +101,6 @@ export async function GET(req: NextRequest) {
           const geo = await geoRes.json()
           city = geo.address?.city ?? geo.address?.town ?? geo.address?.village ?? null
           country = geo.address?.country ?? null
-          // Build a clean address: road + city + country
           const parts = [geo.address?.road, geo.address?.house_number].filter(Boolean)
           address = parts.length > 0 ? parts.reverse().join(' ') : null
         }
