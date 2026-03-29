@@ -748,7 +748,7 @@ function GivePageInner() {
                   ? <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg><span className="text-[12px]">Photo saved — tap to replace</span></>
                   : imageError
                     ? <><span className="text-[12px]">Upload failed — tap to retry</span></>
-                    : <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg><span className="text-[12px]">Photo ready — tap to replace</span></>
+                    : <><span className="text-[12px]">Upload your own photo</span></>
               }
             </button>
           )}
