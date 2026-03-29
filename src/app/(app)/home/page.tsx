@@ -413,7 +413,7 @@ export default function HomePage() {
 
       {/* ── TO DO TAB ── */}
       {tab === 'todo' && (
-        <div className="flex-1 overflow-y-auto scrollbar-none px-5 flex flex-col gap-3 pb-6" onClick={closeAllDD}>
+        <div className="flex-1 overflow-y-auto scrollbar-none px-5 pb-6" onClick={closeAllDD}>
           {loading && (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -421,8 +421,8 @@ export default function HomePage() {
           )}
 
           {!loading && filtered.map((reco, i) => (
+            <div key={reco.id} className="mb-3">
             <RecoCard
-              key={reco.id}
               reco={reco}
               rank={i + 1}
               onMarkDone={setFeedbackReco}
@@ -430,6 +430,7 @@ export default function HomePage() {
               onBeenThere={setBeenThereReco}
               onNoGo={setNoGoReco}
             />
+            </div>
           ))}
 
           {!loading && filtered.length === 0 && (
