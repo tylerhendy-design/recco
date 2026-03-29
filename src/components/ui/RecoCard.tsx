@@ -212,8 +212,14 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
         {/* 64px spacer between pill and title */}
         <div style={{ height: 64 }} />
 
-        {/* Title */}
-        <div className="text-[40px] font-black text-white leading-none tracking-[-1px]">
+        {/* Title — scales down for longer names, max 2 lines */}
+        <div
+          className={`font-black text-white leading-[1.05] tracking-[-1px] line-clamp-2 ${
+            reco.title.length > 30 ? 'text-[26px]' :
+            reco.title.length > 18 ? 'text-[32px]' :
+            'text-[40px]'
+          }`}
+        >
           {reco.title}
         </div>
 
