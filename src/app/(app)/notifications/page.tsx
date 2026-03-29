@@ -178,13 +178,19 @@ function NotifRow({
   else if (notif.type === 'request_received') {
     const cat = notif.payload?.category
     const count = notif.payload?.count ?? 1
+    const subtype = notif.payload?.subtype
     const constraints = notif.payload?.constraints as Record<string, string> | undefined
     const details = notif.payload?.details as string | undefined
     const constraintStr = constraints && Object.keys(constraints).length > 0
       ? Object.values(constraints).join(' · ')
       : null
     const extra = [constraintStr, details].filter(Boolean).join(' · ')
-    body = `is asking for ${count > 1 ? `${count} ` : ''}${cat ? `${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
+    if (subtype === 'been_there_new_request') {
+      const original = notif.payload?.original_title
+      body = `already has "${original}" — they're asking for a new ${cat ? `${cat} ` : ''}reco.`
+    } else {
+      body = `is asking for ${count > 1 ? `${count} ` : ''}${cat ? `${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
+    }
   } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
@@ -199,16 +205,28 @@ function NotifRow({
     const lastReco = notif.payload?.last_reco_title
     body = `Oh no. 3rd strike you are out. You're in ${actor.display_name.split(' ')[0]}'s sin bin for ${category}.${lastReco ? ` Seems it was "${lastReco}" that pushed them over the edge.` : ''}`
   } else if (notif.type === 'feedback_received') {
+    const subtype = notif.payload?.subtype
     const score = notif.payload?.score
     const category = notif.payload?.reco_category
     const categoryLabel = category ? `${category} ` : ''
-    body = `reviewed your ${categoryLabel}reco`
-    if (score != null) {
-      scoreLozenge = {
-        score,
-        title: notif.payload?.reco_title,
-        feedbackText: notif.payload?.feedback_text,
-        category,
+    const recoTitle = notif.payload?.reco_title
+
+    if (subtype === 'no_go') {
+      body = `marked your reco${recoTitle ? ` "${recoTitle}"` : ''} as a 🚫 no go.`
+      if (notif.payload?.feedback_text) {
+        scoreLozenge = { score: -1, title: undefined, feedbackText: notif.payload.feedback_text, category }
+      }
+    } else if (subtype === 'been_there') {
+      body = `has already 🔄 been there, done that with${recoTitle ? ` "${recoTitle}"` : ' your reco'}.`
+    } else {
+      body = `reviewed your ${categoryLabel}reco`
+      if (score != null) {
+        scoreLozenge = {
+          score,
+          title: recoTitle,
+          feedbackText: notif.payload?.feedback_text,
+          category,
+        }
       }
     }
   }
@@ -233,7 +251,7 @@ function NotifRow({
           <div className="text-[13px] text-white leading-[1.5]">
             <span className="font-semibold">{actor.display_name}</span>{' '}
             <span className="text-text-muted">{body}</span>
-            {scoreLozenge != null && (() => {
+            {scoreLozenge != null && scoreLozenge.score >= 0 && (() => {
               const c = getScoreColor(scoreLozenge.score)
               return (
                 <span

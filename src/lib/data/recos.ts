@@ -220,13 +220,21 @@ export async function submitFeedback({
 }
 
 // ── Mark a reco as "been there, done that" ───────────────────────────────────
-export async function markBeenThere(recoId: string, recipientId: string): Promise<{ error: string | null }> {
+export async function markBeenThere(recoId: string, recipientId: string, senderId: string, recoTitle: string): Promise<{ error: string | null }> {
   const supabase = createClient()
   const { error } = await (supabase.from('reco_recipients') as any)
     .update({ status: 'been_there' })
     .eq('reco_id', recoId)
     .eq('recipient_id', recipientId)
-  return { error: error?.message ?? null }
+  if (error) return { error: error.message }
+  await (supabase.from('notifications') as any).insert({
+    user_id: senderId,
+    type: 'feedback_received',
+    actor_id: recipientId,
+    reco_id: recoId,
+    payload: { subtype: 'been_there', reco_title: recoTitle },
+  })
+  return { error: null }
 }
 
 // ── Mark a reco as "no go" and notify the sender ─────────────────────────────
@@ -254,7 +262,7 @@ export async function requestNewReco(recipientId: string, senderId: string, reco
     user_id: senderId,
     type: 'request_received',
     actor_id: recipientId,
-    payload: { subtype: 'new_reco_request', original_title: recoTitle, category },
+    payload: { subtype: 'been_there_new_request', original_title: recoTitle, category, count: 1 },
   })
   return { error: null }
 }

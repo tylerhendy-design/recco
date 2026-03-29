@@ -250,17 +250,19 @@ export default function HomePage() {
 
   async function handleBeenThereRate() {
     if (!beenThereReco || !userId) return
-    await markBeenThere(beenThereReco.id, userId)
+    const reco = beenThereReco
+    await markBeenThere(reco.id, userId, reco.sender_id, reco.title)
     setBeenThereReco(null)
-    setFeedbackReco(beenThereReco)
+    setFeedbackReco(reco)
   }
 
   async function handleBeenThereRequestNew() {
     if (!beenThereReco || !userId) return
-    await markBeenThere(beenThereReco.id, userId)
-    await requestNewReco(userId, beenThereReco.sender_id, beenThereReco.title, beenThereReco.category)
+    const reco = beenThereReco
     setBeenThereReco(null)
-    setDoneIds((prev) => new Set(prev).add(beenThereReco.id))
+    setDoneIds((prev) => new Set(prev).add(reco.id))
+    await markBeenThere(reco.id, userId, reco.sender_id, reco.title)
+    await requestNewReco(userId, reco.sender_id, reco.title, reco.category)
   }
 
   async function handleNoGoSubmit(reason: string) {
