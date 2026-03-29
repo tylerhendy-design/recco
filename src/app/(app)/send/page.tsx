@@ -53,7 +53,7 @@ const CONSTRAINTS: Record<string, ConstraintDef[]> = {
     { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
     { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
     { key: 'occasion', label: 'Occasion', placeholder: 'e.g. date night, casual lunch…', icon: STAR },
-    { key: 'price', label: 'Price range', placeholder: '£ e.g. under £40, splurge…', icon: MONEY },
+    { key: 'price', label: 'Price range', placeholder: 'e.g. under 40pp, splurge…', icon: MONEY },
   ],
   tv: [
     { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, HBO…', icon: TV },
@@ -134,7 +134,7 @@ function GivePageInner() {
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
   // Title autocomplete
-  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string; place_id?: string }
+  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string; place_id?: string; website?: string }
   type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null; meta?: SuggestionMeta }
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -223,6 +223,7 @@ function GivePageInner() {
     if (s.meta?.artist)  setManualArtist(s.meta.artist)
     if (s.meta?.address) setConstraints(p => ({ ...p, address: s.meta!.address! }))
     if (s.meta?.city)    setConstraints(p => ({ ...p, location: s.meta!.city! }))
+    if (s.meta?.website) setConstraints(p => ({ ...p, website: s.meta!.website! }))
     setSuggestions([])
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
     // Fetch restaurant photo lazily after selection
@@ -695,7 +696,14 @@ function GivePageInner() {
               return (
                 <button
                   key={def.key}
-                  onClick={() => setOpenConstraint(isOpen ? null : def.key)}
+                  onClick={() => {
+                    setOpenConstraint(isOpen ? null : def.key)
+                    setAddingCustomConstraint(false)
+                    // Pre-fill currency for price fields
+                    if (!isOpen && def.key === 'price' && !(constraints.price ?? '').trim()) {
+                      setConstraints(p => ({ ...p, price: '£' }))
+                    }
+                  }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
                   style={filled || isOpen
                     ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
@@ -709,16 +717,14 @@ function GivePageInner() {
             })}
 
             {/* Add custom tab */}
-            {!addingCustomConstraint && (
-              <button
-                onClick={() => setAddingCustomConstraint(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
-                style={{ color: '#999', border: '1px dashed #555' }}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add
-              </button>
-            )}
+            <button
+              onClick={() => { setAddingCustomConstraint(true); setOpenConstraint(null) }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
+              style={{ color: '#999', border: '1px dashed #555' }}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
           </div>
 
           {/* Custom constraint label input */}

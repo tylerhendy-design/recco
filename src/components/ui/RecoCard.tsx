@@ -419,12 +419,19 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProp
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Why?</div>
               {details.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
-                  {details.map((d, i) => (
-                    <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">
-                      {DETAIL_ICON[d.key]}
-                      {d.value}
-                    </span>
-                  ))}
+                  {details.map((d, i) => {
+                    const isLocation = d.key === 'address' || d.key === 'location'
+                    const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+                    if (isLocation) {
+                      const mapsUrl = `https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
+                      return (
+                        <a key={i} href={mapsUrl} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className={pillClass}>
+                          {DETAIL_ICON[d.key]}{d.value}
+                        </a>
+                      )
+                    }
+                    return <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
+                  })}
                 </div>
               )}
               {currentWhy && <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>}
@@ -454,9 +461,15 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProp
               {whyMessages.length <= 1 && <div className="mb-3" />}
 
               {/* Links — stopPropagation so tapping a link navigates without closing */}
-              {(reco.meta?.links?.length ?? 0) > 0 && (
+              {((reco.meta?.links?.length ?? 0) > 0 || reco.meta?.website) && (
                 <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  {reco.meta!.links!.map((link, i) => (
+                  {reco.meta?.website && (
+                    <a href={reco.meta.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-medium text-accent px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                      Website
+                    </a>
+                  )}
+                  {reco.meta?.links?.map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">
                       {getLinkLabel(link)}
                     </a>
