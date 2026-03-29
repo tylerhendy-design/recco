@@ -131,6 +131,12 @@ function GivePageInner() {
   const [sendError, setSendError] = useState<string | null>(null)
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
+  // Title autocomplete
+  type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null }
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
@@ -155,7 +161,36 @@ function GivePageInner() {
     setImageError(null)
     setTitle('')
     setManualMode(false)
+    setSuggestions([])
   }, [category])
+
+  function handleTitleChange(val: string) {
+    setTitle(val)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (!val.trim() || val.trim().length < 2 || !category) {
+      setSuggestions([])
+      return
+    }
+    searchTimeout.current = setTimeout(async () => {
+      setSuggestionsLoading(true)
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`)
+        const data = await res.json()
+        setSuggestions(data)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setSuggestionsLoading(false)
+      }
+    }, 300)
+  }
+
+  function selectSuggestion(s: Suggestion) {
+    setTitle(s.title)
+    if (s.imageUrl) setImageUrl(s.imageUrl)
+    setSuggestions([])
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+  }
 
   function toggleFriend(id: string) {
     setFriends((prev) => prev.map((f) => f.id === id ? { ...f, selected: !f.selected } : f))
@@ -463,22 +498,53 @@ function GivePageInner() {
                 </div>
               )}
 
-              {/* ── Manual: title input ── */}
+              {/* ── Manual: title input + autocomplete ── */}
               {manualMode && (
-                <div className="mb-4 flex items-center gap-2">
-                  <input
-                    autoFocus
-                    className="flex-1 text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
-                    placeholder={`Name of ${singular}…`}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                  <button
-                    onClick={() => { setManualMode(false); setTitle('') }}
-                    className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-bg-base border border-border"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  </button>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      autoFocus
+                      className="flex-1 text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                      placeholder={`Name of ${singular}…`}
+                      value={title}
+                      onChange={(e) => handleTitleChange(e.target.value)}
+                    />
+                    <button
+                      onClick={() => { setManualMode(false); setTitle(''); setSuggestions([]) }}
+                      className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-bg-base border border-border"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </div>
+
+                  {/* Suggestions dropdown */}
+                  {(suggestions.length > 0 || suggestionsLoading) && (
+                    <div className="mt-2 rounded-xl border border-border bg-bg-base overflow-hidden">
+                      {suggestionsLoading && suggestions.length === 0 ? (
+                        <div className="flex items-center justify-center py-3">
+                          <div className="w-3.5 h-3.5 border-2 border-border border-t-white/50 rounded-full animate-spin" />
+                        </div>
+                      ) : (
+                        suggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onPointerDown={() => selectSuggestion(s)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border last:border-b-0 active:bg-white/5 transition-colors"
+                          >
+                            {s.imageUrl ? (
+                              <img src={s.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-bg-card flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-semibold text-white truncate">{s.title}</div>
+                              {s.subtitle && <div className="text-[11px] text-text-faint truncate">{s.subtitle}</div>}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
