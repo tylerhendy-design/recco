@@ -238,7 +238,6 @@ function GivePageInner() {
 
   const selectedFriends = friends.filter((f) => f.selected)
   const isRestaurant = category === 'restaurant'
-  const isBook = category === 'book'
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
     : CONSTRAINTS.default
@@ -409,7 +408,7 @@ function GivePageInner() {
                   </div>
                   <button
                     onClick={() => setManualMode(true)}
-                    className="mt-2 text-[12px] text-text-faint hover:text-text-muted transition-colors"
+                    className="mt-2 text-[14px] text-text-muted hover:text-white transition-colors"
                   >
                     Don't have a link? Type the name →
                   </button>
@@ -466,14 +465,20 @@ function GivePageInner() {
 
               {/* ── Manual: title input ── */}
               {manualMode && (
-                <div className="mb-4">
+                <div className="mb-4 flex items-center gap-2">
                   <input
                     autoFocus
-                    className="text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                    className="flex-1 text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
                     placeholder={`Name of ${singular}…`}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
+                  <button
+                    onClick={() => { setManualMode(false); setTitle('') }}
+                    className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-bg-base border border-border"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
                 </div>
               )}
 
@@ -514,6 +519,8 @@ function GivePageInner() {
           {/* ── Rest of form: only once we have a title ── */}
           {(title.trim().length > 0) && (<>
 
+          {/* ── Group 1: Extra details ── */}
+          <div className="anim-in" style={{ animationDelay: '0ms' }}>
           {/* ── Divider ── */}
           <div className="border-t border-[#0e0e10] mt-4 pt-4 mb-1">
             <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-0.5">Extra details</div>
@@ -580,8 +587,10 @@ function GivePageInner() {
               />
             </div>
           )}
+          </div>{/* end group 1 */}
 
-          {/* ── Why ── */}
+          {/* ── Group 2: Why ── */}
+          <div className="anim-in" style={{ animationDelay: '80ms' }}>
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-3">Why?</div>
           <div className="flex gap-2.5 items-start mb-1">
             <VoiceButton />
@@ -598,11 +607,13 @@ function GivePageInner() {
               }}
             />
           </div>
+          </div>{/* end group 2 */}
 
+          {/* ── Group 3: Send to ── */}
+          <div className="anim-in" style={{ animationDelay: '160ms' }}>
           {/* ── Divider ── */}
           <div className="border-t border-[#0e0e10] mt-4 mb-3" />
 
-          {/* ── Send to ── */}
           <div className="flex items-center justify-between mb-3">
             <div className="text-[17px] font-semibold text-white tracking-[-0.3px]">Send to</div>
             {friends.length > 0 && (
@@ -673,6 +684,7 @@ function GivePageInner() {
               <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
           )}
+          </div>{/* end group 3 */}
 
           </>)}
         </div>
