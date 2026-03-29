@@ -729,11 +729,11 @@ function GivePageInner() {
 
           {/* Custom constraint label input */}
           {addingCustomConstraint && (
-            <div className="mb-2">
+            <div className="mb-2 flex gap-2">
               <input
                 autoFocus
-                className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
-                placeholder="Label (e.g. Dress code, Vibe, Duration…)"
+                className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                placeholder="Label (e.g. Dress code, Vibe…)"
                 value={customConstraintInput}
                 onChange={(e) => setCustomConstraintInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -750,20 +750,41 @@ function GivePageInner() {
                   }
                 }}
               />
+              <button
+                onClick={() => {
+                  if (!customConstraintInput.trim()) return
+                  const key = `custom_${Date.now()}`
+                  const newDef: ConstraintDef = { key, label: customConstraintInput.trim(), placeholder: 'Add details…', icon: STAR }
+                  setCustomConstraintDefs((prev) => [...prev, newDef])
+                  setOpenConstraint(key)
+                  setCustomConstraintInput('')
+                  setAddingCustomConstraint(false)
+                }}
+                disabled={!customConstraintInput.trim()}
+                className={`px-4 py-2 rounded-input text-[13px] font-semibold transition-all ${customConstraintInput.trim() ? 'bg-accent text-accent-fg' : 'bg-border text-text-faint'}`}
+              >
+                OK
+              </button>
             </div>
           )}
 
           {/* Expanded constraint input */}
           {openConstraint && (
-            <div className="mb-2">
+            <div className="mb-2 flex gap-2">
               <input
                 autoFocus
-                className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
                 placeholder={allDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
                 value={constraints[openConstraint] ?? ''}
                 onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
                 onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
               />
+              <button
+                onClick={() => setOpenConstraint(null)}
+                className="px-4 py-2 rounded-input text-[13px] font-semibold bg-accent text-accent-fg"
+              >
+                OK
+              </button>
             </div>
           )}
 
