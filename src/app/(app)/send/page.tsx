@@ -131,6 +131,7 @@ function GivePageInner() {
   const [imageError, setImageError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [manualMode, setManualMode] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
@@ -159,6 +160,7 @@ function GivePageInner() {
     setImageUploaded(false)
     setImageError(null)
     setTitle('')
+    setManualMode(false)
   }, [category])
 
   function toggleFriend(id: string) {
@@ -200,7 +202,7 @@ function GivePageInner() {
   function handleLinkChange(val: string) {
     setLinkInput(val)
     const trimmed = val.trim()
-    if (isStreamingUrl(trimmed) || isMapsUrl(trimmed)) {
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
       fetchLinkMeta(trimmed)
     }
   }
@@ -393,114 +395,127 @@ function GivePageInner() {
             />
           )}
 
-          {/* ── Divider ── */}
-          <div className="border-t border-[#0e0e10] mb-4" />
+          {/* ── Everything below only renders once a category is picked ── */}
+          {category && (
+            <>
+              <div className="border-t border-[#0e0e10] mb-4" />
 
-          {/* ── Link auto-fill (restaurant / music / podcast) ── */}
-          {(isRestaurant || isMediaCat || isBook) && (
-            <div className="mb-4">
-              {/* Artwork preview for streaming */}
-              {isMediaCat && imageUrl && (
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-[64px] h-[64px] rounded-xl overflow-hidden border border-border flex-shrink-0 relative">
-                    <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => { setImageUrl(null); setLinkMeta(null); setLinkInput('') }}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center"
-                    >
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {linkMeta?.title && <div className="text-[15px] font-semibold text-white leading-tight">{linkMeta.title}</div>}
-                    {linkMeta?.artist && <div className="text-[12px] text-text-muted mt-0.5">{linkMeta.artist}</div>}
-                  </div>
-                </div>
-              )}
-
-              {/* Link input */}
-              {(!linkMeta || !imageUrl || isBook) && (
-                <div
-                  className="flex items-center gap-2 rounded-input px-3 py-2.5 border"
-                  style={{ background: `${catColor}10`, borderColor: `${catColor}40` }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                  </svg>
-                  <input
-                    className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#444] font-sans"
-                    placeholder={linkPlaceholder}
-                    value={linkInput}
-                    onChange={(e) => handleLinkChange(e.target.value)}
-                  />
-                  {linkLoading && (
-                    <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
-                  )}
-                </div>
-              )}
-
-              {/* Google Maps result preview */}
-              {isRestaurant && linkMeta?.type === 'place' && (
-                <div className="mt-2 px-3 py-2 bg-bg-base border border-border rounded-input">
-                  <div className="text-[13px] font-semibold text-white">{linkMeta.title}</div>
-                  {(linkMeta.city || linkMeta.country) && (
-                    <div className="text-[12px] text-text-muted mt-0.5">
-                      {[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}
-                    </div>
-                  )}
-                  {linkMeta.address && <div className="text-[11px] text-text-faint mt-0.5">{linkMeta.address}</div>}
-                  <button
-                    onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }}
-                    className="text-[11px] text-text-faint mt-1.5 hover:text-red-400 transition-colors"
+              {/* ── Primary: link input ── */}
+              {!linkMeta && !manualMode && (
+                <div className="mb-4">
+                  <div
+                    className="flex items-center gap-2.5 rounded-input px-3 py-3 border"
+                    style={{ background: `${catColor}0d`, borderColor: `${catColor}44` }}
                   >
-                    Clear
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                      <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <input
+                      autoFocus
+                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-[#555] font-sans"
+                      placeholder="Paste a link to auto-fill…"
+                      value={linkInput}
+                      onChange={(e) => handleLinkChange(e.target.value)}
+                    />
+                    {linkLoading && (
+                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setManualMode(true)}
+                    className="mt-2 text-[12px] text-text-faint hover:text-text-muted transition-colors"
+                  >
+                    Don't have a link? Type the name →
                   </button>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* ── Restaurant photo banner ── */}
-          {isRestaurant && imageUrl && (
-            <div className="w-full h-[180px] rounded-xl overflow-hidden mb-3 relative">
-              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-              {imageUploading && (
-                <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
-                  <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span className="text-[11px] text-white font-medium">Uploading…</span>
+              {/* ── Link resolved: result card ── */}
+              {linkMeta && (
+                <div className="mb-4">
+                  {/* Artwork (music / podcast) */}
+                  {imageUrl && (linkMeta.type === 'music' || linkMeta.type === 'podcast') && (
+                    <div className="flex items-center gap-3 px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[14px] font-semibold text-white truncate">{linkMeta.title}</div>
+                        {linkMeta.artist && <div className="text-[12px] text-text-muted">{linkMeta.artist}</div>}
+                      </div>
+                      <button onClick={() => { setLinkMeta(null); setLinkInput(''); setImageUrl(null); setTitle('') }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  )}
+                  {/* Place result (Maps) */}
+                  {linkMeta.type === 'place' && (
+                    <div className="flex items-start justify-between px-3 py-2.5 bg-bg-base border border-border rounded-input mb-2">
+                      <div>
+                        <div className="text-[14px] font-semibold text-white">{linkMeta.title}</div>
+                        {linkMeta.address && <div className="text-[12px] text-text-faint mt-0.5">{linkMeta.address}</div>}
+                        {(linkMeta.city || linkMeta.country) && (
+                          <div className="text-[11px] text-text-faint mt-0.5">{[linkMeta.city, linkMeta.country].filter(Boolean).join(', ')}</div>
+                        )}
+                      </div>
+                      <button onClick={() => { setLinkMeta(null); setLinkInput(''); setTitle(''); setConstraints({}) }} className="ml-3 flex-shrink-0">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-              {imageUploaded && !imageUploading && (
-                <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span className="text-[11px] text-white font-medium">Photo saved</span>
+
+              {/* ── Manual: title input ── */}
+              {manualMode && (
+                <div className="mb-4">
+                  <input
+                    autoFocus
+                    className="text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                    placeholder={`Name of ${singular}…`}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
                 </div>
               )}
-              <button
-                onClick={() => { setImageUrl(null); setImageUploaded(false); setImageError(null) }}
-                className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-            </div>
+
+              {/* ── Photo banner (shown once we have title from either path) ── */}
+              {(title || linkMeta) && imageUrl && isRestaurant && (
+                <div className="w-full h-[180px] rounded-xl overflow-hidden mb-3 relative">
+                  <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                  {imageUploading && (
+                    <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
+                      <div className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span className="text-[11px] text-white font-medium">Uploading…</span>
+                    </div>
+                  )}
+                  {imageUploaded && !imageUploading && (
+                    <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-1">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span className="text-[11px] text-white font-medium">Photo saved</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setImageUrl(null); setImageUploaded(false); setImageError(null) }}
+                    className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                </div>
+              )}
+
+              {imageError && (
+                <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-input text-[11px] text-red-400 leading-[1.5]">
+                  {imageError}
+                </div>
+              )}
+            </>
           )}
 
-          {/* ── Upload error ── */}
-          {imageError && (
-            <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-input text-[11px] text-red-400 leading-[1.5]">
-              {imageError}
-            </div>
-          )}
-
-          {/* ── Name input ── */}
-          <input
-            className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.05] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-1"
-            placeholder={category ? `Name of ${singular}…` : 'Name it…'}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+          {/* ── Rest of form: only once we have a title ── */}
+          {(title.trim().length > 0) && (<>
 
           {/* ── Divider ── */}
           <div className="border-t border-[#0e0e10] mt-4 pt-4 mb-1">
@@ -661,6 +676,8 @@ function GivePageInner() {
               <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
           )}
+
+          </>)}
         </div>
 
         {/* Error */}
