@@ -111,6 +111,14 @@ async function searchSpotify(q: string, type: 'album' | 'show'): Promise<SearchR
     .slice(0, 5)
 }
 
+// ─── iTunes helpers ──────────────────────────────────────────────────────────
+
+// iTunes artwork URLs end in e.g. "100x100bb.jpg" — swap to 600x600 for full res
+function itunesArt(url: string | null): string | null {
+  if (!url) return null
+  return url.replace(/\d+x\d+bb\.jpg$/, '600x600bb.jpg')
+}
+
 // ─── iTunes (free fallback) ───────────────────────────────────────────────────
 
 async function searchITunes(
@@ -237,7 +245,7 @@ export async function GET(req: NextRequest) {
           await searchITunes(q, 'movie', 'movie', r => ({
             title: r.trackName ?? null,
             subtitle: r.releaseDate?.slice(0, 4) ?? null,
-            imageUrl: r.artworkUrl100 ?? null,
+            imageUrl: itunesArt(r.artworkUrl100 ?? null),
             meta: { year: r.releaseDate?.slice(0, 4) },
           }))
         )
@@ -250,7 +258,7 @@ export async function GET(req: NextRequest) {
           await searchITunes(q, 'tvShow', 'tvSeason', r => ({
             title: r.artistName ?? null,
             subtitle: r.primaryGenreName ?? null,
-            imageUrl: r.artworkUrl100 ?? null,
+            imageUrl: itunesArt(r.artworkUrl100 ?? null),
             meta: { genre: r.primaryGenreName },
           }))
         )
@@ -263,7 +271,7 @@ export async function GET(req: NextRequest) {
           await searchITunes(q, 'music', 'album', r => ({
             title: r.collectionName ?? r.trackName ?? null,
             subtitle: r.artistName ?? null,
-            imageUrl: r.artworkUrl100 ?? null,
+            imageUrl: itunesArt(r.artworkUrl100 ?? null),
             meta: r.artistName ? { artist: r.artistName } : undefined,
           }))
         )
@@ -274,7 +282,7 @@ export async function GET(req: NextRequest) {
         const itunes = await searchITunes(q, 'podcast', 'podcast', r => ({
           title: r.collectionName ?? null,
           subtitle: r.artistName ?? null,
-          imageUrl: r.artworkUrl100 ?? null,
+          imageUrl: itunesArt(r.artworkUrl600 ?? r.artworkUrl100 ?? null),
         }))
         const titles = new Set(spotify.map(r => r.title.toLowerCase()))
         return NextResponse.json([...spotify, ...itunes.filter(r => !titles.has(r.title.toLowerCase()))].slice(0, 6))
