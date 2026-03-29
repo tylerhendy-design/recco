@@ -342,7 +342,7 @@ export default function HomePage() {
           }
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={() => setManualAddOpen(true)} aria-label="Add reco manually">
+          <button onClick={() => setManualAddOpen(true)} aria-label="Add reco manually" className="flex items-center justify-center w-11 h-11 -m-[11px]">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="2" width="6" height="4" rx="1"/>
               <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
@@ -350,11 +350,11 @@ export default function HomePage() {
               <line x1="9" y1="14" x2="15" y2="14"/>
             </svg>
           </button>
-          <Link href="/notifications" className="relative" onClick={() => setUnreadCount(0)}>
+          <Link href="/notifications" className="relative flex items-center justify-center w-11 h-11 -m-[11px]" onClick={() => setUnreadCount(0)}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
             </svg>
-            {unreadCount > 0 && <div className="absolute -top-[3px] -right-[3px] w-2 h-2 rounded-full bg-accent" />}
+            {unreadCount > 0 && <div className="absolute top-[5px] right-[5px] w-2 h-2 rounded-full bg-accent" />}
           </Link>
         </div>
       </div>

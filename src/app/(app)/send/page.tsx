@@ -924,7 +924,17 @@ function GivePageInner() {
         </div>
 
         {/* Error */}
-        {sendError && <div className="mt-3 text-[13px] text-red-400 text-center">{sendError}</div>}
+        {sendError && (
+          <div className="mt-3 text-center">
+            <div className="text-[13px] text-red-400">{sendError}</div>
+            <button
+              onClick={() => { setSendError(null); handleSend(true) }}
+              className="mt-2 px-4 py-1.5 text-[13px] font-medium text-white bg-[#2a2a2e] rounded-lg active:opacity-70"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Duplicate warning */}
         {dupeWarning && (

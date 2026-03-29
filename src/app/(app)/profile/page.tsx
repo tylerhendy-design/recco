@@ -88,7 +88,7 @@ export default function ProfilePage() {
           .select('*', { count: 'exact', head: true })
           .in('reco_id', sentIds)
           .eq('status', 'done')
-          .lt('score', 40)
+          .lte('score', 3)
         stinkersSent = count ?? 0
       }
 
@@ -547,7 +547,7 @@ export default function ProfilePage() {
               What's a stinker?
             </div>
             <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
-              A stinker is a recommendation you sent that scored below 40. You said it would be good, and it wasn't. Three stinkers in the same category and you're sin-binned: blocked from sending more until you're let back in. Fool me three times…
+              A stinker is a recommendation you sent that scored 3 or below. You said it would be good, and it wasn't. Three stinkers in the same category and you're sin-binned: blocked from sending more until you're let back in. Fool me three times…
             </p>
             <p className="text-[15px] text-text-muted leading-[1.7]">
               Why do we have stinkers? Every rating — good or bad — helps you learn what someone actually likes. Reco works because recommendations come from real taste. Every stinker chips away at that. Harsh but fair.
