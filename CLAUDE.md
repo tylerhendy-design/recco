@@ -2,6 +2,22 @@
 
 ---
 
+## Development principles
+
+### 1. Usability and functionality above all else
+Every feature must work end-to-end. A notification you can't tap, a button that doesn't respond, a flow that dead-ends — these aren't minor bugs, they're failures. Before adding anything new, the question is always: does the thing we already built actually work on a real phone, with a real thumb, on a spotty connection? Ship working features, not half-wired ones.
+
+### 2. Mobile-first, always
+This is a mobile app that happens to live in a browser for now. Every layout, tap target, animation, and interaction must be designed for a phone screen first. Desktop is a bonus, not the target. Think thumb zones, think scroll behaviour, think iOS Safari quirks. The goal is to ship this as a native app — build as if that's already happened.
+
+### 3. Think in journeys, not screens
+Every feature exists somewhere in a user journey. When you add something, trace the full path: where does the user come from? Where do they go next? What happens downstream? A voice note on the Give page means a voice note player on the Reco card. A website pulled from Places API means a website link on the expanded card. Never build one half of a feature. If it's created somewhere, it must surface everywhere it's relevant — send flow, home feed, expanded card, notifications, profile. Features have knock-on effects; account for them upfront rather than patching them later.
+
+### 4. Don't ship what you haven't tested as a user
+Before calling a feature done: open it on your phone, use it like a real person would. Tap everything. Try the unhappy path. If it feels clunky, it is clunky — fix it now, not next sprint.
+
+---
+
 ## What RECO is and why it exists
 
 **Tagline: "It's not for everyone."** That's the point — not every reco is right for every person. The app is built around human nuance, not algorithmic matching.
