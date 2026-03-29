@@ -371,10 +371,6 @@ export default function HomePage() {
         onClick={closeAllDD}
       >
         <div ref={collapseRef} className="px-6 pt-3 pb-4">
-          <div className="text-[26px] font-semibold text-white leading-[1.25] tracking-[-0.6px] mb-3">
-            Hey {firstName},
-          </div>
-
           {/* Three-filter line */}
           <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
             Here are{' '}
