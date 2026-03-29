@@ -132,10 +132,12 @@ function GivePageInner() {
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
   // Title autocomplete
-  type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null }
+  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string }
+  type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null; meta?: SuggestionMeta }
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [manualArtist, setManualArtist] = useState('')
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -162,6 +164,7 @@ function GivePageInner() {
     setTitle('')
     setManualMode(false)
     setSuggestions([])
+    setManualArtist('')
   }, [category])
 
   function handleTitleChange(val: string) {
@@ -188,6 +191,10 @@ function GivePageInner() {
   function selectSuggestion(s: Suggestion) {
     setTitle(s.title)
     if (s.imageUrl) setImageUrl(s.imageUrl)
+    if (s.meta?.genre)   setConstraints(p => ({ ...p, genre: s.meta!.genre! }))
+    if (s.meta?.artist)  setManualArtist(s.meta.artist)
+    if (s.meta?.address) setConstraints(p => ({ ...p, address: s.meta!.address! }))
+    if (s.meta?.city)    setConstraints(p => ({ ...p, location: s.meta!.city! }))
     setSuggestions([])
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
   }
@@ -292,8 +299,9 @@ function GivePageInner() {
     // Image
     if (imageUrl) meta.artwork_url = imageUrl
 
-    // Link meta (auto-filled from Spotify / Maps)
+    // Link meta (auto-filled from Spotify / Maps) or manual artist from autocomplete
     if (linkMeta?.artist) meta.artist = linkMeta.artist
+    else if (manualArtist.trim()) meta.artist = manualArtist.trim()
     if (linkMeta?.artworkUrl && !meta.artwork_url) meta.artwork_url = linkMeta.artworkUrl
     if (linkMeta?.city) meta.location = linkMeta.city + (linkMeta.country ? `, ${linkMeta.country}` : '')
     if (linkMeta?.address) meta.address = linkMeta.address
