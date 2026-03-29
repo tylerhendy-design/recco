@@ -132,7 +132,7 @@ function GivePageInner() {
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
   // Title autocomplete
-  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string }
+  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string; place_id?: string }
   type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null; meta?: SuggestionMeta }
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
@@ -188,7 +188,7 @@ function GivePageInner() {
     }, 300)
   }
 
-  function selectSuggestion(s: Suggestion) {
+  async function selectSuggestion(s: Suggestion) {
     setTitle(s.title)
     if (s.imageUrl) setImageUrl(s.imageUrl)
     if (s.meta?.genre)   setConstraints(p => ({ ...p, genre: s.meta!.genre! }))
@@ -197,6 +197,14 @@ function GivePageInner() {
     if (s.meta?.city)    setConstraints(p => ({ ...p, location: s.meta!.city! }))
     setSuggestions([])
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    // Fetch restaurant photo lazily after selection
+    if (s.meta?.place_id) {
+      try {
+        const res = await fetch(`/api/place-photo?place_id=${encodeURIComponent(s.meta.place_id)}`)
+        const data = await res.json()
+        if (data.photoUrl) setImageUrl(data.photoUrl)
+      } catch {}
+    }
   }
 
   function toggleFriend(id: string) {
@@ -551,9 +559,18 @@ function GivePageInner() {
                               </div>
                             </button>
                           ))}
-                          <div className="px-3 py-2 border-t border-border">
-                            <div className="text-[11px] text-text-faint">Can't find it? Try adding more detail, e.g. "The Office UK" or "Invincible Amazon"</div>
-                          </div>
+                          <button
+                            onClick={() => { setSuggestions([]); if (searchTimeout.current) clearTimeout(searchTimeout.current) }}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 border-t border-border active:bg-white/5 transition-colors"
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center flex-shrink-0">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-semibold text-white truncate">Use "{title}"</div>
+                              <div className="text-[11px] text-text-faint">Add it manually</div>
+                            </div>
+                          </button>
                         </>
                       )}
                     </div>

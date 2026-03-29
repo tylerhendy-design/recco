@@ -11,6 +11,7 @@ export interface SearchResult {
     author?: string
     address?: string
     city?: string
+    place_id?: string
   }
 }
 
@@ -185,7 +186,11 @@ async function searchRestaurantsGoogle(q: string): Promise<SearchResult[]> {
         title: name,
         subtitle: secondary,
         imageUrl: null,
-        meta: { address: address ?? undefined, city: city ?? undefined },
+        meta: {
+          address: address ?? undefined,
+          city: city ?? undefined,
+          place_id: p.place_id ?? undefined,
+        },
       }
     })
     .filter((r: SearchResult) => r.title)
