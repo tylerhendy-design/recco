@@ -39,7 +39,7 @@ async function searchTMDB(q: string, type: 'movie' | 'tv'): Promise<SearchResult
   const key = process.env.TMDB_API_KEY
   if (!key) return []
   const res = await fetch(
-    `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(q)}&page=1&include_adult=false`
+    `https://api.themoviedb.org/3/search/${type}?api_key=${key}&query=${encodeURIComponent(q)}&page=1&include_adult=false&language=en-US`
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -58,7 +58,7 @@ async function searchTMDB(q: string, type: 'movie' | 'tv'): Promise<SearchResult
       }
     })
     .filter((r: SearchResult) => r.title && !seen.has(r.title) && seen.add(r.title!))
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 // ─── Spotify ─────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ async function searchSpotify(q: string, type: 'album' | 'show'): Promise<SearchR
       }
     })
     .filter((r: SearchResult) => r.title && !seen.has(r.title) && seen.add(r.title!))
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 // ─── iTunes helpers ──────────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ async function searchITunes(
   map: (r: any) => SearchResult
 ): Promise<SearchResult[]> {
   const res = await fetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=${media}&entity=${entity}&limit=10`
+    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&media=${media}&entity=${entity}&limit=15`
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -136,7 +136,7 @@ async function searchITunes(
   return (data.results ?? [])
     .map(map)
     .filter((r: SearchResult) => r.title && !seen.has(r.title) && seen.add(r.title!))
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 // ─── Open Library (books) ────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ async function searchBooks(q: string): Promise<SearchResult[]> {
       }
     })
     .filter((r: SearchResult) => r.title && !seen.has(r.title) && seen.add(r.title!))
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 // ─── Restaurants ─────────────────────────────────────────────────────────────
@@ -189,7 +189,7 @@ async function searchRestaurantsGoogle(q: string): Promise<SearchResult[]> {
       }
     })
     .filter((r: SearchResult) => r.title)
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 async function searchRestaurantsNominatim(q: string): Promise<SearchResult[]> {
@@ -219,7 +219,7 @@ async function searchRestaurantsNominatim(q: string): Promise<SearchResult[]> {
       }
     })
     .filter((r: SearchResult) => r.title && !seen.has(r.title) && seen.add(r.title!))
-    .slice(0, 5)
+    .slice(0, 8)
 }
 
 // ─── Route ───────────────────────────────────────────────────────────────────

@@ -527,29 +527,34 @@ function GivePageInner() {
 
                   {/* Suggestions dropdown */}
                   {(suggestions.length > 0 || suggestionsLoading) && (
-                    <div className="mt-2 rounded-xl border border-border bg-bg-base overflow-hidden">
+                    <div className="mt-2 rounded-xl border border-border bg-bg-base overflow-hidden max-h-[320px] overflow-y-auto">
                       {suggestionsLoading && suggestions.length === 0 ? (
                         <div className="flex items-center justify-center py-3">
                           <div className="w-3.5 h-3.5 border-2 border-border border-t-white/50 rounded-full animate-spin" />
                         </div>
                       ) : (
-                        suggestions.map((s, i) => (
-                          <button
-                            key={i}
-                            onPointerDown={() => selectSuggestion(s)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border last:border-b-0 active:bg-white/5 transition-colors"
-                          >
-                            {s.imageUrl ? (
-                              <img src={s.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
-                            ) : (
-                              <div className="w-9 h-9 rounded-lg bg-bg-card flex-shrink-0" />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[13px] font-semibold text-white truncate">{s.title}</div>
-                              {s.subtitle && <div className="text-[11px] text-text-faint truncate">{s.subtitle}</div>}
-                            </div>
-                          </button>
-                        ))
+                        <>
+                          {suggestions.map((s, i) => (
+                            <button
+                              key={i}
+                              onClick={() => selectSuggestion(s)}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border last:border-b-0 active:bg-white/5 transition-colors"
+                            >
+                              {s.imageUrl ? (
+                                <img src={s.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-lg bg-bg-card flex-shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[13px] font-semibold text-white truncate">{s.title}</div>
+                                {s.subtitle && <div className="text-[11px] text-text-faint truncate">{s.subtitle}</div>}
+                              </div>
+                            </button>
+                          ))}
+                          <div className="px-3 py-2 border-t border-border">
+                            <div className="text-[11px] text-text-faint">Can't find it? Try adding more detail, e.g. "The Office UK" or "Invincible Amazon"</div>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}
