@@ -138,6 +138,16 @@ function GivePageInner() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [manualArtist, setManualArtist] = useState('')
+  const userLocation = useRef<{ lat: number; lng: number } | null>(null)
+
+  // Request geolocation once on mount — used to bias restaurant search
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { userLocation.current = { lat: pos.coords.latitude, lng: pos.coords.longitude } },
+      () => { userLocation.current = { lat: 51.5074, lng: -0.1278 } } // fallback: London
+    )
+  }, [])
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -177,7 +187,11 @@ function GivePageInner() {
     searchTimeout.current = setTimeout(async () => {
       setSuggestionsLoading(true)
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`)
+        let url = `/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`
+        if (category === 'restaurant' && userLocation.current) {
+          url += `&lat=${userLocation.current.lat}&lng=${userLocation.current.lng}`
+        }
+        const res = await fetch(url)
         const data = await res.json()
         setSuggestions(data)
       } catch {

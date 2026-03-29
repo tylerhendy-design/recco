@@ -166,11 +166,15 @@ async function searchBooks(q: string): Promise<SearchResult[]> {
 
 // ─── Restaurants ─────────────────────────────────────────────────────────────
 
-async function searchRestaurantsGoogle(q: string): Promise<SearchResult[]> {
+async function searchRestaurantsGoogle(q: string, lat?: string, lng?: string): Promise<SearchResult[]> {
   const key = process.env.GOOGLE_PLACES_API_KEY
   if (!key) return []
+  // Bias results toward user's location (or London fallback) within 50km
+  const locationBias = lat && lng
+    ? `&location=${lat},${lng}&radius=50000`
+    : `&location=51.5074,-0.1278&radius=50000`
   const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(q)}&types=establishment&key=${key}`
+    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(q)}&types=establishment${locationBias}&key=${key}`
   )
   if (!res.ok) return []
   const data = await res.json()
@@ -232,13 +236,15 @@ async function searchRestaurantsNominatim(q: string): Promise<SearchResult[]> {
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim()
   const category = req.nextUrl.searchParams.get('category')
+  const lat = req.nextUrl.searchParams.get('lat') ?? undefined
+  const lng = req.nextUrl.searchParams.get('lng') ?? undefined
 
   if (!q || q.length < 2) return NextResponse.json([])
 
   try {
     switch (category) {
       case 'restaurant': {
-        const google = await searchRestaurantsGoogle(q)
+        const google = await searchRestaurantsGoogle(q, lat, lng)
         if (google.length) return NextResponse.json(google)
         return NextResponse.json(await searchRestaurantsNominatim(q))
       }
