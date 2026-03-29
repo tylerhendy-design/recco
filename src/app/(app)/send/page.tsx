@@ -408,7 +408,7 @@ function GivePageInner() {
                   </div>
                   <button
                     onClick={() => setManualMode(true)}
-                    className="mt-2 text-[14px] text-text-muted hover:text-white transition-colors"
+                    className="mt-4 text-[14px] text-text-muted hover:text-white transition-colors"
                   >
                     Don't have a link? Type the name →
                   </button>
@@ -475,9 +475,9 @@ function GivePageInner() {
                   />
                   <button
                     onClick={() => { setManualMode(false); setTitle('') }}
-                    className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-bg-base border border-border"
+                    className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-bg-base border border-border"
                   >
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
                 </div>
               )}
