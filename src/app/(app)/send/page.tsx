@@ -9,7 +9,7 @@ import { VoiceButton } from '@/components/ui/VoiceButton'
 import { CATEGORIES, type CategoryId, getCategoryLabel } from '@/constants/categories'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriends } from '@/lib/data/friends'
-import { sendReco } from '@/lib/data/recos'
+import { sendReco, checkDuplicateReco } from '@/lib/data/recos'
 import { initials } from '@/lib/utils'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -129,6 +129,8 @@ function GivePageInner() {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [dupeWarning, setDupeWarning] = useState<string | null>(null)
+  const [dupeConfirmed, setDupeConfirmed] = useState(false)
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
   // Title autocomplete
@@ -321,10 +323,25 @@ function GivePageInner() {
 
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
 
-  async function handleSend() {
+  async function handleSend(force = false) {
     if (!canSend || !userId || !category) return
     setSending(true)
     setSendError(null)
+
+    // Check for duplicates (skip if user already confirmed)
+    if (!force && !dupeConfirmed) {
+      const { duplicateNames } = await checkDuplicateReco({
+        senderId: userId,
+        title: title.trim(),
+        category,
+        recipientIds: selectedFriends.map((f) => f.id),
+      })
+      if (duplicateNames.length > 0) {
+        setDupeWarning(`You've already sent this to ${duplicateNames.join(', ')}`)
+        setSending(false)
+        return
+      }
+    }
 
     const finalCat = category === 'custom' ? 'custom' : category
     const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
@@ -860,16 +877,39 @@ function GivePageInner() {
         {/* Error */}
         {sendError && <div className="mt-3 text-[13px] text-red-400 text-center">{sendError}</div>}
 
+        {/* Duplicate warning */}
+        {dupeWarning && (
+          <div className="mt-3 px-4 py-3 bg-[#2a2210] border border-[#554a1e] rounded-xl text-center">
+            <div className="text-[13px] text-[#e8c840] font-medium mb-2">{dupeWarning}</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setDupeWarning(null); setDupeConfirmed(false) }}
+                className="flex-1 py-2 rounded-lg text-[13px] font-semibold text-text-muted bg-bg-base border border-border"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setDupeWarning(null); setDupeConfirmed(true); handleSend(true) }}
+                className="flex-1 py-2 rounded-lg text-[13px] font-semibold text-accent-fg bg-accent"
+              >
+                Send anyway
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Send button */}
-        <button
-          onClick={handleSend}
-          disabled={!canSend}
-          className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
-            canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
-          }`}
-        >
-          {sending ? 'Giving…' : 'Give reco'}
-        </button>
+        {!dupeWarning && (
+          <button
+            onClick={() => handleSend()}
+            disabled={!canSend}
+            className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
+              canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+            }`}
+          >
+            {sending ? 'Giving…' : 'Give reco'}
+          </button>
+        )}
       </div>
 
       {/* Hidden file input */}

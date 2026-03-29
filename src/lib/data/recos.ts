@@ -288,6 +288,46 @@ export async function requestNewReco(recipientId: string, senderId: string, reco
   return { error: null }
 }
 
+// ── Check for duplicate recos (same sender, title, category, recipient) ──────
+export async function checkDuplicateReco({
+  senderId,
+  title,
+  category,
+  recipientIds,
+}: {
+  senderId: string
+  title: string
+  category: string
+  recipientIds: string[]
+}): Promise<{ duplicateNames: string[] }> {
+  const supabase = createClient()
+  const normalised = title.trim().toLowerCase()
+
+  // Find recos from this sender with the same title + category
+  const { data } = await supabase
+    .from('recommendations')
+    .select('id, reco_recipients ( recipient_id, profiles:recipient_id ( display_name ) )')
+    .eq('sender_id', senderId)
+    .eq('category', category)
+    .ilike('title', normalised)
+
+  if (!data || data.length === 0) return { duplicateNames: [] }
+
+  // Collect recipient names that overlap with the selected recipients
+  const names = new Set<string>()
+  for (const reco of data) {
+    const recipients = (reco as any).reco_recipients ?? []
+    for (const r of recipients) {
+      if (recipientIds.includes(r.recipient_id)) {
+        const name = r.profiles?.display_name ?? 'someone'
+        names.add(name.split(' ')[0])
+      }
+    }
+  }
+
+  return { duplicateNames: Array.from(names) }
+}
+
 // ── Send a reco to one or more people ────────────────────────────────────────
 export async function sendReco({
   senderId,
