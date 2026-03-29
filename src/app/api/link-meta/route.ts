@@ -70,6 +70,23 @@ export async function GET(req: NextRequest) {
         ? decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
         : null
 
+      let city: string | null = null
+      let country: string | null = null
+      let address: string | null = null
+
+      // Mobile share links redirect to /maps?q=Name,+Address,+City — parse the q param
+      if (!placeName) {
+        const qMatch = resolvedUrl.match(/[?&]q=([^&]+)/)
+        if (qMatch) {
+          const qDecoded = decodeURIComponent(qMatch[1].replace(/\+/g, ' '))
+          const qParts = qDecoded.split(',').map(p => p.trim()).filter(Boolean)
+          placeName = qParts[0] ?? null
+          // qParts[1] = street address, qParts[2] = "City Postcode"
+          if (qParts[1]) address = qParts[1]
+          if (qParts[2]) city = qParts[2].replace(/\s+[A-Z]{1,2}\d[\dA-Z]?\s*\d[A-Z]{2}\s*$/i, '').trim() || qParts[2].trim()
+        }
+      }
+
       // Fallback: fetch the page and strip "… - Google Maps" from the OG title
       if (!placeName) {
         try {
@@ -82,13 +99,9 @@ export async function GET(req: NextRequest) {
         } catch {}
       }
 
-      // Extract coordinates for reverse geocoding
+      // Extract coordinates for reverse geocoding (present in /maps/place/ URLs)
       const coordMatch = resolvedUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
-      let city: string | null = null
-      let country: string | null = null
-      let address: string | null = null
-
-      if (coordMatch) {
+      if (coordMatch && !city) {
         const lat = coordMatch[1]
         const lon = coordMatch[2]
         const geoRes = await fetch(
