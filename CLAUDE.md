@@ -1,4 +1,4 @@
-# RECO — Claude Code Context
+  # RECO — Claude Code Context
 
 ---
 

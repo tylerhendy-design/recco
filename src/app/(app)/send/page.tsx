@@ -140,6 +140,14 @@ function GivePageInner() {
   const [manualArtist, setManualArtist] = useState('')
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
 
+  // Custom constraint tabs
+  const [customConstraintDefs, setCustomConstraintDefs] = useState<ConstraintDef[]>([])
+  const [addingCustomConstraint, setAddingCustomConstraint] = useState(false)
+  const [customConstraintInput, setCustomConstraintInput] = useState('')
+
+  // Voice note
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+
   // Request geolocation once on mount — used to bias restaurant search
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -175,6 +183,10 @@ function GivePageInner() {
     setShowLinkInput(false)
     setSuggestions([])
     setManualArtist('')
+    setCustomConstraintDefs([])
+    setAddingCustomConstraint(false)
+    setCustomConstraintInput('')
+    setAudioBlob(null)
   }, [category])
 
   function handleTitleChange(val: string) {
@@ -305,6 +317,7 @@ function GivePageInner() {
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
     : CONSTRAINTS.default
+  const allDefs: ConstraintDef[] = [...activeDefs, ...customConstraintDefs]
 
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
 
@@ -634,16 +647,16 @@ function GivePageInner() {
             <div className="text-[12px] text-text-faint mb-3">Optional — more context makes a better reco</div>
           </div>
 
-          {/* ── Constraint lozenges ── */}
-          <div className="flex gap-2 flex-wrap mb-2.5">
-            {activeDefs.map((def) => {
+          {/* ── Constraint tabs (horizontal scroll) ── */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2 mb-1">
+            {allDefs.map((def) => {
               const filled = (constraints[def.key] ?? '').trim().length > 0
               const isOpen = openConstraint === def.key
               return (
                 <button
                   key={def.key}
                   onClick={() => setOpenConstraint(isOpen ? null : def.key)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
                   style={filled || isOpen
                     ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
                     : { color: '#666', border: '1px dashed #2e2e33' }
@@ -655,64 +668,110 @@ function GivePageInner() {
               )
             })}
 
-            {/* Image lozenge */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all overflow-hidden"
-              style={imageUploaded
-                ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
-                : imageUrl && imageUploading
-                  ? { color: '#888', border: '1px solid #333', background: 'transparent' }
-                  : imageError
-                    ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
-                    : { color: '#666', border: '1px dashed #2e2e33' }
-              }
-            >
-              {imageUploading ? (
-                <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
-              ) : imageUploaded ? (
-                <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg> Photo saved</>
-              ) : imageError ? (
-                <>{CAM} Retry photo</>
-              ) : (
-                <>{CAM} + Photo</>
-
-              )}
-            </button>
+            {/* Add custom tab */}
+            {!addingCustomConstraint && (
+              <button
+                onClick={() => setAddingCustomConstraint(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
+                style={{ color: '#444', border: '1px dashed #222' }}
+              >
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            )}
           </div>
 
-          {/* Expanded constraint input */}
-          {openConstraint && (
-            <div className="mb-2.5">
+          {/* Custom constraint label input */}
+          {addingCustomConstraint && (
+            <div className="mb-2">
               <input
                 autoFocus
                 className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
-                placeholder={activeDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
+                placeholder="Label (e.g. Dress code, Vibe, Duration…)"
+                value={customConstraintInput}
+                onChange={(e) => setCustomConstraintInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && customConstraintInput.trim()) {
+                    const key = `custom_${Date.now()}`
+                    const newDef: ConstraintDef = { key, label: customConstraintInput.trim(), placeholder: 'Add details…', icon: STAR }
+                    setCustomConstraintDefs((prev) => [...prev, newDef])
+                    setOpenConstraint(key)
+                    setCustomConstraintInput('')
+                    setAddingCustomConstraint(false)
+                  } else if (e.key === 'Escape') {
+                    setAddingCustomConstraint(false)
+                    setCustomConstraintInput('')
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Expanded constraint input */}
+          {openConstraint && (
+            <div className="mb-2">
+              <input
+                autoFocus
+                className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                placeholder={allDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
                 value={constraints[openConstraint] ?? ''}
                 onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
                 onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
               />
             </div>
           )}
+
+          {/* ── Add Photo CTA ── */}
+          {!imageUrl ? (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full mt-1 mb-1 py-3 rounded-xl border border-dashed flex items-center justify-center gap-2 transition-colors"
+              style={{ borderColor: '#2a2a30', color: '#555' }}
+            >
+              {CAM}
+              <span className="text-[13px] font-medium">Add a photo</span>
+              <span className="text-[11px] text-[#3a3a42]">— optional but encouraged</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full mt-1 mb-1 py-2 rounded-xl border flex items-center justify-center gap-2 transition-colors"
+              style={imageUploaded
+                ? { borderColor: '#D4E23A55', background: 'rgba(212,226,58,0.06)', color: '#D4E23A' }
+                : imageError
+                  ? { borderColor: '#F56E6E55', background: 'rgba(245,110,110,0.06)', color: '#F56E6E' }
+                  : { borderColor: '#333', color: '#888' }
+              }
+            >
+              {imageUploading
+                ? <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /><span className="text-[12px]">Uploading…</span></>
+                : imageUploaded
+                  ? <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg><span className="text-[12px]">Photo saved — tap to replace</span></>
+                  : imageError
+                    ? <><span className="text-[12px]">Upload failed — tap to retry</span></>
+                    : <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg><span className="text-[12px]">Photo ready — tap to replace</span></>
+              }
+            </button>
+          )}
           </div>{/* end group 1 */}
 
           {/* ── Group 2: Why ── */}
           <div className="anim-in" style={{ animationDelay: '80ms' }}>
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-3">Why?</div>
-          <div className="flex gap-2.5 items-start mb-1">
-            <VoiceButton />
-            <textarea
-              ref={whyRef}
-              className="flex-1 bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.6] min-h-[60px]"
-              placeholder="Why will they love it? Be specific — that's what makes a reco actually useful."
-              rows={1}
-              value={why}
-              onChange={(e) => {
-                setWhy(e.target.value)
-                const el = whyRef.current
-                if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }
-              }}
-            />
+          <textarea
+            ref={whyRef}
+            className="w-full bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.6] min-h-[60px]"
+            placeholder="Why will they love it? Be specific — that's what makes a reco actually useful."
+            rows={1}
+            value={why}
+            onChange={(e) => {
+              setWhy(e.target.value)
+              const el = whyRef.current
+              if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }
+            }}
+          />
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[11px] text-text-faint">CBF typing? Yap instead.</span>
+            <VoiceButton onRecorded={(blob) => setAudioBlob(blob)} />
           </div>
           </div>{/* end group 2 */}
 
