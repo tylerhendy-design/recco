@@ -67,8 +67,8 @@ create table public.reco_recipients (
   id              uuid primary key default uuid_generate_v4(),
   reco_id         uuid not null references public.recommendations on delete cascade,
   recipient_id    uuid not null references public.profiles on delete cascade,
-  status          text not null default 'unseen' check (status in ('unseen', 'done')),
-  score           int check (score >= 0 and score <= 100),
+  status          text not null default 'unseen' check (status in ('unseen', 'seen', 'been_there', 'done', 'no_go')),
+  score           int check (score >= 1 and score <= 10),
   feedback_text   text,
   feedback_audio  text,
   rated_at        timestamptz,
@@ -121,7 +121,7 @@ declare
   v_bad_count   int;
 begin
   -- Only process when status changes to 'done' with a bad score
-  if new.status = 'done' and new.score is not null and new.score <= 34 then
+  if new.status = 'done' and new.score is not null and new.score <= 3 then
     -- Get reco sender and category
     select sender_id, category into v_sender_id, v_category
     from public.recommendations where id = new.reco_id;
@@ -163,7 +163,8 @@ create trigger on_reco_rated
 -- ─── Notifications ────────────────────────────────────────────────────────────
 
 create type public.notif_type as enum (
-  'feedback_received', 'reco_received', 'request_received', 'friend_added', 'sin_bin'
+  'feedback_received', 'reco_received', 'request_received',
+  'friend_added', 'friend_request', 'friend_accepted', 'sin_bin'
 );
 
 create table public.notifications (
@@ -172,6 +173,7 @@ create table public.notifications (
   type        public.notif_type not null,
   actor_id    uuid not null references public.profiles on delete cascade,
   reco_id     uuid references public.recommendations on delete set null,
+  payload     jsonb default '{}'::jsonb,
   read        bool default false not null,
   created_at  timestamptz default now() not null
 );

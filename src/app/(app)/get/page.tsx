@@ -74,7 +74,6 @@ export default function GetPage() {
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
   const [details, setDetails] = useState('')
-  const [recoCount, setRecoCount] = useState<number>(1)
   const [userId, setUserId] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
@@ -128,13 +127,13 @@ export default function GetPage() {
     const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
     const payload = {
       category: effectiveCat,
-      count: recoCount,
+      count: 1,
       constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
       details: details.trim() || null,
     }
     await Promise.all(
       selectedIds.map((friendId) =>
-        supabase.from('notifications').insert({
+        (supabase.from('notifications') as any).insert({
           user_id: friendId,
           type: 'request_received',
           actor_id: userId,
@@ -234,26 +233,6 @@ export default function GetPage() {
             )}
           </div>
 
-          {/* How many recos */}
-          <div className="border-t border-[#0e0e10] pt-4 mb-4">
-            <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-3">How many recos?</div>
-            <div className="flex gap-2">
-              {[1, 3, 5, 10].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setRecoCount(n)}
-                  className="flex-1 py-2 rounded-chip text-[13px] font-bold transition-all"
-                  style={recoCount === n
-                    ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
-                    : { color: '#555', border: '1px solid #222226', background: 'transparent' }
-                  }
-                >
-                  {n}×
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Extra details section */}
           <div className="border-t border-[#0e0e10] pt-4 mb-3">
             <div className="mb-1">
@@ -300,11 +279,16 @@ export default function GetPage() {
             {/* Free text details */}
             <div className="mt-4">
               <textarea
-                rows={2}
-                className="w-full bg-transparent outline-none text-[14px] text-text-secondary leading-[1.6] placeholder:text-[#383840] font-sans resize-none"
-                placeholder="Anything else — who it's for, what you've tried, how specific to be…"
+                rows={1}
+                className="w-full bg-transparent outline-none text-[14px] text-text-secondary leading-[1.6] placeholder:text-[#383840] font-sans resize-none min-h-[44px]"
+                placeholder="Anything else — where you'll be, what you've already tried, how picky you are…"
                 value={details}
-                onChange={(e) => setDetails(e.target.value)}
+                onChange={(e) => {
+                  setDetails(e.target.value)
+                  const el = e.target
+                  el.style.height = 'auto'
+                  el.style.height = `${el.scrollHeight}px`
+                }}
               />
             </div>
           </div>

@@ -118,7 +118,6 @@ function GivePageInner() {
   const [why, setWhy] = useState('')
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
-  const [details, setDetails] = useState('')
 
   // Link auto-fill
   const [linkInput, setLinkInput] = useState('')
@@ -135,6 +134,7 @@ function GivePageInner() {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const whyRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -248,10 +248,7 @@ function GivePageInner() {
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
     : CONSTRAINTS.default
 
-  const hasGoogleMapsLink = linkInput.trim() && isMapsUrl(linkInput)
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
-    && (!isRestaurant || !!hasGoogleMapsLink)
-    && (!isRestaurant || imageUploaded)
 
   async function handleSend() {
     if (!canSend || !userId || !category) return
@@ -330,7 +327,6 @@ function GivePageInner() {
 
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const catColor = category ? CATEGORIES.find((c) => c.id === category)?.color ?? '#D4E23A' : '#D4E23A'
-  const catBgColor = category ? CATEGORIES.find((c) => c.id === category)?.bgColor ?? '#1e1e00' : '#1e1e00'
 
   // ─── Link input label ──────────────────────────────────────────────────────
   const linkPlaceholder = isRestaurant
@@ -341,9 +337,6 @@ function GivePageInner() {
         ? 'Paste Amazon, Goodreads or Bookshop link…'
         : 'Paste Spotify or Apple Music link…'
 
-  const linkService = linkMeta
-    ? linkMeta.type === 'place' ? 'Google Maps' : linkMeta.artworkUrl ? 'Streaming' : null
-    : null
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -353,9 +346,9 @@ function GivePageInner() {
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
-          {/* ── Title ── */}
+          {/* ── Category prompt ── */}
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
-            Select Category
+            {category ? `What ${singular}?` : "What's the reco?"}
           </div>
           <div className="flex gap-1.5 flex-wrap mb-4">
             {displayedCats.map((cat) => {
@@ -546,9 +539,7 @@ function GivePageInner() {
                   ? { color: '#888', border: '1px solid #333', background: 'transparent' }
                   : imageError
                     ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
-                    : isRestaurant
-                      ? { color: '#F56E6E', border: '1px solid #F56E6E55', background: 'rgba(245,110,110,0.06)' }
-                      : { color: '#666', border: '1px dashed #2e2e33' }
+                    : { color: '#666', border: '1px dashed #2e2e33' }
               }
             >
               {imageUploading ? (
@@ -558,7 +549,8 @@ function GivePageInner() {
               ) : imageError ? (
                 <>{CAM} Retry photo</>
               ) : (
-                <>{CAM} {isRestaurant ? 'Add photo (required)' : '+ Photo'}</>
+                <>{CAM} + Photo</>
+
               )}
             </button>
           </div>
@@ -582,11 +574,16 @@ function GivePageInner() {
           <div className="flex gap-2.5 items-start mb-1">
             <VoiceButton />
             <textarea
-              className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.5]"
-              placeholder="Voice or type your reason…"
-              rows={3}
+              ref={whyRef}
+              className="flex-1 bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.6] min-h-[60px]"
+              placeholder="Why will they love it? Be specific — that's what makes a reco actually useful."
+              rows={1}
               value={why}
-              onChange={(e) => setWhy(e.target.value)}
+              onChange={(e) => {
+                setWhy(e.target.value)
+                const el = whyRef.current
+                if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }
+              }}
             />
           </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
@@ -14,7 +14,7 @@ import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { SentimentBadge } from '@/components/ui/SentimentBadge'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
-import { fetchHomeFeed, fetchDoneRecos, submitFeedback, markBeenThere, markNoGo, requestNewReco } from '@/lib/data/recos'
+import { fetchHomeFeed, fetchDoneRecos, fetchNoGoRecos, submitFeedback, markBeenThere, markNoGo, requestNewReco } from '@/lib/data/recos'
 import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import type { Reco, RecoRecommender } from '@/types/app.types'
@@ -72,6 +72,8 @@ export default function HomePage() {
   const [noGoRecos, setNoGoRecos] = useState<Reco[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingDone, setLoadingDone] = useState(false)
+  const [loadingNoGo, setLoadingNoGo] = useState(false)
+  const [dbNoGoRecos, setDbNoGoRecos] = useState<Reco[]>([])
 
   const [tab, setTab] = useState<Tab>('todo')
   const [catFilter, setCatFilter] = useState('all')
@@ -80,6 +82,32 @@ export default function HomePage() {
   const [catDDOpen, setCatDDOpen] = useState(false)
   const [timeDDOpen, setTimeDDOpen] = useState(false)
   const [senderDDOpen, setSenderDDOpen] = useState(false)
+
+  const [headerVisible, setHeaderVisible] = useState(true)
+  const lastScrollY = useRef(0)
+  const collapseRef = useRef<HTMLDivElement>(null)
+  const [collapseHeight, setCollapseHeight] = useState(0)
+
+  useEffect(() => {
+    if (collapseRef.current) {
+      setCollapseHeight(collapseRef.current.scrollHeight)
+    }
+  }, [firstName])
+
+  function handleFeedScroll(e: React.UIEvent<HTMLDivElement>) {
+    const el = e.currentTarget
+    const currentY = el.scrollTop
+    const delta = currentY - lastScrollY.current
+    if (currentY < 60) {
+      setHeaderVisible(true)
+    } else if (delta > 8) {
+      setHeaderVisible(false)
+      closeAllDD()
+    } else if (delta < -8) {
+      setHeaderVisible(true)
+    }
+    lastScrollY.current = currentY
+  }
 
   const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
@@ -104,6 +132,13 @@ export default function HomePage() {
     const recos = await fetchDoneRecos(uid)
     setDoneRecos(recos)
     setLoadingDone(false)
+  }, [])
+
+  const loadNoGo = useCallback(async (uid: string) => {
+    setLoadingNoGo(true)
+    const recos = await fetchNoGoRecos(uid)
+    setDbNoGoRecos(recos)
+    setLoadingNoGo(false)
   }, [])
 
   useEffect(() => {
@@ -164,6 +199,9 @@ export default function HomePage() {
     if (tab === 'done' && userId && doneRecos.length === 0) {
       loadDone(userId)
     }
+    if (tab === 'nogo' && userId && dbNoGoRecos.length === 0) {
+      loadNoGo(userId)
+    }
   }, [tab, userId])
 
   // Split feed into todo and no-go
@@ -173,10 +211,10 @@ export default function HomePage() {
   )
 
   const noGoList = useMemo(
-    () => [...noGoRecos, ...dbRecos.filter((r) => r.status === 'no_go')].filter(
+    () => [...noGoRecos, ...dbNoGoRecos].filter(
       (r, i, self) => self.findIndex((x) => x.id === r.id) === i
     ),
-    [noGoRecos, dbRecos]
+    [noGoRecos, dbNoGoRecos]
   )
 
   // Derive sender options from grouped recos
@@ -321,90 +359,103 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Greeting + filters */}
-      <div className="px-6 pt-3 pb-4 flex-shrink-0" onClick={closeAllDD}>
-        <div className="text-[26px] font-semibold text-white leading-[1.25] tracking-[-0.6px] mb-3">
-          Hey {firstName},
-        </div>
+      {/* Greeting + filters — collapses on scroll down */}
+      <div
+        style={{
+          height: headerVisible ? collapseHeight || 'auto' : 0,
+          opacity: headerVisible ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'height 280ms ease-in-out, opacity 200ms ease-in-out',
+          flexShrink: 0,
+        }}
+        onClick={closeAllDD}
+      >
+        <div ref={collapseRef} className="px-6 pt-3 pb-4">
+          <div className="text-[26px] font-semibold text-white leading-[1.25] tracking-[-0.6px] mb-3">
+            Hey {firstName},
+          </div>
 
-        {/* Three-filter line */}
-        <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
-          Here are{' '}
-          {/* Category */}
-          <span className="relative inline-block">
-            <span
-              className="text-accent border-b border-accent cursor-pointer"
-              onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
-            >
-              {catLabel}
+          {/* Three-filter line */}
+          <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
+            Here are{' '}
+            {/* Category */}
+            <span className="relative inline-block">
+              <span
+                className="text-accent border-b border-accent cursor-pointer"
+                onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
+              >
+                {catLabel}
+              </span>
+              {catDDOpen && (
+                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+                  {CATEGORY_FILTERS.map((f) => (
+                    <div
+                      key={f.value}
+                      onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
+                      className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${catFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                    >
+                      {f.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </span>
-            {catDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
-                {CATEGORY_FILTERS.map((f) => (
-                  <div
-                    key={f.value}
-                    onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
-                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${catFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                  >
-                    {f.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </span>
-          {' '}recos from{' '}
-          {/* Time */}
-          <span className="relative inline-block">
-            <span
-              className="text-accent border-b border-accent cursor-pointer"
-              onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
-            >
-              {timeLabel}
+            {' '}recos from{' '}
+            {/* Time */}
+            <span className="relative inline-block">
+              <span
+                className="text-accent border-b border-accent cursor-pointer"
+                onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
+              >
+                {timeLabel}
+              </span>
+              {timeDDOpen && (
+                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
+                  {TIME_FILTERS.map((f) => (
+                    <div
+                      key={f.value}
+                      onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
+                      className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${timeFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                    >
+                      {f.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </span>
-            {timeDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
-                {TIME_FILTERS.map((f) => (
-                  <div
-                    key={f.value}
-                    onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
-                    className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${timeFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                  >
-                    {f.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </span>
-          {' '}sent by{' '}
-          {/* Sender */}
-          <span className="relative inline-block">
-            <span
-              className="text-accent border-b border-accent cursor-pointer"
-              onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
-            >
-              {senderLabel}
+            {' '}sent by{' '}
+            {/* Sender */}
+            <span className="relative inline-block">
+              <span
+                className="text-accent border-b border-accent cursor-pointer"
+                onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
+              >
+                {senderLabel}
+              </span>
+              {senderDDOpen && (
+                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[180px] overflow-hidden shadow-lg">
+                  {senderOptions.map((f) => (
+                    <div
+                      key={f.value}
+                      onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
+                      className={`px-4 py-2.5 cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
+                    >
+                      <div className="text-[13px]">{f.label}</div>
+                      {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </span>
-            {senderDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[180px] overflow-hidden shadow-lg">
-                {senderOptions.map((f) => (
-                  <div
-                    key={f.value}
-                    onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
-                    className={`px-4 py-2.5 cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                  >
-                    <div className="text-[13px]">{f.label}</div>
-                    {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
-                  </div>
-                ))}
-              </div>
-            )}
-          </span>
+          </div>
         </div>
+      </div>
 
-        {/* To do / Done / No gos toggle */}
-        <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit mt-4">
+      {/* To do / Done / No gos toggle — always visible */}
+      <div className="px-6 pb-4 flex-shrink-0">
+        <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit">
           <button
-            onClick={() => setTab('todo')}
+            onClick={() => { setTab('todo'); setHeaderVisible(true); lastScrollY.current = 0 }}
             className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
               tab === 'todo' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
             }`}
@@ -412,7 +463,7 @@ export default function HomePage() {
             To do{grouped.length > 0 ? ` · ${grouped.length}` : ''}
           </button>
           <button
-            onClick={() => setTab('done')}
+            onClick={() => { setTab('done'); setHeaderVisible(true); lastScrollY.current = 0 }}
             className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
               tab === 'done' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
             }`}
@@ -420,7 +471,7 @@ export default function HomePage() {
             Done{doneRecos.length > 0 ? ` · ${doneRecos.length}` : ''}
           </button>
           <button
-            onClick={() => setTab('nogo')}
+            onClick={() => { setTab('nogo'); setHeaderVisible(true); lastScrollY.current = 0 }}
             className={`px-4 py-1.5 rounded-[6px] text-[13px] font-semibold transition-all ${
               tab === 'nogo' ? 'bg-bg-elevated text-white shadow-sm' : 'text-text-faint hover:text-text-muted'
             }`}
@@ -432,7 +483,7 @@ export default function HomePage() {
 
       {/* ── TO DO TAB ── */}
       {tab === 'todo' && (
-        <div className="flex-1 overflow-y-auto scrollbar-none px-5 pb-6" onClick={closeAllDD}>
+        <div className="flex-1 overflow-y-auto scrollbar-none px-5 pb-6" onClick={closeAllDD} onScroll={handleFeedScroll}>
           {loading && (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -469,7 +520,7 @@ export default function HomePage() {
 
       {/* ── DONE TAB ── */}
       {tab === 'done' && (
-        <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingDone && (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -528,8 +579,12 @@ export default function HomePage() {
 
       {/* ── NO GOS TAB ── */}
       {tab === 'nogo' && (
-        <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
-          {noGoList.length === 0 ? (
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
+          {loadingNoGo ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+            </div>
+          ) : noGoList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
               <div className="text-[36px] mb-1">🚫</div>
               <div className="text-[17px] font-semibold text-white">No no-gos yet</div>
