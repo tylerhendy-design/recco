@@ -161,75 +161,75 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
       className="relative rounded-card overflow-hidden cursor-pointer select-none"
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
-      {/* Background image */}
+      {/* Image — fixed height drives the card height */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={reco.meta.artwork_url!} alt={reco.title} className="absolute inset-0 w-full h-full object-cover" style={{ zIndex: 0 }} />
+      <img
+        src={reco.meta.artwork_url!}
+        alt={reco.title}
+        className="w-full object-cover block"
+        style={{ height: details.length > 0 ? 320 : 280 }}
+      />
 
-      {/* Gradient overlay — stronger at bottom for text legibility */}
-      <div className="absolute inset-0" style={{ zIndex: 1, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 25%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
+      {/* Gradient — absolute over image */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)' }} />
 
-      {/* Content div drives the card height. Image fills it via absolute inset-0. */}
-      <div className="relative pt-4 px-4 pb-0 flex flex-col" style={{ zIndex: 10 }}>
-        {/* Top row: category pill + dots */}
-        <div className="flex items-center justify-between">
-          <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
-            {getCategoryLabel(reco.category)}
-          </span>
-          <div className="relative">
-            <button
-              className="flex gap-[5px] items-center p-1"
+      {/* Top row: category pill + dots — absolute top */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between" style={{ zIndex: 10 }}>
+        <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
+          {getCategoryLabel(reco.category)}
+        </span>
+        <div className="relative">
+          <button
+            className="flex gap-[5px] items-center p-1"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+          >
+            {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+          </button>
+          {menuOpen && (
+            <div
+              className="absolute right-0 top-8 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
               onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
-            </button>
-            {menuOpen && (
-              <div
-                className="absolute right-0 top-8 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
+              <button
+                className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
+                onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
               >
-                <button
-                  className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
-                  onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
-                >
-                  <div className="font-semibold text-white">🔄 Been there, done that</div>
-                  <div className="text-[11px] text-white/60 mt-0.5">Already done this — rate it or request something new</div>
-                </button>
-                <button
-                  className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
-                  onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
-                >
-                  <div className="font-semibold text-bad">🚫 No go</div>
-                  <div className="text-[11px] text-white/60 mt-0.5">Can't or won't do this — give them a reason</div>
-                </button>
-              </div>
-            )}
-          </div>
+                <div className="font-semibold text-white">🔄 Been there, done that</div>
+                <div className="text-[11px] text-white/60 mt-0.5">Already done this — rate it or request something new</div>
+              </button>
+              <button
+                className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
+                onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
+              >
+                <div className="font-semibold text-bad">🚫 No go</div>
+                <div className="text-[11px] text-white/60 mt-0.5">Can't or won't do this — give them a reason</div>
+              </button>
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Fixed spacer between pill and title — always 64px of image shows */}
-        <div style={{ height: 64 }} />
-
-        {/* Title — scales down for longer names, max 2 lines */}
-        <div
-          className={`font-black text-white leading-[1.05] tracking-[-1px] line-clamp-2 ${
-            reco.title.length > 30 ? 'text-[26px]' :
-            reco.title.length > 18 ? 'text-[32px]' :
-            'text-[40px]'
-          }`}
-        >
+      {/* Bottom content — absolute, sits above gradient */}
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-6" style={{ zIndex: 10 }}>
+        {/* Title */}
+        <div className={`font-black text-white leading-[1.05] tracking-[-1px] line-clamp-2 ${
+          reco.title.length > 30 ? 'text-[26px]' :
+          reco.title.length > 18 ? 'text-[32px]' :
+          'text-[40px]'
+        }`}>
           {reco.title}
         </div>
 
-        {/* Reco'd by — 8px below title */}
+        {/* Reco'd by */}
         {(recommenderNames || when) && (
           <div className="text-[14px] text-white/75 mt-2">
             Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
           </div>
         )}
 
-        {/* Detail pills — 8px below reco'd by */}
+        {/* Detail pills */}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => (
@@ -240,8 +240,6 @@ export function RecoCard({ reco, onMarkDone, onShowMap, onBeenThere, onNoGo }: R
             ))}
           </div>
         )}
-        {/* Explicit 24px bottom gap — ensures consistent spacing regardless of last element */}
-        <div style={{ height: 24 }} />
       </div>
     </div>
   ) : (
