@@ -397,7 +397,7 @@ function GivePageInner() {
                     </svg>
                     <input
                       autoFocus
-                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white font-sans"
+                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white placeholder:opacity-100 font-sans"
                       placeholder="Paste a link to auto-fill…"
                       value={linkInput}
                       onChange={(e) => handleLinkChange(e.target.value)}
