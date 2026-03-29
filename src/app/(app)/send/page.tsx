@@ -386,7 +386,7 @@ function GivePageInner() {
 
               {/* ── Primary: link input ── */}
               {!linkMeta && !manualMode && (
-                <div className="mb-4">
+                <div className="mb-0">
                   <div
                     className="flex items-center gap-2.5 rounded-input px-3 py-3 border"
                     style={{ background: `${catColor}0d`, borderColor: `${catColor}44` }}
@@ -397,7 +397,7 @@ function GivePageInner() {
                     </svg>
                     <input
                       autoFocus
-                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-[#555] font-sans"
+                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white font-sans"
                       placeholder="Paste a link to auto-fill…"
                       value={linkInput}
                       onChange={(e) => handleLinkChange(e.target.value)}
