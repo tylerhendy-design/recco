@@ -178,18 +178,17 @@ async function searchRestaurantsGoogle(q: string, lat?: string, lng?: string): P
   )
   if (!res.ok) return []
   const data = await res.json()
-  return (data.predictions ?? [])
+  const results = (data.predictions ?? [])
     .map((p: any) => {
       const name = p.structured_formatting?.main_text ?? p.description?.split(',')[0] ?? null
       const secondary = p.structured_formatting?.secondary_text ?? null
-      // Extract city from secondary text (last meaningful segment before country)
       const parts = secondary?.split(',').map((s: string) => s.trim()) ?? []
       const city = parts.length >= 2 ? parts[parts.length - 2] : parts[0] ?? null
       const address = parts[0] ?? null
       return {
         title: name,
         subtitle: secondary,
-        imageUrl: null,
+        imageUrl: null as string | null,
         meta: {
           address: address ?? undefined,
           city: city ?? undefined,
@@ -199,6 +198,29 @@ async function searchRestaurantsGoogle(q: string, lat?: string, lng?: string): P
     })
     .filter((r: SearchResult) => r.title)
     .slice(0, 8)
+
+  // Fetch thumbnails in parallel from Place Details
+  await Promise.all(
+    results.map(async (r) => {
+      if (!r.meta?.place_id) return
+      try {
+        const detailRes = await fetch(
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.meta.place_id}&fields=photos&key=${key}`
+        )
+        const detail = await detailRes.json()
+        const photoRef = detail.result?.photos?.[0]?.photo_reference
+        if (photoRef) {
+          const photoRes = await fetch(
+            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photo_reference=${photoRef}&key=${key}`,
+            { redirect: 'follow' }
+          )
+          r.imageUrl = photoRes.url
+        }
+      } catch {}
+    })
+  )
+
+  return results
 }
 
 async function searchRestaurantsNominatim(q: string): Promise<SearchResult[]> {
