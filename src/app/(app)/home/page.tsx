@@ -399,7 +399,7 @@ function HomePageInner() {
         style={{
           height: headerVisible ? collapseHeight || 'auto' : 0,
           opacity: headerVisible ? 1 : 0,
-          overflow: headerVisible ? 'visible' : 'hidden',
+          overflow: (catDDOpen || timeDDOpen || senderDDOpen) ? 'visible' : 'hidden',
           transition: 'height 280ms ease-in-out, opacity 200ms ease-in-out',
           flexShrink: 0,
           position: 'relative',
