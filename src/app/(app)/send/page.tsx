@@ -513,7 +513,7 @@ function GivePageInner() {
           senderId: userId,
           category: forwardCategory,
           title: forwardTitle,
-          whyText: forwardWhy || undefined,
+          whyText: why.trim() || forwardWhy || undefined,
           meta,
           recipientIds: selectedFriends.map((f) => f.id),
         })
@@ -575,6 +575,18 @@ function GivePageInner() {
               </div>
             )
           })()}
+
+          {/* Your message */}
+          <div className="mb-4">
+            <div className="text-[12px] font-semibold text-text-faint uppercase tracking-[0.4px] mb-2">Add your take</div>
+            <textarea
+              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-white outline-none placeholder:text-[#444] font-sans resize-none leading-[1.6] min-h-[44px]"
+              placeholder="Why are you forwarding this?"
+              rows={2}
+              value={why}
+              onChange={(e) => setWhy(e.target.value)}
+            />
+          </div>
 
           {/* Who to send to */}
           <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-3">Send to</div>
