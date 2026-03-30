@@ -24,7 +24,7 @@ export function BottomSheet({ open, onClose, children, className }: BottomSheetP
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 md:absolute md:inset-0 z-50">
+    <div className="fixed inset-0 md:absolute md:inset-0 z-[200]">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 animate-fade-in"
