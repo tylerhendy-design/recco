@@ -16,6 +16,7 @@ export default function EditProfilePage() {
   const [checkingUsername, setCheckingUsername] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [locationStatus, setLocationStatus] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown')
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -28,6 +29,22 @@ export default function EditProfilePage() {
       }
     })
   }, [])
+
+  // Check location permission status
+  useEffect(() => {
+    if (!navigator.permissions) return
+    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      setLocationStatus(result.state as 'granted' | 'denied' | 'prompt')
+      result.onchange = () => setLocationStatus(result.state as 'granted' | 'denied' | 'prompt')
+    })
+  }, [])
+
+  function requestLocation() {
+    navigator.geolocation.getCurrentPosition(
+      () => setLocationStatus('granted'),
+      () => setLocationStatus('denied')
+    )
+  }
 
   useEffect(() => {
     if (username.length < 3 || username === currentUsername) {
@@ -108,6 +125,44 @@ export default function EditProfilePage() {
         {usernameAvailable === false && <p className="text-[12px] text-red-400 mt-1.5">That username is taken.</p>}
         {!unchanged && usernameAvailable === true && <p className="text-[12px] text-green-400 mt-1.5">@{usernameClean} is available.</p>}
         {error && <p className="mt-3 text-[13px] text-red-400">{error}</p>}
+
+        {/* Location permission */}
+        <div className="mt-8 border-t border-border pt-6">
+          <label className="text-[11px] font-semibold text-text-muted tracking-[0.5px] uppercase block mb-2">
+            Location
+          </label>
+          <div className="flex items-center justify-between bg-bg-card border border-border rounded-input px-4 py-3.5">
+            <div className="flex-1 min-w-0 mr-3">
+              <div className="text-[14px] font-medium text-white">Location access</div>
+              <div className="text-[12px] text-text-faint mt-0.5 leading-[1.5]">
+                {locationStatus === 'granted'
+                  ? 'Enabled. Restaurant and venue searches are biased to your area.'
+                  : locationStatus === 'denied'
+                    ? 'Blocked. Open your browser settings to allow location access for this site.'
+                    : 'Allow location to get better local recommendations.'
+                }
+              </div>
+            </div>
+            {locationStatus === 'granted' ? (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span className="text-[12px] font-semibold text-green-400">On</span>
+              </div>
+            ) : locationStatus === 'denied' ? (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="w-2 h-2 rounded-full bg-bad" />
+                <span className="text-[12px] font-semibold text-bad">Blocked</span>
+              </div>
+            ) : (
+              <button
+                onClick={requestLocation}
+                className="px-3.5 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors flex-shrink-0"
+              >
+                Enable
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="mt-auto pt-8">
           <button
