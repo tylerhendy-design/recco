@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { Avatar } from '@/components/ui/Avatar'
 import { createClient } from '@/lib/supabase/client'
@@ -26,6 +27,12 @@ type RequestRow = {
 }
 
 export default function FriendsPage() {
+  return <Suspense><FriendsPageInner /></Suspense>
+}
+
+function FriendsPageInner() {
+  const searchParams = useSearchParams()
+  const previewMode = searchParams.get('preview')
   const [userId, setUserId] = useState<string | null>(null)
   const [friends, setFriends] = useState<FriendRow[]>([])
   const [requests, setRequests] = useState<RequestRow[]>([])
@@ -138,13 +145,28 @@ export default function FriendsPage() {
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
           </div>
-        ) : filtered.length === 0 && requests.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 px-10 text-center gap-3">
-            <div className="text-[36px] mb-1">👋</div>
-            <div className="text-[16px] font-semibold text-white">No friends yet</div>
-            <div className="text-[13px] text-text-muted leading-[1.6]">
-              Search for people you know or share your invite link.
+        ) : (filtered.length === 0 && requests.length === 0) || previewMode === 'nofriends' ? (
+          <div className="flex flex-col items-center justify-center py-14 px-8 text-center gap-3">
+            <div className="text-[40px] mb-1">👋</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px]">No friends yet</div>
+            <div className="text-[14px] text-text-muted leading-[1.6]">
+              Recos only work with people you trust. Add friends by username or invite them to join.
             </div>
+            <Link href="/friends/add" className="mt-3 w-full py-3.5 bg-accent text-accent-fg rounded-btn text-[15px] font-bold text-center">
+              Find friends
+            </Link>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'Join me on reco.', text: 'Your friends have recommendations for you.', url: 'https://givemeareco.com' }).catch(() => {})
+                } else {
+                  navigator.clipboard.writeText('https://givemeareco.com')
+                }
+              }}
+              className="text-text-faint text-[13px] hover:text-white transition-colors"
+            >
+              Or share your invite link
+            </button>
           </div>
         ) : (
           <>
