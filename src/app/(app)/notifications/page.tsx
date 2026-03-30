@@ -245,6 +245,9 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
   if (notif.type === 'reco_received' && subtype === 'message') {
     return { emoji: '💬', bg: '#0a1a2a' }
   }
+  if (notif.type === 'reco_received' && subtype === 'forwarded') {
+    return { emoji: '🚀', bg: '#1a1020' }
+  }
   if (notif.type === 'reco_received') {
     const cat = notif.payload?.category
     const catEmoji: Record<string, string> = {
@@ -342,6 +345,12 @@ function NotifRow({
     } else {
       body = `${firstName} is asking for ${count > 1 ? `${count} ` : ''}${cat ? `a ${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
     }
+  } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'forwarded') {
+    const title = notif.payload?.title
+    const forwardedTo = notif.payload?.forwarded_to
+    const count = notif.payload?.forwarded_count ?? 1
+    heading = `${icon.emoji} Reco forwarded`
+    body = `${firstName} forwarded your reco${title ? ` "${title}"` : ''} to ${forwardedTo ?? `${count} ${count === 1 ? 'person' : 'people'}`}. Reco legend.`
   } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
     const title = notif.payload?.title
     const preview = notif.payload?.message_preview
@@ -405,6 +414,8 @@ function NotifRow({
   let href: string | null = null
   if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
     href = notif.reco_id ? `/notifications/${notif.reco_id}?with=${notif.actor_id}` : '/notifications'
+  } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'forwarded') {
+    href = '/home'
   } else if (notif.type === 'reco_received') {
     href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
   }

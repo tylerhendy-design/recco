@@ -290,6 +290,7 @@ function HomePageInner() {
     if (reco.meta?.artwork_url) params.set('image', reco.meta.artwork_url)
     if (reco.why_text) params.set('why', reco.why_text)
     if (reco.sender?.display_name) params.set('from', reco.sender.display_name.split(' ')[0])
+    if (reco.sender?.id) params.set('originalSenderId', reco.sender.id)
     router.push(`/send?${params.toString()}`)
   }
 

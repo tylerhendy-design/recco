@@ -139,6 +139,7 @@ function GivePageInner() {
   const forwardImage = searchParams.get('image')
   const forwardWhy = searchParams.get('why')
   const forwardFrom = searchParams.get('from')
+  const originalSenderId = searchParams.get('originalSenderId')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
@@ -517,6 +518,25 @@ function GivePageInner() {
           recipientIds: selectedFriends.map((f) => f.id),
         })
         if (error) { setSendError(error); setSending(false); return }
+
+        // Notify the original sender that their reco was forwarded
+        if (originalSenderId && originalSenderId !== userId) {
+          const supabase = createClient()
+          const forwardedToNames = selectedFriends.map(f => f.name.split(' ')[0]).join(', ')
+          await supabase.from('notifications').insert({
+            user_id: originalSenderId,
+            type: 'reco_received' as const,
+            actor_id: userId,
+            payload: {
+              subtype: 'forwarded',
+              title: forwardTitle,
+              category: forwardCategory,
+              forwarded_to: forwardedToNames,
+              forwarded_count: selectedFriends.length,
+            },
+          })
+        }
+
         setSending(false)
         setSent(true)
       } catch (e: any) {
