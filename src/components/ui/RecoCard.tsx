@@ -110,9 +110,10 @@ interface RecoCardProps {
   onMarkDone?: (reco: Reco) => void
   onBeenThere?: (reco: Reco) => void
   onNoGo?: (reco: Reco) => void
+  onForward?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, initialOpen }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
@@ -188,6 +189,17 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
         <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
           {getCategoryLabel(reco.category)}
         </span>
+        {onForward && reco.status === 'done' && (
+          <button
+            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onForward(reco) }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </button>
+        )}
         {hasActions && <div style={{ position: 'relative' }}>
           <button
             className="flex gap-[5px] items-center p-1"
@@ -261,6 +273,17 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
         </div>
+        {onForward && reco.status === 'done' && (
+          <button
+            className="w-8 h-8 rounded-full bg-bg-base border border-border flex items-center justify-center flex-shrink-0"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onForward(reco) }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </button>
+        )}
         {hasActions && <div className="relative flex-shrink-0">
           <button
             className="flex gap-[4px] items-center pt-1 p-1"
@@ -495,6 +518,20 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
                     <circle cx="8" cy="8" r="7" /><path d="M5 8l2.5 2.5L11 5.5" />
                   </svg>
                   Done? Give them your review
+                </button>
+              )}
+
+              {/* Forward button — only on completed recos */}
+              {reco.status === 'done' && onForward && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onForward(reco) }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-accent-fg rounded-input text-[14px] font-bold mt-2"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Forward this reco
                 </button>
               )}
             </div>

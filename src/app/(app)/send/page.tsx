@@ -133,6 +133,12 @@ function GivePageInner() {
   const searchParams = useSearchParams()
   const preselectedId = searchParams.get('to')
   const sendContext = searchParams.get('context')
+  const isForward = searchParams.get('forward') === 'true'
+  const forwardCategory = searchParams.get('category') as CategoryId | null
+  const forwardTitle = searchParams.get('title')
+  const forwardImage = searchParams.get('image')
+  const forwardWhy = searchParams.get('why')
+  const forwardFrom = searchParams.get('from')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
@@ -140,9 +146,9 @@ function GivePageInner() {
   const [friendSearch, setFriendSearch] = useState('')
 
   // Card fields
-  const [category, setCategory] = useState<CategoryId | null>(null)
+  const [category, setCategory] = useState<CategoryId | null>(forwardCategory)
   const [customCat, setCustomCat] = useState('')
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(forwardTitle ?? '')
   const [why, setWhy] = useState('')
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
@@ -153,7 +159,7 @@ function GivePageInner() {
   const [linkLoading, setLinkLoading] = useState(false)
 
   // Image
-  const [imageUrl, setImageUrl] = useState<string | null>(null)         // displayed URL (local blob or uploaded)
+  const [imageUrl, setImageUrl] = useState<string | null>(forwardImage ?? null)         // displayed URL (local blob or uploaded)
   const [imageUploaded, setImageUploaded] = useState(false)              // true = stored in Supabase
   const [imageUploading, setImageUploading] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
@@ -509,6 +515,19 @@ function GivePageInner() {
               </div>
             ) : null
           })()}
+
+          {/* Forward banner */}
+          {isForward && forwardFrom && (
+            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-4 rounded-xl bg-accent/8 border border-accent/20">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              <div className="text-[13px] text-accent leading-[1.4]">
+                <span className="font-semibold">Forwarding {forwardFrom}'s reco.</span>{' '}
+                <span className="text-accent/70">Pick who to send it to.</span>
+              </div>
+            </div>
+          )}
 
           {/* ── Category prompt ── */}
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">

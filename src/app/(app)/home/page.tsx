@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { FeedbackSheet } from '@/components/overlays/FeedbackSheet'
@@ -68,6 +68,7 @@ function HomePageInner() {
   const { manualRecos } = useRecos()
   const supabase = createClient()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const openRecoId = searchParams.get('reco')
   const previewMode = searchParams.get('preview')
 
@@ -279,6 +280,18 @@ function HomePageInner() {
     }, {}),
     [doneRecos]
   )
+
+  function handleForward(reco: Reco) {
+    const params = new URLSearchParams({
+      forward: 'true',
+      category: reco.category,
+      title: reco.title,
+    })
+    if (reco.meta?.artwork_url) params.set('image', reco.meta.artwork_url)
+    if (reco.why_text) params.set('why', reco.why_text)
+    if (reco.sender?.display_name) params.set('from', reco.sender.display_name.split(' ')[0])
+    router.push(`/send?${params.toString()}`)
+  }
 
   function closeAllDD() {
     setCatDDOpen(false)
@@ -593,7 +606,7 @@ function HomePageInner() {
                 {isOpen && (
                   <div className="px-4 pb-3 flex flex-col gap-3">
                     {recos.map((reco) => (
-                      <RecoCard key={reco.id} reco={reco} />
+                      <RecoCard key={reco.id} reco={reco} onForward={handleForward} />
                     ))}
                   </div>
                 )}
