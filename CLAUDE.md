@@ -16,6 +16,9 @@ Every feature exists somewhere in a user journey. When you add something, trace 
 ### 4. Don't ship what you haven't tested as a user
 Before calling a feature done: open it on your phone, use it like a real person would. Tap everything. Try the unhappy path. If it feels clunky, it is clunky — fix it now, not next sprint.
 
+### 5. Typography rules
+Never use italic text anywhere in the app unless explicitly asked. All text must follow a clear typographic hierarchy: large bold headings, medium-weight subheadings, regular body text, small muted secondary text. Consistent sizing, consistent weight progression, consistent spacing. Good hierarchy means users can scan any screen and instantly know what matters most.
+
 ---
 
 ## What RECO is and why it exists
