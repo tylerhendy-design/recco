@@ -399,9 +399,9 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          <span className="text-[18px] font-bold text-white tracking-[-0.4px]">
+          <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
             {TAB_LABELS[tab]}
-          </span>
+          </h1>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/send/manual" aria-label="Add reco manually" className="flex items-center justify-center w-11 h-11 -m-[11px]">
