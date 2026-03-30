@@ -343,7 +343,8 @@ function NotifRow({
     body = `${firstName}${title ? ` about ${title}` : ''}: "${preview ?? ''}"`
   } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
-    heading = `${icon.emoji} New reco`
+    const cat = notif.payload?.category
+    heading = `${icon.emoji} New ${cat ? `${cat} ` : ''}reco`
     body = `${firstName} just sent you${title ? ` "${title}"` : ' a reco'}.`
   } else if (isPlea) {
     const category = notif.payload?.category ?? ''
