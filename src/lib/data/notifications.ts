@@ -4,6 +4,7 @@ export type NotificationRow = {
   id: string
   type: 'friend_request' | 'friend_accepted' | 'reco_received' | 'feedback_received' | 'request_received' | 'sin_bin'
   actor_id: string
+  reco_id: string | null
   payload: Record<string, any>
   read: boolean
   created_at: string
@@ -19,7 +20,7 @@ export async function fetchNotifications(userId: string): Promise<NotificationRo
   const { data } = await supabase
     .from('notifications')
     .select(`
-      id, type, actor_id, payload, read, created_at,
+      id, type, actor_id, reco_id, payload, read, created_at,
       actor:profiles!notifications_actor_id_fkey(display_name, username, avatar_url)
     `)
     .eq('user_id', userId)

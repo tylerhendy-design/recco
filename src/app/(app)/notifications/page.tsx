@@ -231,8 +231,19 @@ function NotifRow({
     }
   }
 
+  // Determine where this notification should link to
+  let href: string | null = null
+  if (notif.type === 'reco_received') href = '/home'
+  else if (notif.type === 'feedback_received') href = '/home'
+  else if (notif.type === 'friend_accepted') href = `/friends/${notif.actor_id}`
+  else if (notif.type === 'sin_bin' && !isPlea && !isReleased) href = '/sinbin'
+
+  const Wrapper = href
+    ? ({ children, className }: { children: React.ReactNode; className: string }) => <Link href={href!} className={className}>{children}</Link>
+    : ({ children, className }: { children: React.ReactNode; className: string }) => <div className={className}>{children}</div>
+
   return (
-    <div className={`px-6 py-4 border-b border-[#0e0e10] ${!notif.read ? 'bg-bg-card/40' : ''}`}>
+    <Wrapper className={`block px-6 py-4 border-b border-[#0e0e10] ${!notif.read ? 'bg-bg-card/40' : ''}`}>
       <div className="flex items-start gap-3">
         {/* Unread dot */}
         <div className="pt-1 w-2 flex-shrink-0">
@@ -269,7 +280,14 @@ function NotifRow({
               {scoreLozenge.feedbackText}
             </div>
           ) : null}
-          <div className="text-[11px] text-text-faint mt-0.5">{time}</div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[11px] text-text-faint">{time}</span>
+            {href && (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            )}
+          </div>
 
           {/* Friend request actions */}
           {notif.type === 'friend_request' && (
@@ -352,6 +370,6 @@ function NotifRow({
           )}
         </div>
       </div>
-    </div>
+    </Wrapper>
   )
 }
