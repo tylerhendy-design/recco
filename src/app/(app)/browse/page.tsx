@@ -220,9 +220,10 @@ export default function BrowsePage() {
               Tell them why (optional)
             </div>
             <textarea
-              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans mb-4 resize-none"
+              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans mb-4 resize-none min-h-[44px]"
               placeholder="e.g. Not really my kind of thing..."
-              rows={3}
+              rows={1}
+              onChange={(e) => { const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
             />
 
             <button

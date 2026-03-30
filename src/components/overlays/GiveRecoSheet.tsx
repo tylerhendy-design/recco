@@ -264,11 +264,11 @@ export function GiveRecoSheet({
             <div className="flex gap-2 items-start">
               <VoiceButton />
               <textarea
-                className="flex-1 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-text-faint font-sans resize-none focus:border-accent"
+                className="flex-1 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-text-faint font-sans resize-none focus:border-accent min-h-[44px]"
                 placeholder="Voice or type your reason…"
-                rows={3}
+                rows={1}
                 value={why}
-                onChange={(e) => setWhy(e.target.value)}
+                onChange={(e) => { setWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
               />
             </div>
           </div>

@@ -625,7 +625,7 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
           {pick.category === 'restaurant' && (
             <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />
           )}
-          <textarea value={editWhy} onChange={(e) => setEditWhy(e.target.value)} placeholder="Why? (optional)" rows={3} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans" />
+          <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={1} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans min-h-[44px]" />
           {editLinks.map((link, i) => (
             <div key={i} className="flex items-center gap-2">
               <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link (optional)" className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />

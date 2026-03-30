@@ -79,13 +79,13 @@ export function FeedbackSheet({
         <div className="flex gap-2.5 items-start">
           <VoiceButton onRecorded={() => { setHasVoice(true); setShowError(false) }} />
           <textarea
-            rows={2}
+            rows={1}
             className={`flex-1 bg-bg-card border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none font-sans transition-colors resize-none min-h-[44px] ${
               showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-border'
             }`}
             placeholder="Tell them what you thought. Details matter."
             value={text}
-            onChange={(e) => { setText(e.target.value); setShowError(false) }}
+            onChange={(e) => { setText(e.target.value); setShowError(false); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
           />
         </div>
 

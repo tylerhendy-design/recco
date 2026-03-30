@@ -210,11 +210,11 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
               <span className="normal-case font-normal text-[10px] text-text-faint">optional — category auto-detected</span>
             </div>
             <textarea
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans resize-none leading-[1.5]"
+              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans resize-none leading-[1.5] min-h-[44px]"
               placeholder={'e.g. \u201cYou have to listen to the new Tame Impala album\u2026\u201d'}
-              rows={3}
+              rows={1}
               value={pastedText}
-              onChange={(e) => handlePaste(e.target.value)}
+              onChange={(e) => { handlePaste(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
             />
           </div>
 
