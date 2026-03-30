@@ -418,19 +418,31 @@ export default function ProfilePage() {
 
           {/* TOP 03 */}
           <div className="px-6 pt-5">
-            <div className="flex items-baseline justify-between mb-1">
-              <h1 className="text-[20px] font-bold text-white tracking-[-0.4px]">TOP 03</h1>
-              <span className="text-[11px] text-text-faint">{picks.length}/3</span>
-            </div>
-            <div className="text-[13px] text-text-muted leading-[1.5] mb-4">
-              {picks.length < 3
-                ? 'Add your top 3 recos to unlock sending. These are the ones you think everyone should try.'
-                : 'Your top 3. The ones you think everyone should try.'
-              }
-            </div>
+            {(() => {
+              // Count picks per category
+              const catCounts: Record<string, number> = {}
+              for (const p of picks) { catCounts[p.category] = (catCounts[p.category] ?? 0) + 1 }
+              const completedCategories = Object.values(catCounts).filter(c => c >= 3).length
+              const hasAnyComplete = completedCategories > 0
 
-            {/* Add CTA — only show if under 3 */}
-            {!showAddPick && picks.length < 3 && (
+              return (
+                <>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <h1 className="text-[20px] font-bold text-white tracking-[-0.4px]">TOP 03</h1>
+                    {hasAnyComplete && <span className="text-[11px] text-accent font-semibold">{completedCategories} {completedCategories === 1 ? 'category' : 'categories'} complete</span>}
+                  </div>
+                  <div className="text-[13px] text-text-muted leading-[1.5] mb-4">
+                    {!hasAnyComplete
+                      ? 'Pick a category and add your top 3. Complete at least one category to unlock sending recos.'
+                      : 'Your top 3 in each category. The ones you think everyone should try.'
+                    }
+                  </div>
+                </>
+              )
+            })()}
+
+            {/* Add CTA */}
+            {!showAddPick && (
               <button
                 onClick={() => { setShowAddPick(true); setSelectedCategory(null); setNewPickTitle('') }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
@@ -438,7 +450,7 @@ export default function ProfilePage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Add top reco ({picks.length + 1} of 3)
+                Add to your TOP 03
               </button>
             )}
 
@@ -473,8 +485,15 @@ export default function ProfilePage() {
                   )}
                 </div>
 
+                {/* Category full warning */}
+                {selectedCategory && picks.filter(p => p.category === selectedCategory).length >= 3 && (
+                  <div className="bg-bad/5 border border-bad/20 rounded-card px-4 py-3 text-[13px] text-bad leading-[1.5]">
+                    You already have 3 in {getCategoryLabel(selectedCategory)}. Remove one to add another, or pick a different category.
+                  </div>
+                )}
+
                 {/* Name */}
-                {selectedCategory && (
+                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Name</div>
                     <input
@@ -503,7 +522,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Why */}
-                {selectedCategory && (
+                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Why?</div>
                     <textarea
@@ -517,7 +536,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Links & details — collapsible */}
-                {selectedCategory && (
+                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card">
                     <button
                       onClick={() => setDetailsOpen((o) => !o)}
@@ -568,7 +587,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Submit */}
-                {selectedCategory && (
+                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
                   <button
                     onClick={handleAddPick}
                     disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickCity.trim())}
@@ -607,7 +626,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
                         <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
-                        <span className="text-[11px] text-text-faint">{items.length}</span>
+                        <span className={`text-[11px] font-semibold ${items.length >= 3 ? 'text-accent' : 'text-text-faint'}`}>{items.length}/3</span>
                       </div>
                       <svg
                         width="14" height="14" viewBox="0 0 24 24" fill="none"
