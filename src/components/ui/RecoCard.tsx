@@ -368,14 +368,14 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   // ─── Expanded sheet ──────────────────────────────────────────────────────────
 
   return (
-    <div className="relative" style={{ zIndex: menuOpen ? 1001 : 'auto' }}>
+    <div className="relative" style={{ zIndex: menuOpen ? 181 : 'auto' }}>
       {activeCard}
 
       {/* Three-dot menu — drops from top-right of card */}
       {menuOpen && (
         <>
-          <div className="fixed inset-0 z-[1000] bg-black/20 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-          <div className="absolute top-2 right-2 z-[1001] bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[220px]">
+          <div className="fixed inset-0 z-[180] bg-black/20 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className="absolute top-2 right-2 z-[181] bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[220px]">
             <button
               className="w-full text-left px-4 py-3.5 text-[14px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
               onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}

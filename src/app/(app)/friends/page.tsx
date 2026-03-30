@@ -206,7 +206,7 @@ function FriendsPageInner() {
 
       {/* Dunbar's Number overlay */}
       {showDunbar && (
-        <div className="absolute inset-0 z-50 flex items-end" onClick={() => setShowDunbar(false)}>
+        <div className="absolute inset-0 z-[150] flex items-end" onClick={() => setShowDunbar(false)}>
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />

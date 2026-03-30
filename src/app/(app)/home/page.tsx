@@ -372,7 +372,7 @@ function HomePageInner() {
       <StatusBar />
 
       {/* Nav */}
-      <div className="flex justify-between items-center px-6 pt-5 pb-2.5 flex-shrink-0 relative" style={{ zIndex: tabDDOpen ? 1001 : 30 }}>
+      <div className="flex justify-between items-center px-6 pt-5 pb-2.5 flex-shrink-0 relative" style={{ zIndex: tabDDOpen ? 111 : 30 }}>
         <div className="flex items-center gap-3">
           <Link href="/profile" className="w-8 h-8 rounded-full bg-[#1e1c04] border border-accent flex items-center justify-center overflow-hidden flex-shrink-0">
             {avatarUrl
@@ -449,7 +449,7 @@ function HomePageInner() {
           pointerEvents: tab === 'todo' ? 'auto' : 'none',
           flexShrink: 0,
           position: 'relative',
-          zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 1002 : 30,
+          zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 112 : 30,
         }}
         onClick={closeAllDD}
       >
@@ -457,7 +457,7 @@ function HomePageInner() {
           {/* Three-filter line — tappable words with inline dropdowns */}
           <div className="text-[22px] font-semibold text-text-muted leading-[1.3] tracking-[-0.5px]" onClick={(e) => e.stopPropagation()}>
             Here are{' '}
-            <span className="relative inline-block" style={{ zIndex: catDDOpen ? 1001 : 'auto' }}>
+            <span className="relative inline-block" style={{ zIndex: catDDOpen ? 111 : 'auto' }}>
               <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setCatDDOpen(o => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}>{catLabel}</span>
               {catDDOpen && (
                 <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[180px]">
@@ -469,7 +469,7 @@ function HomePageInner() {
               )}
             </span>
             {' '}recos from{' '}
-            <span className="relative inline-block" style={{ zIndex: timeDDOpen ? 1001 : 'auto' }}>
+            <span className="relative inline-block" style={{ zIndex: timeDDOpen ? 111 : 'auto' }}>
               <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setTimeDDOpen(o => !o); setCatDDOpen(false); setSenderDDOpen(false) }}>{timeLabel}</span>
               {timeDDOpen && (
                 <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[160px]">
@@ -481,7 +481,7 @@ function HomePageInner() {
               )}
             </span>
             {' '}sent by{' '}
-            <span className="relative inline-block" style={{ zIndex: senderDDOpen ? 1001 : 'auto' }}>
+            <span className="relative inline-block" style={{ zIndex: senderDDOpen ? 111 : 'auto' }}>
               <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setSenderDDOpen(o => !o); setCatDDOpen(false); setTimeDDOpen(false) }}>{senderLabel}</span>
               {senderDDOpen && (
                 <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[200px] max-h-[50vh] overflow-y-auto">
@@ -643,12 +643,12 @@ function HomePageInner() {
 
       {/* Tab picker overlay */}
       {tabDDOpen && (
-        <div className="fixed inset-0 z-[1000] bg-black/30" onClick={() => setTabDDOpen(false)} />
+        <div className="fixed inset-0 z-[110] bg-black/30" onClick={() => setTabDDOpen(false)} />
       )}
 
       {/* Filter backdrop */}
       {(catDDOpen || timeDDOpen || senderDDOpen) && (
-        <div className="fixed inset-0 z-[1000] bg-black/30" onClick={closeAllDD} />
+        <div className="fixed inset-0 z-[110] bg-black/30" onClick={closeAllDD} />
       )}
 
       <FeedbackSheet

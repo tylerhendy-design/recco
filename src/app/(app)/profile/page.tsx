@@ -708,7 +708,7 @@ export default function ProfilePage() {
 
       {/* Stinkers overlay */}
       {showStinkers && (
-        <div className="fixed inset-0 z-[100] flex items-end" onClick={() => setShowStinkers(false)}>
+        <div className="fixed inset-0 z-[150] flex items-end" onClick={() => setShowStinkers(false)}>
           <div className="fixed inset-0 bg-black/60" />
           <div className="relative w-full bg-bg-base rounded-t-[28px] px-6 pt-6 pb-10 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
@@ -840,8 +840,8 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
             </button>
             {menuOpenId === pick.id && (
               <>
-                <div className="fixed inset-0 z-[999]" onClick={() => setMenuOpenId(null)} />
-                <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+                <div className="fixed inset-0 z-[120] bg-black/20 backdrop-blur-sm" onClick={() => setMenuOpenId(null)} />
+                <div className="fixed inset-x-0 bottom-0 z-[121] p-4 pb-8">
                   <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
                     <button onClick={() => onEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white hover:bg-bg-card transition-colors border-b border-border font-semibold">Edit</button>
                     <button onClick={() => onDelete(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 hover:bg-bg-card transition-colors border-b border-border font-semibold">Delete</button>

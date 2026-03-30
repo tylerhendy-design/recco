@@ -30,7 +30,7 @@ export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderNam
   const firstName = recommenderName?.split(' ')[0]
 
   return (
-    <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center px-8 text-center animate-fade-in">
+    <div className="absolute inset-0 z-[150] bg-black/85 flex flex-col items-center justify-center px-8 text-center animate-fade-in">
       <div className="w-[68px] h-[68px] rounded-full bg-accent/15 border-2 border-accent flex items-center justify-center mb-[22px]">
         <svg width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="#D4E23A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M6 16l8 8 12-12" />
