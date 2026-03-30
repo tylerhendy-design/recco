@@ -439,12 +439,12 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Greeting + filters — only on To Do tab, collapses on scroll */}
+      {/* Greeting + filters — only on To Do tab */}
       <div
         style={{
-          height: tab === 'todo' && headerVisible ? collapseHeight || 'auto' : 0,
-          opacity: tab === 'todo' && headerVisible ? 1 : 0,
-          overflow: 'hidden',
+          height: tab === 'todo' ? 'auto' : 0,
+          opacity: tab === 'todo' ? 1 : 0,
+          overflow: tab === 'todo' ? 'visible' : 'hidden',
           transition: 'none',
           pointerEvents: tab === 'todo' ? 'auto' : 'none',
           flexShrink: 0,
