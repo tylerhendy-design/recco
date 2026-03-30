@@ -85,6 +85,10 @@ function HomePageInner() {
   const [dbNoGoRecos, setDbNoGoRecos] = useState<Reco[]>([])
 
   const [tab, setTab] = useState<Tab>('todo')
+  type ViewMode = 'full' | 'compact' | 'list'
+  const VIEW_LABELS: Record<ViewMode, string> = { full: 'Full', compact: 'Compact', list: 'List' }
+  const VIEW_CYCLE: ViewMode[] = ['full', 'compact', 'list']
+  const [viewMode, setViewMode] = useState<ViewMode>('full')
   const [catFilter, setCatFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
   const [senderFilter, setSenderFilter] = useState('all')
@@ -513,7 +517,7 @@ function HomePageInner() {
       </div>
 
       {/* To do / Done / No gos toggle — always visible */}
-      <div className="px-6 pb-4 flex-shrink-0">
+      <div className="px-6 pb-4 flex-shrink-0 flex items-center justify-between">
         <div className="flex items-center gap-1 bg-bg-card rounded-input p-1 w-fit">
           <button
             onClick={() => { setTab('todo'); setHeaderVisible(true); lastScrollY.current = 0 }}
@@ -540,6 +544,15 @@ function HomePageInner() {
             No gos{noGoList.length > 0 ? ` · ${noGoList.length}` : ''}
           </button>
         </div>
+        <button
+          onClick={() => setViewMode(VIEW_CYCLE[(VIEW_CYCLE.indexOf(viewMode) + 1) % VIEW_CYCLE.length])}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[6px] bg-bg-card text-[11px] font-semibold text-text-faint hover:text-white transition-colors"
+        >
+          {viewMode === 'full' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
+          {viewMode === 'compact' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>}
+          {viewMode === 'list' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
+          {VIEW_LABELS[viewMode]}
+        </button>
       </div>
 
       {/* ── TO DO TAB ── */}
@@ -556,6 +569,7 @@ function HomePageInner() {
             <RecoCard
               reco={reco}
               rank={i + 1}
+              viewMode={viewMode}
               initialOpen={openRecoId === reco.id}
               onMarkDone={setFeedbackReco}
               onBeenThere={setBeenThereReco}
@@ -639,7 +653,7 @@ function HomePageInner() {
                 {isOpen && (
                   <div className="px-4 pb-3 flex flex-col gap-3">
                     {recos.map((reco) => (
-                      <RecoCard key={reco.id} reco={reco} onForward={handleForward} />
+                      <RecoCard key={reco.id} reco={reco} viewMode={viewMode} onForward={handleForward} />
                     ))}
                   </div>
                 )}
@@ -665,7 +679,7 @@ function HomePageInner() {
           ) : (
             <div className="px-4 pb-3 flex flex-col gap-3">
               {noGoList.map((reco) => (
-                <RecoCard key={reco.id} reco={reco} />
+                <RecoCard key={reco.id} reco={reco} viewMode={viewMode} />
               ))}
             </div>
           )}

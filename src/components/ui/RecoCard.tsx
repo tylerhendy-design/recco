@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { CategoryDot } from './CategoryDot'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
-import { getCategoryLabel } from '@/constants/categories'
+import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 
 function getLinkLabel(url: string): string {
   try {
@@ -103,17 +103,20 @@ function pillClasses(category: string) {
   return CAT_PILL[category] ?? { bg: 'bg-neutral-900/70', border: 'border-neutral-500/50', text: 'text-neutral-400' }
 }
 
+export type CardViewMode = 'full' | 'compact' | 'list'
+
 interface RecoCardProps {
   reco: Reco
   rank?: number
   initialOpen?: boolean
+  viewMode?: CardViewMode
   onMarkDone?: (reco: Reco) => void
   onBeenThere?: (reco: Reco) => void
   onNoGo?: (reco: Reco) => void
   onForward?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, initialOpen }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, initialOpen, viewMode = 'full' }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
@@ -284,11 +287,89 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
     </div>
   )
 
+  // ─── Compact card ─────────────────────────────────────────────────────────
+  const compactCard = hasImage ? (
+    <div
+      className="rounded-card overflow-hidden cursor-pointer select-none relative"
+      style={{ height: 140 }}
+      onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
+    >
+      <img src={reco.meta.artwork_url!} alt={reco.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 14px', zIndex: 10 }}>
+        <div className="text-[20px] font-black text-white leading-[1.1] tracking-[-0.5px] truncate">{reco.title}</div>
+        <div className="flex items-center gap-2 mt-1">
+          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getCategoryLabel(reco.category)}</span>
+          {recommenderNames && <span className="text-[11px] text-white/60">{recommenderNames}</span>}
+        </div>
+      </div>
+      {onForward && reco.status === 'done' && (
+        <button className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+      )}
+      {hasActions && (
+        <button className="absolute top-2.5 right-2.5 flex gap-[4px] items-center p-1.5 rounded-full bg-black/50" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
+          {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-white opacity-80" />)}
+        </button>
+      )}
+    </div>
+  ) : (
+    <div className="bg-bg-card border border-border rounded-card px-3.5 py-3 cursor-pointer flex items-center gap-3" onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}>
+      <div className="flex-1 min-w-0">
+        <div className="text-[16px] font-semibold text-white tracking-[-0.3px] truncate">{reco.title}</div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getCategoryLabel(reco.category)}</span>
+          {recommenderNames && <span className="text-[11px] text-text-faint">{recommenderNames}</span>}
+        </div>
+      </div>
+      {onForward && reco.status === 'done' && (
+        <button className="w-7 h-7 rounded-full bg-bg-base border border-border flex items-center justify-center flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+      )}
+      {hasActions && (
+        <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
+          {[0, 1, 2].map((i) => <div key={i} className="w-[4px] h-[4px] rounded-full bg-text-faint" />)}
+        </button>
+      )}
+    </div>
+  )
+
+  // ─── List card ──────────────────────────────────────────────────────────────
+  const listCard = (
+    <div
+      className="flex items-center gap-3 px-1 py-2.5 cursor-pointer border-b border-[#1a1a1e]"
+      onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
+    >
+      {hasImage && <img src={reco.meta.artwork_url!} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
+      {!hasImage && <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: pills.bg.replace('bg-', ''), border: `1px solid ${getCategoryColor(reco.category)}33` }}>
+        <span className="w-2 h-2 rounded-full" style={{ background: getCategoryColor(reco.category) }} />
+      </div>}
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
+        <div className="text-[11px] text-text-faint truncate">{getCategoryLabel(reco.category)} {recommenderNames ? `· ${recommenderNames}` : ''}</div>
+      </div>
+      {hasActions && (
+        <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
+          {[0, 1, 2].map((i) => <div key={i} className="w-[4px] h-[4px] rounded-full bg-text-faint" />)}
+        </button>
+      )}
+      {onForward && reco.status === 'done' && (
+        <button className="p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+      )}
+    </div>
+  )
+
+  const activeCard = viewMode === 'list' ? listCard : viewMode === 'compact' ? compactCard : dormant
+
   // ─── Expanded sheet ──────────────────────────────────────────────────────────
 
   return (
     <>
-      {dormant}
+      {activeCard}
 
       {/* Three-dot menu overlay — fixed position, always on top */}
       {menuOpen && (
