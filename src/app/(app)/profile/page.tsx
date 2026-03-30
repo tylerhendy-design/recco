@@ -646,15 +646,21 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
               </div>
             )}
           </div>
-          <div className="relative flex-shrink-0">
+          <div className="flex-shrink-0">
             <button onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)} className="text-text-faint hover:text-white transition-colors p-1">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
             </button>
             {menuOpenId === pick.id && (
-              <div className="absolute right-0 top-7 z-50 bg-bg-card border border-border rounded-card shadow-lg overflow-hidden min-w-[110px]">
-                <button onClick={() => onEdit(pick)} className="w-full px-4 py-2.5 text-left text-[13px] text-white hover:bg-bg-base transition-colors">Edit</button>
-                <button onClick={() => onDelete(pick.id)} className="w-full px-4 py-2.5 text-left text-[13px] text-red-400 hover:bg-bg-base transition-colors">Delete</button>
-              </div>
+              <>
+                <div className="fixed inset-0 z-[999]" onClick={() => setMenuOpenId(null)} />
+                <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+                  <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+                    <button onClick={() => onEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white hover:bg-bg-card transition-colors border-b border-border font-semibold">Edit</button>
+                    <button onClick={() => onDelete(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 hover:bg-bg-card transition-colors border-b border-border font-semibold">Delete</button>
+                    <button onClick={() => setMenuOpenId(null)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
