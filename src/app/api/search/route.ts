@@ -267,7 +267,12 @@ export async function GET(req: NextRequest) {
 
   try {
     switch (category) {
-      case 'restaurant': {
+      case 'restaurant':
+      case 'bars':
+      case 'clubs':
+      case 'cocktails':
+      case 'pubs':
+      case 'wine_bars': {
         const google = await searchRestaurantsGoogle(q, lat, lng)
         if (google.length) return NextResponse.json(google)
         return NextResponse.json(await searchRestaurantsNominatim(q))

@@ -249,11 +249,17 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
     const cat = notif.payload?.category
     const catEmoji: Record<string, string> = {
       restaurant: '🍽️',
+      bars: '🍺',
+      book: '📚',
+      clubs: '🪩',
+      cocktails: '🍸',
+      culture: '🎭',
       film: '🎬',
-      tv: '📺',
       music: '🎵',
       podcast: '🎙️',
-      book: '📚',
+      pubs: '🍻',
+      tv: '📺',
+      wine_bars: '🍷',
     }
     return { emoji: catEmoji[cat] ?? '🎁', bg: '#1a1020' }
   }

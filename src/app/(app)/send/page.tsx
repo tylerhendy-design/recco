@@ -80,6 +80,39 @@ const CONSTRAINTS: Record<string, ConstraintDef[]> = {
     { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, cinema…', icon: TV },
     { key: 'era', label: 'Era', placeholder: 'e.g. classic, 90s, recent…', icon: CLOCK },
   ],
+  bars: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. after work, date…', icon: STAR },
+    { key: 'price', label: 'Price range', placeholder: 'e.g. cheap, mid, pricey…', icon: MONEY },
+  ],
+  clubs: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'music_type', label: 'Music', placeholder: 'e.g. house, techno, R&B…', icon: MUSIC },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. big night, chill…', icon: STAR },
+  ],
+  cocktails: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. date night, celebration…', icon: STAR },
+    { key: 'price', label: 'Price range', placeholder: 'e.g. under £15 a drink…', icon: MONEY },
+  ],
+  culture: [
+    { key: 'type', label: 'Type', placeholder: 'e.g. gallery, museum, theatre…', icon: STAR },
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'price', label: 'Price', placeholder: 'e.g. free, under £20…', icon: MONEY },
+  ],
+  pubs: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. Sunday roast, beer garden…', icon: STAR },
+  ],
+  wine_bars: [
+    { key: 'location', label: 'Location', placeholder: 'City / neighbourhood…', icon: PIN },
+    { key: 'address', label: 'Address', placeholder: 'Street address…', icon: PIN },
+    { key: 'occasion', label: 'Occasion', placeholder: 'e.g. date, after work…', icon: STAR },
+    { key: 'price', label: 'Price range', placeholder: 'e.g. natural wine, splurge…', icon: MONEY },
+  ],
   default: [
     { key: 'vibes', label: 'Vibes', placeholder: 'e.g. cosy, lively, adventurous…', icon: STAR },
     { key: 'budget', label: 'Budget', placeholder: 'e.g. cheap and cheerful…', icon: MONEY },
@@ -205,7 +238,7 @@ function GivePageInner() {
       setSuggestionsLoading(true)
       try {
         let url = `/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`
-        if (category === 'restaurant' && userLocation.current) {
+        if (isRestaurant && userLocation.current) {
           url += `&lat=${userLocation.current.lat}&lng=${userLocation.current.lng}`
         }
         const res = await fetch(url)
@@ -320,7 +353,8 @@ function GivePageInner() {
   }
 
   const selectedFriends = friends.filter((f) => f.selected)
-  const isRestaurant = category === 'restaurant'
+  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars'])
+  const isRestaurant = category !== null && VENUE_CATEGORIES.has(category)
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)
     : CONSTRAINTS.default
@@ -443,7 +477,10 @@ function GivePageInner() {
   // ─── Category chip title ──────────────────────────────────────────────────
   const SINGULAR: Record<string, string> = {
     restaurant: 'restaurant', tv: 'TV show', podcast: 'podcast',
-    music: 'album or track', book: 'book', film: 'film', custom: customCat || 'thing',
+    music: 'album or track', book: 'book', film: 'film',
+    bars: 'bar', clubs: 'club', cocktails: 'cocktail bar',
+    culture: 'place', pubs: 'pub', wine_bars: 'wine bar',
+    custom: customCat || 'thing',
   }
   const singular = category ? (SINGULAR[category] ?? getCategoryLabel(category).toLowerCase()) : ''
 
