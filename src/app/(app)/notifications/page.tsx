@@ -286,11 +286,10 @@ function NotifRow({
           ) : null}
           <div className="flex items-center gap-2 mt-0.5">
             <span className="text-[11px] text-text-faint">{time}</span>
-            {(href || isExpandable) && (
+            {href && (
               <svg
                 width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                className="flex-shrink-0 transition-transform"
-                style={isExpandable && expanded ? { transform: 'rotate(90deg)' } : undefined}
+                className="flex-shrink-0"
               >
                 <path d="M9 18l6-6-6-6"/>
               </svg>
