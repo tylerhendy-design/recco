@@ -175,18 +175,18 @@ function ThreadPageInner() {
             {/* Feedback context as first "message" */}
             {(feedbackText || score != null) && (
               <div className="self-start max-w-[85%]">
-                <div className="bg-[#161618] rounded-2xl rounded-bl-sm px-4 py-3.5">
+                <div className="bg-white rounded-2xl px-4 py-3.5">
                   {score != null && (
                     <div className="mb-2.5">
-                      <div className="text-[16px] font-bold text-white leading-[1.3]">{getScoreReaction(score, recoTitle || 'this reco')}</div>
+                      <div className="text-[16px] font-bold text-[#222] leading-[1.3]">{getScoreReaction(score, recoTitle || 'this reco')}</div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[22px] font-black tabular-nums" style={{ color: scoreColor! }}>{score}/10</span>
-                        <span className="text-[12px] text-text-faint">{recoCategory}</span>
+                        <span className="text-[12px] text-[#888]">{recoCategory}</span>
                       </div>
                     </div>
                   )}
                   {feedbackText && (
-                    <div className="text-[14px] text-text-secondary leading-[1.6]">{feedbackText}</div>
+                    <div className="text-[14px] text-[#333] leading-[1.6]">{feedbackText}</div>
                   )}
                 </div>
                 <div className="text-[11px] text-text-faint mt-1 pl-1">{firstName}'s review</div>
@@ -201,11 +201,11 @@ function ThreadPageInner() {
                   <div
                     className={`rounded-2xl px-3.5 py-3 ${
                       isMe
-                        ? 'bg-[#1e1c04] border border-accent'
-                        : 'bg-[#161618]'
+                        ? 'bg-accent'
+                        : 'bg-white'
                     }`}
                   >
-                    <div className={`text-[14px] leading-[1.5] ${isMe ? 'text-accent' : 'text-text-secondary'}`}>
+                    <div className={`text-[14px] leading-[1.5] ${isMe ? 'text-[#1a1c00]' : 'text-[#222]'}`}>
                       {msg.body}
                     </div>
                   </div>
