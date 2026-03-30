@@ -257,7 +257,7 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
     return { emoji: '🙇', bg: '#2a1a0a' }
   }
   if (notif.type === 'sin_bin' && subtype === 'released') {
-    return { emoji: '🔓', bg: '#0a2a1a' }
+    return { emoji: '\u{1F513}', bg: '#0a2a1a' }
   }
   if (notif.type === 'sin_bin') {
     return { emoji: '⛔', bg: '#2a0a0a' }
