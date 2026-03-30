@@ -590,18 +590,13 @@ function HomePageInner() {
                   </svg>
                 </button>
 
-                {isOpen && recos.map((reco, i) => (
-                  <div key={reco.id} className={`flex items-center justify-between px-6 py-3 ${i > 0 ? 'border-t border-[#1a1a1e]' : ''}`}>
-                    <div className="flex-1 min-w-0 pr-3">
-                      <div className="text-[14px] font-medium text-text-secondary truncate">{reco.title}</div>
-                      <div className="text-[11px] text-text-faint mt-0.5">
-                        from {reco.sender.display_name.split(' ')[0]}
-                        {reco.rated_at ? ` · ${new Date(reco.rated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
-                      </div>
-                    </div>
-                    {reco.score != null && <SentimentBadge score={reco.score} />}
+                {isOpen && (
+                  <div className="px-4 pb-3 flex flex-col gap-3">
+                    {recos.map((reco) => (
+                      <RecoCard key={reco.id} reco={reco} />
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )
           })}
@@ -621,24 +616,13 @@ function HomePageInner() {
               <div className="text-[17px] font-semibold text-white">No no-gos yet</div>
               <div className="text-[13px] text-text-muted leading-[1.6]">Recos you can't or won't do will appear here.</div>
             </div>
-          ) : noGoList.map((reco) => (
-            <div key={reco.id} className="mx-5 mb-3 rounded-card border border-bad/20 bg-bg-card overflow-hidden">
-              <div className="px-4 py-3">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <div className="text-[15px] font-semibold text-white leading-tight">{reco.title}</div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border border-bad/30 text-bad/80 flex-shrink-0">No go</span>
-                </div>
-                <div className="text-[12px] text-text-faint mb-2">
-                  from {reco.sender.display_name.split(' ')[0]} · {getCategoryLabel(reco.category)}
-                </div>
-                {reco.feedback_text && (
-                  <div className="text-[12px] text-text-muted leading-[1.5] border-l-2 border-bad/30 pl-2">
-                    "{reco.feedback_text}"
-                  </div>
-                )}
-              </div>
+          ) : (
+            <div className="px-4 pb-3 flex flex-col gap-3">
+              {noGoList.map((reco) => (
+                <RecoCard key={reco.id} reco={reco} />
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
