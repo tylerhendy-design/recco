@@ -200,8 +200,8 @@ function ThreadPageInner() {
                   <div
                     className={`rounded-2xl px-3.5 py-3 ${
                       isMe
-                        ? 'bg-[#1e1c04] border border-accent rounded-br-sm'
-                        : 'bg-[#161618] rounded-bl-sm'
+                        ? 'bg-[#1e1c04] border border-accent'
+                        : 'bg-[#161618]'
                     }`}
                   >
                     <div className={`text-[14px] leading-[1.5] ${isMe ? 'text-accent' : 'text-text-secondary'}`}>
