@@ -114,14 +114,26 @@ function HomePageInner() {
     const el = e.currentTarget
     const currentY = el.scrollTop
     const delta = currentY - lastScrollY.current
-    if (currentY < 60) {
-      setHeaderVisible(true)
-    } else if (delta > 8) {
+
+    // Near the top — always show
+    if (currentY < 30) {
+      if (!headerVisible) setHeaderVisible(true)
+    }
+    // Scrolling down significantly — hide
+    else if (delta > 15 && headerVisible) {
       setHeaderVisible(false)
       closeAllDD()
-    } else if (delta < -8) {
-      setHeaderVisible(true)
+      // Reset lastScrollY to current position to avoid stale delta on next scroll
+      lastScrollY.current = currentY
+      return
     }
+    // Scrolling up significantly — show
+    else if (delta < -10 && !headerVisible) {
+      setHeaderVisible(true)
+      lastScrollY.current = currentY
+      return
+    }
+
     lastScrollY.current = currentY
   }
 
@@ -439,14 +451,14 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Greeting + filters — only on To Do tab */}
+      {/* Greeting + filters — only on To Do tab, collapses on scroll */}
       <div
         style={{
-          height: tab === 'todo' ? 'auto' : 0,
-          opacity: tab === 'todo' ? 1 : 0,
-          overflow: tab === 'todo' ? 'visible' : 'hidden',
-          transition: 'none',
-          pointerEvents: tab === 'todo' ? 'auto' : 'none',
+          height: tab !== 'todo' ? 0 : headerVisible ? collapseHeight || 'auto' : 0,
+          opacity: tab !== 'todo' ? 0 : headerVisible ? 1 : 0,
+          overflow: (catDDOpen || timeDDOpen || senderDDOpen) ? 'visible' : 'hidden',
+          transition: 'height 200ms ease, opacity 150ms ease',
+          pointerEvents: tab === 'todo' && headerVisible ? 'auto' : 'none',
           flexShrink: 0,
           position: 'relative',
           zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 112 : 30,
