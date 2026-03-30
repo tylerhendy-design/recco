@@ -153,7 +153,7 @@ function ThreadPageInner() {
             <span className="text-[12px] text-text-faint truncate">{recoTitle}</span>
             {score != null && (
               <span
-                className="text-[11px] font-bold px-2 py-0.5 rounded-chip flex-shrink-0"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
                 style={{ color: scoreColor!, background: `${scoreColor}22`, border: `1px solid ${scoreColor}44` }}
               >
                 {score}/10
