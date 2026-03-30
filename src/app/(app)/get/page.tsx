@@ -340,10 +340,9 @@ function GetPageInner() {
             </div>
           </div>
 
-          {/* Divider */}
+          {/* Ask section — hidden when pre-selected from friend profile */}
+          {!preselectedFrom && <>
           <div className="border-t border-[#0e0e10] mb-3" />
-
-          {/* Ask section */}
           <div className="flex items-center justify-between mb-2">
             <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">Ask</div>
             {friends.length > 0 && (
@@ -415,6 +414,7 @@ function GetPageInner() {
               })}
             </div>
           )}
+          </>}
         </div>
 
         <button

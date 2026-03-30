@@ -1167,8 +1167,8 @@ function GivePageInner() {
           </div>
           </div>{/* end group 2 */}
 
-          {/* ── Group 3: Send to ── */}
-          <div className="anim-in" style={{ animationDelay: '160ms' }}>
+          {/* ── Group 3: Send to — hidden when pre-selected from friend profile ── */}
+          {!preselectedId && <div className="anim-in" style={{ animationDelay: '160ms' }}>
           {/* ── Divider ── */}
           <div className="border-t border-[#0e0e10] mt-4 mb-3" />
 
@@ -1242,7 +1242,7 @@ function GivePageInner() {
               <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
           )}
-          </div>{/* end group 3 */}
+          </div>}{/* end group 3 */}
 
           </>)}
         </div>
