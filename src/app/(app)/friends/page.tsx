@@ -92,12 +92,14 @@ function FriendsPageInner() {
         </Link>
       </div>
 
-      <input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="mx-6 mt-2.5 px-3.5 py-[11px] bg-bg-card border border-border rounded-input text-sm text-white font-sans outline-none placeholder:text-text-faint"
-        placeholder="Search friends..."
-      />
+      {friends.length > 0 && previewMode !== 'nofriends' && (
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mx-6 mt-2.5 px-3.5 py-[11px] bg-bg-card border border-border rounded-input text-sm text-white font-sans outline-none placeholder:text-text-faint"
+          placeholder="Search friends..."
+        />
+      )}
 
       <div className="flex-1 overflow-y-auto scrollbar-none">
 
