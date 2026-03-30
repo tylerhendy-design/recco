@@ -194,6 +194,11 @@ function NotifRow({
     } else {
       body = `is asking for ${count > 1 ? `${count} ` : ''}${cat ? `${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
     }
+  } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
+    const title = notif.payload?.title
+    const preview = notif.payload?.message_preview
+    body = title ? `sent you a message about ${title}` : 'sent you a message.'
+    if (preview) body += ` "${preview}"`
   } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
     body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
@@ -236,7 +241,11 @@ function NotifRow({
 
   // Determine where this notification should link to
   let href: string | null = null
-  if (notif.type === 'reco_received') href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
+  if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
+    href = notif.reco_id ? `/notifications/${notif.reco_id}?with=${notif.actor_id}` : '/notifications'
+  } else if (notif.type === 'reco_received') {
+    href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
+  }
   else if (notif.type === 'feedback_received' && notif.reco_id) href = `/notifications/${notif.reco_id}?with=${notif.actor_id}`
   else if (notif.type === 'friend_accepted') href = `/friends/${notif.actor_id}`
   else if (notif.type === 'sin_bin' && !isPlea && !isReleased) href = '/sinbin'

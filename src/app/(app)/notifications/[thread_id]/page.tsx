@@ -108,6 +108,7 @@ function ThreadPageInner() {
       senderId: userId,
       recipientId: withUserId,
       body: replyText.trim(),
+      recoTitle,
     })
     // Optimistically add to messages
     setMessages(prev => [...prev, {

@@ -35,12 +35,14 @@ export async function sendMessage({
   recipientId,
   body,
   audioUrl,
+  recoTitle,
 }: {
   recoId: string
   senderId: string
   recipientId: string
   body?: string
   audioUrl?: string
+  recoTitle?: string
 }): Promise<{ error: string | null }> {
   const supabase = createClient()
   const { error } = await supabase.from('messages').insert({
@@ -50,5 +52,20 @@ export async function sendMessage({
     body: body?.trim() || null,
     audio_url: audioUrl || null,
   })
-  return { error: error?.message ?? null }
+  if (error) return { error: error.message }
+
+  // Create a notification for the recipient so the message surfaces at the top
+  await supabase.from('notifications').insert({
+    user_id: recipientId,
+    type: 'reco_received' as const,
+    actor_id: senderId,
+    reco_id: recoId,
+    payload: {
+      subtype: 'message',
+      title: recoTitle || null,
+      message_preview: body?.trim()?.slice(0, 100) || 'Voice note',
+    },
+  })
+
+  return { error: null }
 }
