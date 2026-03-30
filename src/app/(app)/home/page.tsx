@@ -399,12 +399,45 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
-            {TAB_LABELS[tab]}
-          </h1>
+          {/* Scrubbing tab titles */}
+          <div className="relative overflow-hidden flex-1" style={{ height: 34 }}>
+            <div className="flex items-center gap-6 absolute left-0 top-0 h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${TAB_ORDER.indexOf(tab) * 120}px)` }}>
+              {TAB_ORDER.map((t) => {
+                const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
+                const active = tab === t
+                return (
+                  <button
+                    key={t}
+                    onClick={() => scrollToTab(t)}
+                    className="flex-shrink-0 transition-all duration-300"
+                    style={{ width: 108 }}
+                  >
+                    <span className={`text-[26px] font-bold tracking-[-0.6px] transition-all duration-300 ${active ? 'text-white' : 'text-[#333]'}`}>
+                      {TAB_LABELS[t]}
+                    </span>
+                    {count > 0 && (
+                      <span className={`ml-1.5 text-[14px] font-semibold transition-all duration-300 ${active ? 'text-text-faint' : 'text-[#222]'}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            {/* Right fade */}
+            <div className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none" style={{ background: 'linear-gradient(to right, transparent, #0c0c0e)' }} />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/send/manual" aria-label="Add reco manually" className="flex items-center justify-center w-11 h-11 -m-[11px]">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode(VIEW_CYCLE[(VIEW_CYCLE.indexOf(viewMode) + 1) % VIEW_CYCLE.length])}
+            className="flex items-center justify-center w-9 h-9 text-text-faint hover:text-white transition-colors"
+          >
+            {viewMode === 'full' && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
+            {viewMode === 'compact' && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>}
+            {viewMode === 'list' && <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
+          </button>
+          <Link href="/send/manual" aria-label="Add reco manually" className="flex items-center justify-center w-9 h-9">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="2" width="6" height="4" rx="1"/>
               <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
@@ -412,7 +445,7 @@ function HomePageInner() {
               <line x1="9" y1="14" x2="15" y2="14"/>
             </svg>
           </Link>
-          <Link href="/notifications" className="relative flex items-center justify-center w-11 h-11 -m-[11px]" onClick={() => setUnreadCount(0)}>
+          <Link href="/notifications" className="relative flex items-center justify-center w-9 h-9" onClick={() => setUnreadCount(0)}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
             </svg>
@@ -426,111 +459,21 @@ function HomePageInner() {
         style={{
           height: headerVisible ? collapseHeight || 'auto' : 0,
           opacity: headerVisible ? 1 : 0,
-          overflow: (catDDOpen || timeDDOpen || senderDDOpen) ? 'visible' : 'hidden',
+          overflow: 'hidden',
           transition: 'height 280ms ease-in-out, opacity 200ms ease-in-out',
           flexShrink: 0,
-          position: 'relative',
-          zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 1002 : 10,
         }}
         onClick={closeAllDD}
       >
         <div ref={collapseRef} className="px-6 pt-3 pb-4">
-          {/* Three-filter line */}
-          <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
+          {/* Three-filter line — tappable words, dropdowns are fixed overlays */}
+          <div className="text-[22px] font-semibold text-text-muted leading-[1.3] tracking-[-0.5px]">
             Here are{' '}
-            {/* Category */}
-            <span className="relative inline-block" style={{ zIndex: catDDOpen ? 1001 : 'auto' }}>
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
-              >
-                {catLabel}
-              </span>
-              {catDDOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[180px]">
-                  {CATEGORY_FILTERS.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
-                      className={`w-full text-left px-4 py-3 text-[14px] border-b border-[#1a1a1e] transition-colors ${catFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                  {catFilter !== 'all' && (
-                    <button
-                      onClick={() => { setCatFilter('all'); setCatDDOpen(false) }}
-                      className="w-full text-left px-4 py-3 text-[13px] text-text-faint border-t border-border"
-                    >
-                      Clear filter
-                    </button>
-                  )}
-                </div>
-              )}
-            </span>
+            <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setCatDDOpen(o => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}>{catLabel}</span>
             {' '}recos from{' '}
-            {/* Time */}
-            <span className="relative inline-block" style={{ zIndex: timeDDOpen ? 1001 : 'auto' }}>
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
-              >
-                {timeLabel}
-              </span>
-              {timeDDOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[160px]">
-                  {TIME_FILTERS.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
-                      className={`w-full text-left px-4 py-3 text-[14px] border-b border-[#1a1a1e] transition-colors ${timeFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                  {timeFilter !== 'all' && (
-                    <button
-                      onClick={() => { setTimeFilter('all'); setTimeDDOpen(false) }}
-                      className="w-full text-left px-4 py-3 text-[13px] text-text-faint border-t border-border"
-                    >
-                      Clear filter
-                    </button>
-                  )}
-                </div>
-              )}
-            </span>
+            <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setTimeDDOpen(o => !o); setCatDDOpen(false); setSenderDDOpen(false) }}>{timeLabel}</span>
             {' '}sent by{' '}
-            {/* Sender */}
-            <span className="relative inline-block" style={{ zIndex: senderDDOpen ? 1001 : 'auto' }}>
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
-              >
-                {senderLabel}
-              </span>
-              {senderDDOpen && (
-                <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[200px] max-h-[50vh] overflow-y-auto">
-                  {senderOptions.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
-                      className={`w-full text-left px-4 py-3 border-b border-[#1a1a1e] transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
-                    >
-                      <div className="text-[14px]">{f.label}</div>
-                      {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
-                    </button>
-                  ))}
-                  {senderFilter !== 'all' && (
-                    <button
-                      onClick={() => { setSenderFilter('all'); setSenderDDOpen(false) }}
-                      className="w-full text-left px-4 py-3 text-[13px] text-text-faint border-t border-border"
-                    >
-                      Clear filter
-                    </button>
-                  )}
-                </div>
-              )}
-            </span>
+            <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setSenderDDOpen(o => !o); setCatDDOpen(false); setTimeDDOpen(false) }}>{senderLabel}</span>
           </div>
           {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
             <button
@@ -543,24 +486,6 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Dots + view toggle */}
-      <div className="px-6 pb-3 flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {TAB_ORDER.map((t) => (
-            <button key={t} onClick={() => scrollToTab(t)} className="p-1">
-              <span className={`block w-2 h-2 rounded-full transition-all ${tab === t ? 'bg-accent' : 'bg-[#333]'}`} />
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setViewMode(VIEW_CYCLE[(VIEW_CYCLE.indexOf(viewMode) + 1) % VIEW_CYCLE.length])}
-          className="flex items-center justify-center w-9 h-9 rounded-[6px] bg-bg-card text-text-faint hover:text-white transition-colors"
-        >
-          {viewMode === 'full' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>}
-          {viewMode === 'compact' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>}
-          {viewMode === 'list' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
-        </button>
-      </div>
 
       {/* ── Swipeable tab container ── */}
       <div
@@ -697,9 +622,45 @@ function HomePageInner() {
         </div>
       </div>{/* end swipe container */}
 
-      {/* Filter backdrop overlay */}
+      {/* Filter overlays — fixed, always on top */}
       {(catDDOpen || timeDDOpen || senderDDOpen) && (
         <div className="fixed inset-0 z-[1000] bg-black/50" onClick={closeAllDD} />
+      )}
+      {catDDOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[1001] p-4 pb-8">
+          <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+            {CATEGORY_FILTERS.map((f) => (
+              <button key={f.value} onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }} className={`w-full text-left px-5 py-3.5 text-[14px] border-b border-[#1a1a1e] transition-colors ${catFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
+            ))}
+            {catFilter !== 'all' && <button onClick={() => { setCatFilter('all'); setCatDDOpen(false) }} className="w-full text-left px-5 py-3.5 text-[13px] text-text-faint border-t border-border">Clear filter</button>}
+            <button onClick={() => setCatDDOpen(false)} className="w-full text-center px-5 py-3 text-[14px] font-semibold text-text-faint border-t border-border">Cancel</button>
+          </div>
+        </div>
+      )}
+      {timeDDOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[1001] p-4 pb-8">
+          <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+            {TIME_FILTERS.map((f) => (
+              <button key={f.value} onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }} className={`w-full text-left px-5 py-3.5 text-[14px] border-b border-[#1a1a1e] transition-colors ${timeFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
+            ))}
+            {timeFilter !== 'all' && <button onClick={() => { setTimeFilter('all'); setTimeDDOpen(false) }} className="w-full text-left px-5 py-3.5 text-[13px] text-text-faint border-t border-border">Clear filter</button>}
+            <button onClick={() => setTimeDDOpen(false)} className="w-full text-center px-5 py-3 text-[14px] font-semibold text-text-faint border-t border-border">Cancel</button>
+          </div>
+        </div>
+      )}
+      {senderDDOpen && (
+        <div className="fixed inset-x-0 bottom-0 z-[1001] p-4 pb-8">
+          <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto max-h-[60vh] overflow-y-auto">
+            {senderOptions.map((f) => (
+              <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-5 py-3.5 border-b border-[#1a1a1e] transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
+                <div className="text-[14px]">{f.label}</div>
+                {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+              </button>
+            ))}
+            {senderFilter !== 'all' && <button onClick={() => { setSenderFilter('all'); setSenderDDOpen(false) }} className="w-full text-left px-5 py-3.5 text-[13px] text-text-faint border-t border-border">Clear filter</button>}
+            <button onClick={() => setSenderDDOpen(false)} className="w-full text-center px-5 py-3 text-[14px] font-semibold text-text-faint border-t border-border">Cancel</button>
+          </div>
+        </div>
       )}
 
       <FeedbackSheet
