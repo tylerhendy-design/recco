@@ -400,8 +400,8 @@ function HomePageInner() {
             }
           </Link>
           {/* Scrubbing tab titles */}
-          <div className="relative overflow-hidden flex-1" style={{ height: 34 }}>
-            <div className="flex items-center gap-6 absolute left-0 top-0 h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${TAB_ORDER.indexOf(tab) * 120}px)` }}>
+          <div className="relative overflow-hidden flex-1" style={{ height: 38 }}>
+            <div className="flex items-center gap-5 absolute left-0 top-0 h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${TAB_ORDER.indexOf(tab) * 115}px)` }}>
               {TAB_ORDER.map((t) => {
                 const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
                 const active = tab === t
@@ -410,7 +410,7 @@ function HomePageInner() {
                     key={t}
                     onClick={() => scrollToTab(t)}
                     className="flex-shrink-0 transition-all duration-300"
-                    style={{ width: 108 }}
+                    style={{ width: 110 }}
                   >
                     <span className={`text-[26px] font-bold tracking-[-0.6px] transition-all duration-300 ${active ? 'text-white' : 'text-[#333]'}`}>
                       {TAB_LABELS[t]}
@@ -467,7 +467,7 @@ function HomePageInner() {
       >
         <div ref={collapseRef} className="px-6 pt-3 pb-4">
           {/* Three-filter line — tappable words, dropdowns are fixed overlays */}
-          <div className="text-[22px] font-semibold text-text-muted leading-[1.3] tracking-[-0.5px]">
+          <div className="text-[22px] font-semibold text-text-muted leading-[1.3] tracking-[-0.5px]" onClick={(e) => e.stopPropagation()}>
             Here are{' '}
             <span className="text-accent border-b border-accent cursor-pointer" onClick={() => { setCatDDOpen(o => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}>{catLabel}</span>
             {' '}recos from{' '}
