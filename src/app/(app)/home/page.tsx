@@ -596,7 +596,7 @@ export default function HomePage() {
                   from {reco.sender.display_name.split(' ')[0]} · {getCategoryLabel(reco.category)}
                 </div>
                 {reco.feedback_text && (
-                  <div className="text-[12px] text-text-muted italic leading-[1.5] border-l-2 border-bad/30 pl-2">
+                  <div className="text-[12px] text-text-muted leading-[1.5] border-l-2 border-bad/30 pl-2">
                     "{reco.feedback_text}"
                   </div>
                 )}

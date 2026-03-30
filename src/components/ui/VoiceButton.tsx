@@ -247,7 +247,7 @@ export function VoiceButton({ onRecorded, onStart, onClear }: VoiceButtonProps) 
           </button>
         </div>
         {transcript && (
-          <div className="mt-1.5 text-[11px] text-text-faint italic leading-[1.5] px-1">{transcript}…</div>
+          <div className="mt-1.5 text-[11px] text-text-faint leading-[1.5] px-1">{transcript}…</div>
         )}
       </div>
     )

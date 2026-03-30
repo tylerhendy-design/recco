@@ -324,7 +324,7 @@ function NotifRow({
           {isPlea && (
             <div className="mt-2">
               {notif.payload?.message && (
-                <div className="text-[12px] text-text-muted bg-bg-card border border-border rounded-input px-3 py-2 mb-2.5 leading-[1.5] italic">
+                <div className="text-[12px] text-text-muted bg-bg-card border border-border rounded-input px-3 py-2 mb-2.5 leading-[1.5]">
                   "{notif.payload.message}"
                 </div>
               )}
