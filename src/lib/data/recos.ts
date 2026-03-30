@@ -394,7 +394,7 @@ export async function sendReco({
     type: 'reco_received' as const,
     actor_id: senderId,
     reco_id: recoId,
-    payload: { title },
+    payload: { title, category: finalCat },
   }))
 
   await supabase.from('notifications').insert(notifRows)

@@ -246,7 +246,16 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
     return { emoji: '💬', bg: '#0a1a2a' }
   }
   if (notif.type === 'reco_received') {
-    return { emoji: '🎁', bg: '#1a1020' }
+    const cat = notif.payload?.category
+    const catEmoji: Record<string, string> = {
+      restaurant: '🍽️',
+      film: '🎬',
+      tv: '📺',
+      music: '🎵',
+      podcast: '🎙️',
+      book: '📚',
+    }
+    return { emoji: catEmoji[cat] ?? '🎁', bg: '#1a1020' }
   }
   // Friend request
   if (notif.type === 'friend_request') {
