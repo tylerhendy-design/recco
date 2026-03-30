@@ -158,10 +158,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   const manualSender = reco.meta?.manual_sender_name as string | undefined
   const recommenderNames = manualSender
     ? manualSender.split(' ')[0]
-    : reco.recommenders
-      ?.map((r) => r.profile.display_name.split(' ')[0])
-      .slice(0, 2)
-      .join(' & ') ?? ''
+    : reco.recommenders && reco.recommenders.length > 0
+      ? reco.recommenders
+          .map((r) => r.profile.display_name.split(' ')[0])
+          .slice(0, 2)
+          .join(' & ')
+      : reco.sender?.display_name?.split(' ')[0] ?? ''
   const when = reco.created_at ? timeAgo(reco.created_at) : ''
   const details = getDetailPills(reco)
   const pills = pillClasses(reco.category)
