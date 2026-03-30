@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
@@ -16,6 +16,31 @@ export default function NotificationsPage() {
   const [notifs, setNotifs] = useState<NotificationRow[]>([])
   const [loading, setLoading] = useState(true)
   const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept' | 'completed'>>({})
+  const [filter, setFilter] = useState<string>('all')
+
+  const FILTERS = [
+    { value: 'all', label: 'All' },
+    { value: 'recos', label: 'Recos' },
+    { value: 'reviews', label: 'Reviews' },
+    { value: 'messages', label: 'Messages' },
+    { value: 'stinkers', label: 'Stinkers' },
+    { value: 'friends', label: 'Friends' },
+    { value: 'sinbin', label: 'Sin bin' },
+  ]
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return notifs
+    return notifs.filter((n) => {
+      if (filter === 'recos') return n.type === 'reco_received' && n.payload?.subtype !== 'message'
+      if (filter === 'reviews') return n.type === 'feedback_received'
+      if (filter === 'messages') return n.type === 'reco_received' && n.payload?.subtype === 'message'
+      if (filter === 'stinkers') return n.type === 'feedback_received' && n.payload?.score != null && n.payload.score <= 3
+      if (filter === 'friends') return n.type === 'friend_request' || n.type === 'friend_accepted'
+      if (filter === 'sinbin') return n.type === 'sin_bin'
+      return true
+    })
+  }, [notifs, filter])
+
   const [replyTarget, setReplyTarget] = useState<{
     notifId: string
     notifPayload: Record<string, any>
@@ -88,7 +113,31 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="Notifications" closeHref="/home" />
+      <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
+        <div className="text-[22px] font-bold text-white tracking-[-0.5px]">Notifications</div>
+        <Link href="/home" className="flex items-center justify-center w-9 h-9">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </Link>
+      </div>
+
+      {/* Filter bar */}
+      {notifs.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-6 pb-3 flex-shrink-0">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-3 py-1.5 rounded-full text-[12px] font-semibold flex-shrink-0 transition-all ${
+                filter === f.value
+                  ? 'bg-accent text-accent-fg'
+                  : 'bg-bg-card border border-border text-text-faint'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto scrollbar-none">
         {loading ? (
@@ -103,8 +152,12 @@ export default function NotificationsPage() {
               You'll see friend requests and reco activity here.
             </div>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="text-[14px] text-text-faint">No {FILTERS.find(f => f.value === filter)?.label.toLowerCase()} notifications.</div>
+          </div>
         ) : (
-          notifs.map((n) => (
+          filtered.map((n) => (
             <NotifRow
               key={n.id}
               notif={n}
@@ -146,6 +199,70 @@ export default function NotificationsPage() {
       )}
     </div>
   )
+}
+
+function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.ReactNode; bg: string } {
+  const score = notif.payload?.score
+  const subtype = notif.payload?.subtype
+
+  // Stinker (score <= 3)
+  if (notif.type === 'feedback_received' && score != null && score <= 3) {
+    return { emoji: '💩', bg: '#2a1a0a' }
+  }
+  // Crown (score >= 9)
+  if (notif.type === 'feedback_received' && score != null && score >= 9) {
+    return { emoji: '👑', bg: '#2a2500' }
+  }
+  // Good review (7-8)
+  if (notif.type === 'feedback_received' && score != null && score >= 7) {
+    return { emoji: '🔥', bg: '#1a2010' }
+  }
+  // Meh review (4-6)
+  if (notif.type === 'feedback_received' && score != null) {
+    return { emoji: '😐', bg: '#1a1a1a' }
+  }
+  // No go
+  if (notif.type === 'feedback_received' && subtype === 'no_go') {
+    return { emoji: '🚫', bg: '#2a0a0a' }
+  }
+  // Been there
+  if (notif.type === 'feedback_received' && subtype === 'been_there') {
+    return { emoji: '🔄', bg: '#0a1a2a' }
+  }
+  // Feedback (generic)
+  if (notif.type === 'feedback_received') {
+    return { emoji: '⭐', bg: '#2a2500' }
+  }
+  // Reco received
+  if (notif.type === 'reco_received' && subtype === 'message') {
+    return { emoji: '💬', bg: '#0a1a2a' }
+  }
+  if (notif.type === 'reco_received') {
+    return { emoji: '🎁', bg: '#1a1020' }
+  }
+  // Friend request
+  if (notif.type === 'friend_request') {
+    return { emoji: '👋', bg: '#0a1a2a' }
+  }
+  // Friend accepted
+  if (notif.type === 'friend_accepted') {
+    return { emoji: '🤝', bg: '#0a2a1a' }
+  }
+  // Request received
+  if (notif.type === 'request_received') {
+    return { emoji: '🙏', bg: '#2a1a2a' }
+  }
+  // Sin bin
+  if (notif.type === 'sin_bin' && subtype === 'plea') {
+    return { emoji: '🙇', bg: '#2a1a0a' }
+  }
+  if (notif.type === 'sin_bin' && subtype === 'released') {
+    return { emoji: '🔓', bg: '#0a2a1a' }
+  }
+  if (notif.type === 'sin_bin') {
+    return { emoji: '⛔', bg: '#2a0a0a' }
+  }
+  return { emoji: '🔔', bg: '#1a1a1a' }
 }
 
 function NotifRow({
@@ -263,12 +380,25 @@ function NotifRow({
           {!notif.read && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
         </div>
 
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
-          {actor.avatar_url
-            ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
-            : initials(actor.display_name)
-          }
+        {/* Avatar + type icon */}
+        <div className="relative flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden">
+            {actor.avatar_url
+              ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
+              : initials(actor.display_name)
+            }
+          </div>
+          {(() => {
+            const icon = getNotifIcon(notif)
+            return (
+              <div
+                className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] border-2 border-[#0c0c0e]"
+                style={{ background: icon.bg }}
+              >
+                {icon.emoji}
+              </div>
+            )
+          })()}
         </div>
 
         <div className="flex-1 min-w-0">
