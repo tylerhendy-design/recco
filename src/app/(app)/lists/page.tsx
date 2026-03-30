@@ -1,186 +1,260 @@
 'use client'
 
-import { useState } from 'react'
-import { StatusBar } from '@/components/ui/StatusBar'
-import { NavHeader, PlusCircle } from '@/components/ui/NavHeader'
-import { CATEGORIES } from '@/constants/categories'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { StatusBar } from '@/components/ui/StatusBar'
+import { RecoCard } from '@/components/ui/RecoCard'
+import { createClient } from '@/lib/supabase/client'
+import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
+import type { Reco } from '@/types/app.types'
 
-const MY_LISTS = [
-  {
-    id: 'paris',
-    name: 'Paris — a few things',
-    count: 8,
-    categories: ['restaurant', 'shopping', 'culture'],
-    sharedWith: 'Huckle +3',
-    status: 'shared',
-  },
-  {
-    id: 'london',
-    name: 'London essentials',
-    count: 12,
-    categories: ['restaurant', 'bar'],
-    sharedWith: null,
-    status: 'draft',
-  },
-]
-
-const SHARED_LISTS = [
-  {
-    id: 'tokyo',
-    name: "Tokyo — Sam's guide",
-    count: 14,
-    author: 'Sam Huckle',
-    categories: ['restaurant', 'culture'],
-    isNew: true,
-  },
-]
-
-const EXTRA_CATS: Record<string, string> = {
-  shopping: '#C084FC',
-  bar: '#FB923C',
-  culture: '#FB923C',
-}
-
-function categoryLabel(id: string) {
-  return CATEGORIES.find((c) => c.id === id)?.label ?? id.charAt(0).toUpperCase() + id.slice(1)
-}
-
-function SectionCard({ label, filterIcon, children }: { label: string; filterIcon?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-1 mx-5">
-      <div className="flex items-center justify-between mb-3.5">
-        <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">
-          {label}
-        </div>
-        {filterIcon}
-      </div>
-      {children}
-    </div>
-  )
+type CityGroup = {
+  city: string
+  recos: Reco[]
+  categories: string[]
 }
 
 export default function ListsPage() {
-  const [activeFilter, setActiveFilter] = useState<string | null>(null)
-  const [filterOpen, setFilterOpen] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [allRecos, setAllRecos] = useState<Reco[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [catFilter, setCatFilter] = useState<string | null>(null)
+  const [expandedCity, setExpandedCity] = useState<string | null>(null)
 
-  // All unique categories across my lists
-  const allCats = Array.from(new Set(MY_LISTS.flatMap((l) => l.categories)))
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      setUserId(user.id)
 
-  const filteredMy = activeFilter
-    ? MY_LISTS.filter((l) => l.categories.includes(activeFilter))
-    : MY_LISTS
+      // Fetch all recos the user has received (any status)
+      const { data } = await supabase
+        .from('reco_recipients')
+        .select(`
+          id, status, score, feedback_text, rated_at,
+          recommendations (
+            id, sender_id, category, custom_cat, title,
+            why_text, why_audio_url, meta, created_at,
+            profiles (id, display_name, username, avatar_url)
+          )
+        `)
+        .eq('recipient_id', user.id)
+        .order('created_at', { ascending: false })
 
-  const filteredShared = activeFilter
-    ? SHARED_LISTS.filter((l) => l.categories.includes(activeFilter))
-    : SHARED_LISTS
+      if (!data) { setLoading(false); return }
+
+      const mapped: Reco[] = (data as any[])
+        .filter((r: any) => r.recommendations)
+        .map((r: any) => {
+          const rec = r.recommendations
+          return {
+            id: rec.id,
+            sender_id: rec.sender_id,
+            sender: rec.profiles ?? { id: rec.sender_id, display_name: 'Unknown', username: '', avatar_url: null },
+            category: rec.category,
+            custom_cat: rec.custom_cat,
+            title: rec.title,
+            why_text: rec.why_text,
+            why_audio_url: rec.why_audio_url,
+            meta: rec.meta ?? {},
+            created_at: rec.created_at,
+            status: r.status,
+            score: r.score,
+            feedback_text: r.feedback_text,
+            rated_at: r.rated_at,
+          }
+        })
+
+      setAllRecos(mapped)
+      setLoading(false)
+    })
+  }, [])
+
+  // Extract city from meta.location (take first part before comma)
+  function extractCity(reco: Reco): string | null {
+    const loc = reco.meta?.location as string | undefined
+    const city = reco.meta?.city as string | undefined
+    const raw = loc || city
+    if (!raw) return null
+    // Clean: take first meaningful part, capitalise
+    const cleaned = raw.split(',')[0].trim()
+    return cleaned || null
+  }
+
+  // Group recos by city
+  const cityGroups = useMemo(() => {
+    const groups = new Map<string, Reco[]>()
+
+    for (const reco of allRecos) {
+      const city = extractCity(reco)
+      if (!city) continue
+      if (catFilter && reco.category !== catFilter) continue
+      const key = city.toLowerCase()
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(reco)
+    }
+
+    // Sort by count descending
+    const result: CityGroup[] = []
+    for (const [, recos] of groups) {
+      const city = extractCity(recos[0])!
+      const categories = [...new Set(recos.map(r => r.category))]
+      result.push({ city, recos, categories })
+    }
+    result.sort((a, b) => b.recos.length - a.recos.length)
+    return result
+  }, [allRecos, catFilter])
+
+  // Filter by search
+  const filtered = useMemo(() => {
+    if (!search.trim()) return cityGroups
+    const q = search.trim().toLowerCase()
+    return cityGroups.filter(g => g.city.toLowerCase().includes(q))
+  }, [cityGroups, search])
+
+  // All unique categories that have location data
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>()
+    for (const reco of allRecos) {
+      if (extractCity(reco)) cats.add(reco.category)
+    }
+    return [...cats].sort()
+  }, [allRecos])
+
+  // Recos without a city
+  const uncategorisedCount = allRecos.filter(r => !extractCity(r)).length
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="lists" rightAction={<PlusCircle href="/lists/new" />} />
+      <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
+        <div className="text-[22px] font-bold text-white tracking-[-0.5px]">Places</div>
+      </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-none px-0 pt-4 flex flex-col gap-3 pb-6">
+      {/* Search */}
+      <div className="px-6 pb-2">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search a city..."
+          className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white outline-none placeholder:text-text-faint font-sans"
+        />
+      </div>
 
-        {/* Your Lists */}
-        <SectionCard
-          label="Your lists"
-          filterIcon={
-            <button
-              onClick={() => setFilterOpen((o) => !o)}
-              className={`flex items-center gap-1.5 text-[11px] font-semibold transition-colors ${filterOpen || activeFilter ? 'text-accent' : 'text-text-faint hover:text-text-muted'}`}
-            >
-              {activeFilter && (
-                <span className="text-[11px] font-medium">{categoryLabel(activeFilter)}</span>
-              )}
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="6" x2="20" y2="6"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-                <line x1="11" y1="18" x2="13" y2="18"/>
-              </svg>
-            </button>
-          }
-        >
-          {/* Filter chips */}
-          {filterOpen && (
-            <div className="flex flex-wrap gap-[6px] mb-3.5">
-              <span
-                onClick={() => setActiveFilter(null)}
-                className={`text-[12px] font-medium px-2.5 py-[5px] rounded-chip border cursor-pointer transition-all ${
-                  !activeFilter ? 'border-accent text-accent bg-accent/10' : 'border-border text-text-dim'
-                }`}
+      {/* Category filter chips */}
+      {availableCategories.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-6 pb-3 flex-shrink-0">
+          <button
+            onClick={() => setCatFilter(null)}
+            className={`px-3 py-1.5 rounded-full text-[12px] font-semibold flex-shrink-0 transition-all ${
+              !catFilter ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-faint'
+            }`}
+          >
+            All
+          </button>
+          {availableCategories.map((cat) => {
+            const color = getCategoryColor(cat)
+            const active = catFilter === cat
+            return (
+              <button
+                key={cat}
+                onClick={() => setCatFilter(active ? null : cat)}
+                className="px-3 py-1.5 rounded-full text-[12px] font-semibold flex-shrink-0 transition-all"
+                style={active
+                  ? { background: color, color: '#000' }
+                  : { background: '#1a1a1e', color: '#888' }
+                }
               >
-                All
-              </span>
-              {allCats.map((cat) => {
-                const color = CATEGORIES.find((c) => c.id === cat)?.color ?? EXTRA_CATS[cat] ?? '#888'
-                const bg = CATEGORIES.find((c) => c.id === cat)?.bgColor ?? (EXTRA_CATS[cat] ? `${EXTRA_CATS[cat]}1a` : '#88888811')
-                const isActive = activeFilter === cat
-                return (
-                  <span
-                    key={cat}
-                    onClick={() => setActiveFilter(isActive ? null : cat)}
-                    className="text-[12px] font-medium px-2.5 py-[5px] rounded-chip border cursor-pointer transition-all"
-                    style={isActive
-                      ? { color, borderColor: color, background: bg }
-                      : { color: '#909099', borderColor: '#2a2a30' }
-                    }
-                  >
-                    {categoryLabel(cat)}
-                  </span>
-                )
-              })}
-            </div>
-          )}
+                {getCategoryLabel(cat)}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
-          {filteredMy.length > 0 ? filteredMy.map((list, i) => (
-            <Link
-              key={list.id}
-              href={`/lists/${list.id}`}
-              className={`flex justify-between items-center py-3 cursor-pointer hover:opacity-80 transition-opacity ${i < filteredMy.length - 1 ? 'border-b border-border' : ''}`}
-            >
-              <div>
-                <div className="text-[15px] font-medium text-white tracking-[-0.2px]">{list.name}</div>
-                <div className="text-[11px] text-text-faint mt-[3px]">
-                  {list.count} places · {list.categories.map(categoryLabel).join(', ')}
-                </div>
-              </div>
-              <div className="text-right flex-shrink-0 ml-3">
-                <div className="text-xs text-text-dim capitalize">{list.status}</div>
-                {list.sharedWith && (
-                  <div className="text-[10px] text-text-faint mt-0.5">{list.sharedWith}</div>
+      {/* City list */}
+      <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-8 text-center gap-3">
+            <div className="text-[36px] mb-1">🗺️</div>
+            <div className="text-[17px] font-semibold text-white">
+              {search.trim() ? `No recos in "${search.trim()}"` : 'No location-based recos yet'}
+            </div>
+            <div className="text-[14px] text-text-muted leading-[1.6]">
+              {search.trim()
+                ? 'Try a different city or clear the search.'
+                : 'When friends give you recos with locations, they will be grouped by city here. Perfect for planning trips.'
+              }
+            </div>
+            {!search.trim() && (
+              <Link href="/get" className="mt-2 text-accent text-[14px] font-semibold">Ask friends for recos →</Link>
+            )}
+          </div>
+        ) : (
+          filtered.map((group) => {
+            const isOpen = expandedCity === group.city.toLowerCase()
+            return (
+              <div key={group.city.toLowerCase()} className="border-b border-[#1a1a1e]">
+                <button
+                  onClick={() => setExpandedCity(isOpen ? null : group.city.toLowerCase())}
+                  className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-card/30 transition-colors"
+                >
+                  <div>
+                    <div className="text-[17px] font-bold text-white tracking-[-0.3px] text-left">{group.city}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[12px] text-text-faint">{group.recos.length} {group.recos.length === 1 ? 'reco' : 'recos'}</span>
+                      <div className="flex gap-1">
+                        {group.categories.slice(0, 4).map((cat) => (
+                          <span
+                            key={cat}
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ background: getCategoryColor(cat) }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="2.5" strokeLinecap="round"
+                    className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+
+                {isOpen && (
+                  <div className="px-4 pb-4 flex flex-col gap-3">
+                    {/* Sub-category pills */}
+                    {group.categories.length > 1 && (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {group.categories.map((cat) => {
+                          const count = group.recos.filter(r => r.category === cat).length
+                          return (
+                            <span
+                              key={cat}
+                              className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full"
+                              style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
+                            >
+                              {getCategoryLabel(cat)} {count}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                    {group.recos.map((reco) => (
+                      <RecoCard key={reco.id} reco={reco} />
+                    ))}
+                  </div>
                 )}
               </div>
-            </Link>
-          )) : (
-            <div className="py-3 text-[13px] text-text-faint">No lists in that category.</div>
-          )}
-        </SectionCard>
-
-        {/* Shared with you */}
-        <SectionCard label="Shared with you">
-          {filteredShared.length > 0 ? filteredShared.map((list, i) => (
-            <div
-              key={list.id}
-              className={`flex justify-between items-center py-3 cursor-pointer hover:opacity-80 transition-opacity ${i < filteredShared.length - 1 ? 'border-b border-border' : ''}`}
-            >
-              <div>
-                <div className="text-[15px] font-medium text-white tracking-[-0.2px]">{list.name}</div>
-                <div className="text-[11px] text-text-faint mt-[3px]">
-                  {list.count} places · {list.author}
-                </div>
-              </div>
-              {list.isNew && (
-                <div className="text-[11px] font-semibold bg-accent/10 text-accent px-2 py-[3px] rounded-md flex-shrink-0 ml-3">
-                  New
-                </div>
-              )}
-            </div>
-          )) : (
-            <div className="py-3 text-[13px] text-text-faint">Nothing shared with you yet.</div>
-          )}
-        </SectionCard>
-
+            )
+          })
+        )}
       </div>
     </div>
   )

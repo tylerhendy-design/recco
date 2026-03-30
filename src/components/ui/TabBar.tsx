@@ -35,7 +35,7 @@ const TABS = [
   },
   {
     href: '/lists',
-    label: 'Lists',
+    label: 'Places',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke={active ? '#D4E23A' : '#6e6e78'}>
         <line x1="8" y1="6" x2="21" y2="6" />
