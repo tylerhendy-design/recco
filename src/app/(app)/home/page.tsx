@@ -406,73 +406,27 @@ function HomePageInner() {
           <div className="text-[26px] font-semibold text-text-muted leading-[1.25] tracking-[-0.6px]" onClick={(e) => e.stopPropagation()}>
             Here are{' '}
             {/* Category */}
-            <span className="relative inline-block">
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
-              >
-                {catLabel}
-              </span>
-              {catDDOpen && (
-                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
-                  {CATEGORY_FILTERS.map((f) => (
-                    <div
-                      key={f.value}
-                      onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
-                      className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${catFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                    >
-                      {f.label}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setCatDDOpen((o) => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
+            >
+              {catLabel}
             </span>
             {' '}recos from{' '}
             {/* Time */}
-            <span className="relative inline-block">
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
-              >
-                {timeLabel}
-              </span>
-              {timeDDOpen && (
-                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[160px] overflow-hidden shadow-lg">
-                  {TIME_FILTERS.map((f) => (
-                    <div
-                      key={f.value}
-                      onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
-                      className={`px-4 py-2.5 text-[13px] cursor-pointer hover:bg-bg-card ${timeFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                    >
-                      {f.label}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setTimeDDOpen((o) => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
+            >
+              {timeLabel}
             </span>
             {' '}sent by{' '}
             {/* Sender */}
-            <span className="relative inline-block">
-              <span
-                className="text-accent border-b border-accent cursor-pointer"
-                onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
-              >
-                {senderLabel}
-              </span>
-              {senderDDOpen && (
-                <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-input z-50 min-w-[180px] overflow-hidden shadow-lg">
-                  {senderOptions.map((f) => (
-                    <div
-                      key={f.value}
-                      onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
-                      className={`px-4 py-2.5 cursor-pointer hover:bg-bg-card ${senderFilter === f.value ? 'text-accent' : 'text-text-secondary'}`}
-                    >
-                      <div className="text-[13px]">{f.label}</div>
-                      {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <span
+              className="text-accent border-b border-accent cursor-pointer"
+              onClick={() => { setSenderDDOpen((o) => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
+            >
+              {senderLabel}
             </span>
           </div>
         </div>
@@ -636,6 +590,66 @@ function HomePageInner() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Filter overlays — fixed, always on top */}
+      {catDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[999]" onClick={() => setCatDDOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+              {CATEGORY_FILTERS.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }}
+                  className={`w-full text-left px-5 py-3.5 text-[14px] border-b border-border transition-colors ${catFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <button onClick={() => setCatDDOpen(false)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+            </div>
+          </div>
+        </>
+      )}
+      {timeDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[999]" onClick={() => setTimeDDOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+              {TIME_FILTERS.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }}
+                  className={`w-full text-left px-5 py-3.5 text-[14px] border-b border-border transition-colors ${timeFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+              <button onClick={() => setTimeDDOpen(false)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+            </div>
+          </div>
+        </>
+      )}
+      {senderDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[999]" onClick={() => setSenderDDOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto max-h-[60vh] overflow-y-auto">
+              {senderOptions.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }}
+                  className={`w-full text-left px-5 py-3.5 border-b border-border transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}
+                >
+                  <div className="text-[14px]">{f.label}</div>
+                  {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+                </button>
+              ))}
+              <button onClick={() => setSenderDDOpen(false)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+            </div>
+          </div>
+        </>
       )}
 
       <FeedbackSheet
