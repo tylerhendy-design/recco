@@ -85,6 +85,7 @@ function HomePageInner() {
   const [dbNoGoRecos, setDbNoGoRecos] = useState<Reco[]>([])
 
   const [tab, setTab] = useState<Tab>('todo')
+  const [tabDDOpen, setTabDDOpen] = useState(false)
   const TAB_LABELS: Record<Tab, string> = { todo: 'To Do', done: 'Done', nogo: 'No Gos' }
   const TAB_ORDER: Tab[] = ['todo', 'done', 'nogo']
   type ViewMode = 'full' | 'compact' | 'list'
@@ -379,7 +380,7 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          <button onClick={() => setTab(TAB_ORDER[(TAB_ORDER.indexOf(tab) + 1) % TAB_ORDER.length])} className="flex items-baseline gap-2">
+          <button onClick={() => setTabDDOpen(o => !o)} className="flex items-baseline gap-2">
             <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
               {TAB_LABELS[tab]}
             </h1>
@@ -585,6 +586,32 @@ function HomePageInner() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Tab picker overlay */}
+      {tabDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[1000] bg-black/50" onClick={() => setTabDDOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-[1001] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+              {TAB_ORDER.map((t) => {
+                const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
+                const active = tab === t
+                return (
+                  <button
+                    key={t}
+                    onClick={() => { setTab(t); setTabDDOpen(false); setHeaderVisible(true) }}
+                    className={`w-full flex items-center justify-between px-5 py-4 text-[15px] border-b border-[#1a1a1e] transition-colors ${active ? 'text-accent font-bold' : 'text-text-secondary font-semibold'}`}
+                  >
+                    {TAB_LABELS[t]}
+                    {count > 0 && <span className={`text-[13px] ${active ? 'text-accent/70' : 'text-text-faint'}`}>{count}</span>}
+                  </button>
+                )
+              })}
+              <button onClick={() => setTabDDOpen(false)} className="w-full text-center px-5 py-3 text-[14px] font-semibold text-text-faint border-t border-border">Cancel</button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Filter overlays — fixed, always on top */}
