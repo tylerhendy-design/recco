@@ -416,14 +416,21 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Picks */}
+          {/* TOP 03 */}
           <div className="px-6 pt-5">
-            <h1 className="text-[20px] font-bold text-white tracking-[-0.4px] mb-4">
-              I'd recommend to anyone
-            </h1>
+            <div className="flex items-baseline justify-between mb-1">
+              <h1 className="text-[20px] font-bold text-white tracking-[-0.4px]">TOP 03</h1>
+              <span className="text-[11px] text-text-faint">{picks.length}/3</span>
+            </div>
+            <div className="text-[13px] text-text-muted leading-[1.5] mb-4">
+              {picks.length < 3
+                ? 'Add your top 3 recos to unlock sending. These are the ones you think everyone should try.'
+                : 'Your top 3. The ones you think everyone should try.'
+              }
+            </div>
 
-            {/* Add CTA */}
-            {!showAddPick && (
+            {/* Add CTA — only show if under 3 */}
+            {!showAddPick && picks.length < 3 && (
               <button
                 onClick={() => { setShowAddPick(true); setSelectedCategory(null); setNewPickTitle('') }}
                 className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
@@ -431,7 +438,7 @@ export default function ProfilePage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                 </svg>
-                Add reco
+                Add top reco ({picks.length + 1} of 3)
               </button>
             )}
 

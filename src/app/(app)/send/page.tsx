@@ -192,6 +192,9 @@ function GivePageInner() {
   // Voice note
   const [voiceResult, setVoiceResult] = useState<VoiceResult | null>(null)
 
+  // TOP 03 gate
+  const [picksCount, setPicksCount] = useState<number | null>(null)
+
   // Request geolocation once on mount — used to bias restaurant search
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -205,7 +208,11 @@ function GivePageInner() {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-      const fetched = await fetchFriends(user.id)
+      const [fetched, { count: pCount }] = await Promise.all([
+        fetchFriends(user.id),
+        createClient().from('profile_picks').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      ])
+      setPicksCount(pCount ?? 0)
       setFriends(fetched.map((f: any) => ({
         id: f.id, name: f.display_name, username: f.username,
         avatar_url: f.avatar_url, selected: f.id === preselectedId,
@@ -495,6 +502,32 @@ function GivePageInner() {
   const catColor = category ? CATEGORIES.find((c) => c.id === category)?.color ?? '#D4E23A' : '#D4E23A'
 
 
+
+  // ─── TOP 03 gate ──────────────────────────────────────────────────────────
+  if (picksCount !== null && picksCount < 3 && !isForward) {
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <StatusBar />
+        <NavHeader title="Give a Reco" closeHref="/home" />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
+          <div className="text-[40px] mb-1">🏆</div>
+          <div className="text-[22px] font-bold text-white tracking-[-0.5px]">Set your TOP 03 first</div>
+          <div className="text-[14px] text-text-muted leading-[1.6]">
+            Before you can send recos, add your top 3 recommendations. The ones you think everyone should try. It takes 30 seconds.
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={`w-3 h-3 rounded-full ${i < picksCount ? 'bg-accent' : 'bg-[#333]'}`} />
+            ))}
+            <span className="text-[12px] text-text-faint ml-1">{picksCount}/3 added</span>
+          </div>
+          <Link href="/profile" className="mt-3 w-full py-3.5 bg-accent text-accent-fg rounded-btn text-[15px] font-bold text-center">
+            Add your TOP 03
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   // ─── Forward mode ─────────────────────────────────────────────────────────
   if (isForward && forwardTitle) {

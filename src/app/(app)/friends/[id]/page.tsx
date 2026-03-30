@@ -226,12 +226,12 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Picks */}
           <div className="px-6 pt-5">
             <h1 className="text-[20px] font-bold text-white tracking-[-0.4px] mb-4">
-              I'd recommend to anyone
+              {profile.display_name.split(' ')[0]}'s TOP 03
             </h1>
 
             {picks.length === 0 ? (
               <p className="text-[13px] text-text-faint leading-[1.5]">
-                {profile.display_name.split(' ')[0]} hasn't added any picks yet.
+                {profile.display_name.split(' ')[0]} hasn't set their top 3 yet.
               </p>
             ) : (
               Object.entries(picksByCategory).map(([key, items]) => {
