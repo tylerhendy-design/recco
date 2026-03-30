@@ -12,12 +12,12 @@ export default function ThreadPage() {
   return <Suspense><ThreadPageInner /></Suspense>
 }
 
-function getScoreReaction(score: number): string {
-  if (score >= 9) return 'They absolutely loved it.'
-  if (score >= 7) return 'Solid reco. They are into it.'
-  if (score >= 5) return 'Not bad, not great.'
-  if (score >= 3) return 'Bit of a miss.'
-  return 'Stinker alert.'
+function getScoreReaction(score: number, title: string): string {
+  if (score >= 9) return `They absolutely loved ${title}.`
+  if (score >= 7) return `${title} was a solid reco.`
+  if (score >= 5) return `${title} was just okay.`
+  if (score >= 3) return `${title} was a bit of a miss.`
+  return `Stinker alert. ${title} did not land.`
 }
 
 function ThreadPageInner() {
@@ -177,7 +177,7 @@ function ThreadPageInner() {
                 <div className="bg-[#161618] rounded-2xl rounded-bl-sm px-4 py-3.5">
                   {score != null && (
                     <div className="mb-2.5">
-                      <div className="text-[16px] font-bold text-white leading-[1.3]">{getScoreReaction(score)}</div>
+                      <div className="text-[16px] font-bold text-white leading-[1.3]">{getScoreReaction(score, recoTitle || 'this reco')}</div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <span className="text-[22px] font-black tabular-nums" style={{ color: scoreColor! }}>{score}/10</span>
                         <span className="text-[12px] text-text-faint">{recoCategory}</span>
