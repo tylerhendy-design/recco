@@ -233,7 +233,7 @@ function NotifRow({
 
   // Determine where this notification should link to
   let href: string | null = null
-  if (notif.type === 'reco_received') href = '/home'
+  if (notif.type === 'reco_received') href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
   else if (notif.type === 'feedback_received') href = '/home'
   else if (notif.type === 'friend_accepted') href = `/friends/${notif.actor_id}`
   else if (notif.type === 'sin_bin' && !isPlea && !isReleased) href = '/sinbin'

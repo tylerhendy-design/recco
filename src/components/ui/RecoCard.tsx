@@ -106,12 +106,13 @@ function pillClasses(category: string) {
 interface RecoCardProps {
   reco: Reco
   rank?: number
+  initialOpen?: boolean
   onMarkDone?: (reco: Reco) => void
   onBeenThere?: (reco: Reco) => void
   onNoGo?: (reco: Reco) => void
 }
 
-export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
@@ -129,6 +130,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo }: RecoCardProp
     setAnimating(false)
     setTimeout(() => setExpanded(false), 320)
   }
+
+  // Auto-open when linked from notifications
+  useEffect(() => {
+    if (initialOpen) open()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close on browser back gesture
   useEffect(() => {

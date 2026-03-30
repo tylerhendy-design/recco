@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { FeedbackSheet } from '@/components/overlays/FeedbackSheet'
@@ -60,8 +61,14 @@ function groupRecos(recos: Reco[]): Reco[] {
 }
 
 export default function HomePage() {
+  return <Suspense><HomePageInner /></Suspense>
+}
+
+function HomePageInner() {
   const { manualRecos } = useRecos()
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const openRecoId = searchParams.get('reco')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [firstName, setFirstName] = useState('there')
@@ -491,6 +498,7 @@ export default function HomePage() {
             <RecoCard
               reco={reco}
               rank={i + 1}
+              initialOpen={openRecoId === reco.id}
               onMarkDone={setFeedbackReco}
               onBeenThere={setBeenThereReco}
               onNoGo={setNoGoReco}
