@@ -543,25 +543,14 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Dot indicators + view toggle */}
+      {/* Dots + view toggle */}
       <div className="px-6 pb-3 flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {TAB_ORDER.map((t) => {
-            const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
-            const active = tab === t
-            return (
-              <button
-                key={t}
-                onClick={() => scrollToTab(t)}
-                className={`flex items-center gap-1.5 transition-all ${active ? 'text-white' : 'text-text-faint'}`}
-              >
-                <span className={`w-2 h-2 rounded-full transition-all ${active ? 'bg-accent' : 'bg-[#333]'}`} />
-                <span className={`text-[12px] font-semibold transition-all ${active ? 'opacity-100' : 'opacity-60'}`}>
-                  {TAB_LABELS[t]}{count > 0 ? ` ${count}` : ''}
-                </span>
-              </button>
-            )
-          })}
+        <div className="flex items-center gap-2">
+          {TAB_ORDER.map((t) => (
+            <button key={t} onClick={() => scrollToTab(t)} className="p-1">
+              <span className={`block w-2 h-2 rounded-full transition-all ${tab === t ? 'bg-accent' : 'bg-[#333]'}`} />
+            </button>
+          ))}
         </div>
         <button
           onClick={() => setViewMode(VIEW_CYCLE[(VIEW_CYCLE.indexOf(viewMode) + 1) % VIEW_CYCLE.length])}
