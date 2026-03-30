@@ -286,16 +286,23 @@ function NotifRow({
 }) {
   const actor = notif.actor
   const time = formatRelativeTime(notif.created_at)
+  const firstName = actor.display_name.split(' ')[0]
+  const icon = getNotifIcon(notif)
 
+  let heading = ''
   let body = ''
   let scoreLozenge: { score: number; title?: string; feedbackText?: string; category?: string } | null = null
 
   const isPlea = notif.type === 'sin_bin' && notif.payload?.subtype === 'plea'
   const isReleased = notif.type === 'sin_bin' && notif.payload?.subtype === 'released'
 
-  if (notif.type === 'friend_request') body = 'wants to add you as a friend.'
-  else if (notif.type === 'friend_accepted') body = 'accepted your friend request.'
-  else if (notif.type === 'request_received') {
+  if (notif.type === 'friend_request') {
+    heading = `${icon.emoji} Friend request`
+    body = `${firstName} wants to add you as a friend.`
+  } else if (notif.type === 'friend_accepted') {
+    heading = `${icon.emoji} New friend`
+    body = `${firstName} accepted your friend request.`
+  } else if (notif.type === 'request_received') {
     const cat = notif.payload?.category
     const count = notif.payload?.count ?? 1
     const subtype = notif.payload?.subtype
@@ -305,46 +312,59 @@ function NotifRow({
       ? Object.values(constraints).join(' · ')
       : null
     const extra = [constraintStr, details].filter(Boolean).join(' · ')
+    heading = `${icon.emoji} Reco request`
     if (subtype === 'been_there_new_request') {
       const original = notif.payload?.original_title
-      body = `already has "${original}" — they're asking for a new ${cat ? `${cat} ` : ''}reco.`
+      body = `${firstName} already has "${original}" — they want a new ${cat ? `${cat} ` : ''}reco.`
     } else {
-      body = `is asking for ${count > 1 ? `${count} ` : ''}${cat ? `${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
+      body = `${firstName} is asking for ${count > 1 ? `${count} ` : ''}${cat ? `a ${cat} ` : ''}reco${count > 1 ? 's' : ''}.${extra ? ` ${extra}` : ''}`
     }
   } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
     const title = notif.payload?.title
     const preview = notif.payload?.message_preview
-    body = title ? `sent you a message about ${title}` : 'sent you a message.'
-    if (preview) body += ` "${preview}"`
+    heading = `${icon.emoji} New message`
+    body = `${firstName}${title ? ` about ${title}` : ''}: "${preview ?? ''}"`
   } else if (notif.type === 'reco_received') {
     const title = notif.payload?.title
-    body = title ? `gave you a reco: ${title}` : 'gave you a reco.'
+    heading = `${icon.emoji} New reco`
+    body = `${firstName} just sent you${title ? ` "${title}"` : ' a reco'}.`
   } else if (isPlea) {
     const category = notif.payload?.category ?? ''
-    body = `is pleading to get out of your sin bin for ${category}.`
-  } else if (notif.type === 'sin_bin' && notif.payload?.subtype === 'released') {
+    heading = `${icon.emoji} Sin bin plea`
+    body = `${firstName} is pleading to get out of your sin bin for ${category}.`
+  } else if (isReleased) {
     const category = notif.payload?.category ?? ''
-    body = `released you from their sin bin for ${category}. You can send them recos again.`
+    heading = `${icon.emoji} Released`
+    body = `${firstName} released you from their sin bin for ${category}. Freedom.`
   } else if (notif.type === 'sin_bin') {
     const category = notif.payload?.category ?? ''
     const lastReco = notif.payload?.last_reco_title
-    body = `Oh no. 3rd strike you are out. You're in ${actor.display_name.split(' ')[0]}'s sin bin for ${category}.${lastReco ? ` Seems it was "${lastReco}" that pushed them over the edge.` : ''}`
+    heading = `${icon.emoji} Sin binned`
+    body = `3rd strike. You're in ${firstName}'s sin bin for ${category}.${lastReco ? ` "${lastReco}" pushed them over the edge.` : ''}`
   } else if (notif.type === 'feedback_received') {
     const subtype = notif.payload?.subtype
     const score = notif.payload?.score
     const category = notif.payload?.reco_category
-    const categoryLabel = category ? `${category} ` : ''
     const recoTitle = notif.payload?.reco_title
 
     if (subtype === 'no_go') {
-      body = `marked your reco${recoTitle ? ` "${recoTitle}"` : ''} as a 🚫 no go.`
+      heading = `🚫 No go`
+      body = `${firstName} is not doing${recoTitle ? ` "${recoTitle}"` : ' your reco'}.`
       if (notif.payload?.feedback_text) {
         scoreLozenge = { score: -1, title: undefined, feedbackText: notif.payload.feedback_text, category }
       }
     } else if (subtype === 'been_there') {
-      body = `has already 🔄 been there, done that with${recoTitle ? ` "${recoTitle}"` : ' your reco'}.`
+      heading = `🔄 Been there`
+      body = `${firstName} already did${recoTitle ? ` "${recoTitle}"` : ' this one'}.`
     } else {
-      body = `reviewed your ${categoryLabel}reco`
+      if (score != null && score >= 9) heading = `${icon.emoji} They loved it`
+      else if (score != null && score >= 7) heading = `${icon.emoji} Solid reco`
+      else if (score != null && score >= 5) heading = `${icon.emoji} Meh`
+      else if (score != null && score >= 3) heading = `${icon.emoji} Stinker`
+      else if (score != null) heading = `${icon.emoji} Proper stinker`
+      else heading = `${icon.emoji} Review`
+
+      body = `${firstName} reviewed${recoTitle ? ` "${recoTitle}"` : ` your ${category ?? ''}reco`}.`
       if (score != null) {
         scoreLozenge = {
           score,
@@ -380,31 +400,18 @@ function NotifRow({
           {!notif.read && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
         </div>
 
-        {/* Avatar + type icon */}
-        <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden">
-            {actor.avatar_url
-              ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
-              : initials(actor.display_name)
-            }
-          </div>
-          {(() => {
-            const icon = getNotifIcon(notif)
-            return (
-              <div
-                className="absolute -bottom-0.5 -right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] border-2 border-[#0c0c0e]"
-                style={{ background: icon.bg }}
-              >
-                {icon.emoji}
-              </div>
-            )
-          })()}
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+          {actor.avatar_url
+            ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
+            : initials(actor.display_name)
+          }
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] text-white leading-[1.5]">
-            <span className="font-semibold">{actor.display_name}</span>{' '}
-            <span className="text-text-muted">{body}</span>
+          <div className="text-[12px] font-bold text-white tracking-[0.3px] mb-0.5">{heading}</div>
+          <div className="text-[13px] text-text-muted leading-[1.5]">
+            {body}
             {scoreLozenge != null && scoreLozenge.score >= 0 && (() => {
               const c = getScoreColor(scoreLozenge.score)
               return (
