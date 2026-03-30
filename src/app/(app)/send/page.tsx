@@ -330,6 +330,7 @@ function GivePageInner() {
     setSending(true)
     setSendError(null)
 
+    try {
     // Check for duplicates (skip if user already confirmed)
     if (!force && !dupeConfirmed) {
       const { duplicateNames } = await checkDuplicateReco({
@@ -403,7 +404,12 @@ function GivePageInner() {
     })
 
     if (error) { setSendError(error); setSending(false); return }
+    setSending(false)
     setSent(true)
+    } catch (e: any) {
+      setSendError(e?.message ?? 'Something went wrong')
+      setSending(false)
+    }
   }
 
   // ─── Success screen ────────────────────────────────────────────────────────
