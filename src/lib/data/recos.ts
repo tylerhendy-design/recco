@@ -300,39 +300,41 @@ export async function checkDuplicateReco({
   category: string
   recipientIds: string[]
 }): Promise<{ duplicateNames: string[] }> {
-  const supabase = createClient()
-  const normalised = title.trim().toLowerCase()
+  try {
+    const supabase = createClient()
+    const normalised = title.trim().toLowerCase()
 
-  // Fast check: find reco IDs from this sender with same title + category
-  const { data: recos } = await supabase
-    .from('recommendations')
-    .select('id')
-    .eq('sender_id', senderId)
-    .eq('category', category)
-    .ilike('title', normalised)
-    .limit(5)
+    const { data: recos } = await supabase
+      .from('recommendations')
+      .select('id')
+      .eq('sender_id', senderId)
+      .eq('category', category)
+      .ilike('title', normalised)
+      .limit(5)
 
-  if (!recos || recos.length === 0) return { duplicateNames: [] }
+    if (!recos || recos.length === 0) return { duplicateNames: [] }
 
-  // Check if any of those recos were sent to the selected recipients
-  const recoIds = recos.map(r => r.id)
-  const { data: dupes } = await supabase
-    .from('reco_recipients')
-    .select('recipient_id')
-    .in('reco_id', recoIds)
-    .in('recipient_id', recipientIds)
-    .limit(10)
+    const recoIds = recos.map(r => r.id)
+    const { data: dupes } = await supabase
+      .from('reco_recipients')
+      .select('recipient_id')
+      .in('reco_id', recoIds)
+      .in('recipient_id', recipientIds)
+      .limit(10)
 
-  if (!dupes || dupes.length === 0) return { duplicateNames: [] }
+    if (!dupes || dupes.length === 0) return { duplicateNames: [] }
 
-  // Fetch just the names we need
-  const dupeIds = [...new Set(dupes.map(d => d.recipient_id))]
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('display_name')
-    .in('id', dupeIds)
+    const dupeIds = [...new Set(dupes.map(d => d.recipient_id))]
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .in('id', dupeIds)
 
-  return { duplicateNames: (profiles ?? []).map(p => p.display_name.split(' ')[0]) }
+    return { duplicateNames: (profiles ?? []).map(p => p.display_name.split(' ')[0]) }
+  } catch {
+    // Network error — skip duplicate check rather than blocking send
+    return { duplicateNames: [] }
+  }
 }
 
 // ── Send a reco to one or more people ────────────────────────────────────────
