@@ -395,9 +395,11 @@ function HomePageInner() {
         style={{
           height: headerVisible ? collapseHeight || 'auto' : 0,
           opacity: headerVisible ? 1 : 0,
-          overflow: 'hidden',
+          overflow: headerVisible ? 'visible' : 'hidden',
           transition: 'height 280ms ease-in-out, opacity 200ms ease-in-out',
           flexShrink: 0,
+          position: 'relative',
+          zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 1002 : 10,
         }}
         onClick={closeAllDD}
       >
@@ -499,6 +501,14 @@ function HomePageInner() {
               )}
             </span>
           </div>
+          {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
+            <button
+              onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all') }}
+              className="mt-2 text-[12px] text-text-faint underline underline-offset-2 hover:text-white transition-colors"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       </div>
 
