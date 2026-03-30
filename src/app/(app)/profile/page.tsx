@@ -37,6 +37,7 @@ export default function ProfilePage() {
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [showStinkers, setShowStinkers] = useState(false)
+  const [stinkerRecos, setStinkerRecos] = useState<{ title: string; category: string; score: number; recipient: string }[]>([])
   const [sinBinStatuses, setSinBinStatuses] = useState<Array<{ category: string; bad_count: number; recipient_name: string; offences: string[] }>>([])
 
 
@@ -119,6 +120,26 @@ export default function ProfilePage() {
 
       const stinkersSent = stinkersCount ?? 0
       const totalReceived = recosReceived ?? 0
+
+      // Fetch actual stinker details
+      if (sentIds.length > 0) {
+        const { data: stinkerData } = await supabase
+          .from('reco_recipients')
+          .select('score, reco_id, recommendations ( title, category ), profiles:recipient_id ( display_name )')
+          .in('reco_id', sentIds)
+          .eq('status', 'done')
+          .lte('score', 3)
+          .not('score', 'is', null)
+          .order('score', { ascending: true })
+        if (stinkerData) {
+          setStinkerRecos(stinkerData.map((r: any) => ({
+            title: r.recommendations?.title ?? 'Unknown',
+            category: r.recommendations?.category ?? 'custom',
+            score: r.score,
+            recipient: r.profiles?.display_name?.split(' ')[0] ?? 'Someone',
+          })))
+        }
+      }
 
       // Avg time to complete (in days)
       let avgCompletionDays = 0
@@ -298,11 +319,12 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Sent / Received / Completed ratio bar */}
+            {/* Reco flow graphic */}
             {(() => {
               const sent = profile.recos_sent
               const received = profile.recos_received
               const completed = profile.recos_completed
+              const stinkers = profile.stinkers_sent
               const max = Math.max(sent, received, 1)
               return (
                 <div className="mb-4 bg-bg-base border border-border rounded-xl px-4 py-3.5">
@@ -340,6 +362,18 @@ export default function ProfilePage() {
                         <div className="h-full bg-[#2DD4BF] rounded-full transition-all" style={{ width: `${(completed / max) * 100}%` }} />
                       </div>
                     </div>
+                    <button onClick={() => setShowStinkers(true)}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] font-semibold text-[#F56E6E]">💩 Stinkers</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-bold text-white">{stinkers}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#F56E6E] rounded-full transition-all" style={{ width: `${(stinkers / max) * 100}%` }} />
+                      </div>
+                    </button>
                   </div>
                 </div>
               )
@@ -351,8 +385,8 @@ export default function ProfilePage() {
               <StatBox value={profile.avg_score} label="Avg score" />
             </div>
             <div className="flex gap-2.5 mb-2.5">
-              <StatBox value={String(profile.stinkers_sent)} label="Stinkers" danger onPress={() => setShowStinkers(true)} />
               <StatBox value={String(profile.times_forwarded)} label="Forwarded" />
+              <StatBox value={`${profile.avg_completion_days}d`} label="Avg to complete" />
             </div>
             <div className="flex gap-2.5">
               <StatBox value={String(profile.friends_count)} label="Friends" />
@@ -648,25 +682,43 @@ export default function ProfilePage() {
 
       {/* Stinkers overlay */}
       {showStinkers && (
-        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowStinkers(false)}>
+        <div className="fixed inset-0 z-[100] flex items-end" onClick={() => setShowStinkers(false)}>
           <div className="fixed inset-0 bg-black/60" />
-          <div className="relative w-full bg-bg-base rounded-t-[28px] px-7 pt-6 pb-10" onClick={(e) => e.stopPropagation()}>
-            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-6" />
-            <div className="text-[11px] font-semibold text-[#A07850] tracking-[1px] uppercase mb-2">Your track record</div>
-            <div className="text-[22px] font-bold text-white tracking-[-0.5px] leading-[1.2] mb-4">
-              What's a stinker?
+          <div className="relative w-full bg-bg-base rounded-t-[28px] px-6 pt-6 pb-10 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5" />
+            <div className="text-[11px] font-semibold text-bad tracking-[1px] uppercase mb-1">💩 Your stinkers</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] leading-[1.2] mb-1">
+              {stinkerRecos.length} {stinkerRecos.length === 1 ? 'stinker' : 'stinkers'}
             </div>
-            <p className="text-[15px] text-text-muted leading-[1.7] mb-4">
-              A stinker is a recommendation you sent that scored 3 or below. You said it would be good, and it wasn't. Three stinkers in the same category and you're sin-binned: blocked from sending more until you're let back in. Fool me three times…
-            </p>
-            <p className="text-[15px] text-text-muted leading-[1.7]">
-              Why do we have stinkers? Every rating — good or bad — helps you learn what someone actually likes. Reco works because recommendations come from real taste. Every stinker chips away at that. Harsh but fair.
-            </p>
+            <div className="text-[13px] text-text-muted leading-[1.5] mb-4">
+              Recos you sent that scored 3 or below. Three in one category and you're sin-binned.
+            </div>
+
+            {stinkerRecos.length === 0 ? (
+              <div className="text-[14px] text-text-faint text-center py-6">Clean record. No stinkers yet.</div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {stinkerRecos.map((s, i) => (
+                  <div key={i} className="flex items-center justify-between px-4 py-3 bg-bg-card border border-border rounded-xl">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[14px] font-semibold text-white truncate">{s.title}</div>
+                      <div className="text-[12px] text-text-faint mt-0.5">
+                        {getCategoryLabel(s.category)} — sent to {s.recipient}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                      <span className="text-[16px] font-black" style={{ color: '#F56E6E' }}>{s.score}/10</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <button
               onClick={() => setShowStinkers(false)}
-              className="w-full mt-7 py-4 rounded-btn bg-bg-card border border-border text-[15px] font-semibold text-white"
+              className="w-full mt-5 py-4 rounded-btn bg-bg-card border border-border text-[15px] font-semibold text-white"
             >
-              Got it
+              Close
             </button>
           </div>
         </div>
