@@ -92,7 +92,7 @@ function ManualAddInner() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
-        <NavHeader title="Add a Reco" closeHref="/home" />
+        <NavHeader title="Manually Add a Reco" closeHref="/home" />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
           <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -114,7 +114,7 @@ function ManualAddInner() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="Add a Reco" closeHref="/home" />
+      <NavHeader title="Manually Add a Reco" closeHref="/home" />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
