@@ -399,34 +399,13 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          {/* Scrubbing tab titles */}
-          <div className="relative overflow-hidden flex-1" style={{ height: 38 }}>
-            <div className="flex items-center gap-5 absolute left-0 top-0 h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${TAB_ORDER.indexOf(tab) * 115}px)` }}>
-              {TAB_ORDER.map((t) => {
-                const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
-                const active = tab === t
-                return (
-                  <button
-                    key={t}
-                    onClick={() => scrollToTab(t)}
-                    className="flex-shrink-0 transition-all duration-300"
-                    style={{ width: 110 }}
-                  >
-                    <span className={`text-[26px] font-bold tracking-[-0.6px] transition-all duration-300 ${active ? 'text-white' : 'text-[#333]'}`}>
-                      {TAB_LABELS[t]}
-                    </span>
-                    {count > 0 && (
-                      <span className={`ml-1.5 text-[14px] font-semibold transition-all duration-300 ${active ? 'text-text-faint' : 'text-[#222]'}`}>
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-            {/* Right fade */}
-            <div className="absolute right-0 top-0 bottom-0 w-12 pointer-events-none" style={{ background: 'linear-gradient(to right, transparent, #0c0c0e)' }} />
-          </div>
+          <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
+            {TAB_LABELS[tab]}
+            {(() => {
+              const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : noGoList.length
+              return count > 0 ? <span className="ml-2 text-[14px] font-semibold text-text-faint">{count}</span> : null
+            })()}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <button
