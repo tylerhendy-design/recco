@@ -725,17 +725,31 @@ function GivePageInner() {
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
-          {/* ── Context banner (from notifications) ── */}
-          {sendContext === 'prove' && preselectedId && (() => {
+          {/* ── Pre-selected friend banner ── */}
+          {preselectedId && (() => {
             const friend = friends.find(f => f.id === preselectedId)
-            return friend ? (
-              <div className="flex items-center gap-2.5 px-3 py-2.5 mb-4 rounded-xl bg-accent/8 border border-accent/20">
+            if (!friend) return null
+            const isProve = sendContext === 'prove'
+            return (
+              <div className="flex items-center gap-3 px-3 py-2.5 mb-4 rounded-xl bg-accent/8 border border-accent/20">
+                <div className="w-8 h-8 rounded-full bg-bg-base border border-border flex items-center justify-center text-[10px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                  {friend.avatar_url
+                    ? <img src={friend.avatar_url} alt={friend.name} className="w-full h-full object-cover" />
+                    : initials(friend.name)
+                  }
+                </div>
                 <div className="text-[13px] text-accent leading-[1.4]">
-                  <span className="font-semibold">Prove yourself to {friend.name.split(' ')[0]}.</span>{' '}
-                  <span className="text-accent/70">Make this one count.</span>
+                  {isProve ? (
+                    <>
+                      <span className="font-semibold">Prove yourself to {friend.name.split(' ')[0]}.</span>{' '}
+                      <span className="text-accent/70">Make this one count.</span>
+                    </>
+                  ) : (
+                    <span className="font-semibold">Giving a reco to {friend.name.split(' ')[0]}</span>
+                  )}
                 </div>
               </div>
-            ) : null
+            )
           })()}
 
           {/* ── Category prompt ── */}
