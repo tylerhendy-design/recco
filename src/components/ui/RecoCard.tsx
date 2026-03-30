@@ -118,6 +118,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
   const [whyIndex, setWhyIndex] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const hasImage = !!reco.meta?.artwork_url
+  const hasActions = !!(onMarkDone || onBeenThere || onNoGo)
   const ptrDown = useRef<{ x: number; y: number } | null>(null)
 
   function open() {
@@ -187,7 +188,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
         <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
           {getCategoryLabel(reco.category)}
         </span>
-        <div style={{ position: 'relative' }}>
+        {hasActions && <div style={{ position: 'relative' }}>
           <button
             className="flex gap-[5px] items-center p-1"
             onPointerDown={(e) => e.stopPropagation()}
@@ -217,7 +218,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Title + Reco'd by + pills — bottom */}
@@ -260,7 +261,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
         </div>
-        <div className="relative flex-shrink-0">
+        {hasActions && <div className="relative flex-shrink-0">
           <button
             className="flex gap-[4px] items-center pt-1 p-1"
             onPointerDown={(e) => e.stopPropagation()}
@@ -290,7 +291,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
               </button>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )
@@ -484,7 +485,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, initialOpen }:
               )}
 
               {/* Done button — stopPropagation so it runs its action, not just close */}
-              {reco.status !== 'done' && (
+              {reco.status !== 'done' && reco.status !== 'no_go' && hasActions && (
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onMarkDone?.(reco) }}
