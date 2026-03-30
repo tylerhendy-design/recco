@@ -391,7 +391,7 @@ function HomePageInner() {
       <StatusBar />
 
       {/* Nav */}
-      <div className="flex justify-between items-center px-6 pt-5 pb-2.5 flex-shrink-0">
+      <div className="flex justify-between items-center px-6 pt-5 pb-2.5 flex-shrink-0 relative z-30">
         <div className="flex items-center gap-3">
           <Link href="/profile" className="w-8 h-8 rounded-full bg-[#1e1c04] border border-accent flex items-center justify-center overflow-hidden flex-shrink-0">
             {avatarUrl
@@ -443,7 +443,7 @@ function HomePageInner() {
           pointerEvents: tab === 'todo' ? 'auto' : 'none',
           flexShrink: 0,
           position: 'relative',
-          zIndex: 20,
+          zIndex: 30,
         }}
         onClick={closeAllDD}
       >

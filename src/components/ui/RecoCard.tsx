@@ -406,14 +406,14 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         <>
           {/* Backdrop — only close when tapping the backdrop itself, not children */}
           <div
-            className={cn('fixed inset-0 z-40 bg-black transition-opacity duration-300', animating ? 'opacity-60' : 'opacity-0')}
+            className={cn('fixed inset-0 z-[100] bg-black transition-opacity duration-300', animating ? 'opacity-60' : 'opacity-0')}
             onClick={(e) => { if (e.target === e.currentTarget) close() }}
           />
 
           {/* Sheet — constrained to phone width on desktop */}
           <div
             className={cn(
-              'fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] bg-bg-card rounded-t-[24px] overflow-y-auto transition-transform duration-300 ease-out',
+              'fixed bottom-0 left-1/2 -translate-x-1/2 z-[101] w-full max-w-[390px] bg-bg-card rounded-t-[24px] overflow-y-auto transition-transform duration-300 ease-out',
               animating ? 'translate-y-0' : 'translate-y-full'
             )}
             style={{ maxHeight: '80dvh' }}
