@@ -19,6 +19,9 @@ Before calling a feature done: open it on your phone, use it like a real person 
 ### 5. Typography rules
 Never use italic text anywhere in the app unless explicitly asked. All text must follow a clear typographic hierarchy: large bold headings, medium-weight subheadings, regular body text, small muted secondary text. Consistent sizing, consistent weight progression, consistent spacing. Good hierarchy means users can scan any screen and instantly know what matters most.
 
+### 6. Colour contrast
+Always ensure legible colour contrast for important information. White text on light backgrounds (yellow, green, light grey) is not readable. Use dark text (#000 or #111) on light/bright backgrounds and light text (#fff) on dark backgrounds. Scores, badges, labels, and any data the user needs to read at a glance must pass this check. If in doubt, use black text on coloured backgrounds.
+
 ---
 
 ## What RECO is and why it exists

@@ -427,7 +427,7 @@ function NotifRow({
             return (
               <div
                 className="absolute -top-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-black border-2 border-[#0c0c0e]"
-                style={{ background: c, color: '#fff' }}
+                style={{ background: c, color: '#000' }}
               >
                 {scoreLozenge.score}
               </div>
