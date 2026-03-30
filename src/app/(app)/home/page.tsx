@@ -505,7 +505,7 @@ function HomePageInner() {
             </div>
           )}
 
-          {!loading && filtered.map((reco, i) => (
+          {!loading && previewMode !== 'nofriends' && filtered.map((reco, i) => (
             <div key={reco.id} className="mb-3">
             <RecoCard
               reco={reco}
@@ -518,7 +518,7 @@ function HomePageInner() {
             </div>
           ))}
 
-          {!loading && filtered.length === 0 && (friendCount === 0 || previewMode === 'nofriends') && (
+          {!loading && (filtered.length === 0 || previewMode === 'nofriends') && (friendCount === 0 || previewMode === 'nofriends') && (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-8">
               <div className="text-[40px] mb-1">👋</div>
               <div className="text-[20px] font-bold text-white tracking-[-0.5px]">Add your friends first</div>
