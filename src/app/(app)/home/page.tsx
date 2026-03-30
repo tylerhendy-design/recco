@@ -11,7 +11,6 @@ import { NoGoSheet } from '@/components/overlays/NoGoSheet'
 import { SuccessOverlay } from '@/components/overlays/SuccessOverlay'
 import { SinBinModal } from '@/components/overlays/SinBinModal'
 import { MapSheet } from '@/components/overlays/MapSheet'
-import { ManualAddSheet } from '@/components/overlays/ManualAddSheet'
 import { SentimentBadge } from '@/components/ui/SentimentBadge'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
@@ -124,7 +123,6 @@ function HomePageInner() {
   const [successState, setSuccessState] = useState<{ reco: Reco; score: number; sinBinWarning?: { category: string; remaining: number } } | null>(null)
   const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
   const [mapReco, setMapReco] = useState<Reco | null>(null)
-  const [manualAddOpen, setManualAddOpen] = useState(false)
   const [beenThereReco, setBeenThereReco] = useState<Reco | null>(null)
   const [noGoReco, setNoGoReco] = useState<Reco | null>(null)
   const [noGoSuccess, setNoGoSuccess] = useState<{ senderName: string } | null>(null)
@@ -375,14 +373,14 @@ function HomePageInner() {
           }
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={() => setManualAddOpen(true)} aria-label="Add reco manually" className="flex items-center justify-center w-11 h-11 -m-[11px]">
+          <Link href="/send/manual" aria-label="Add reco manually" className="flex items-center justify-center w-11 h-11 -m-[11px]">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="2" width="6" height="4" rx="1"/>
               <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
               <line x1="12" y1="11" x2="12" y2="17"/>
               <line x1="9" y1="14" x2="15" y2="14"/>
             </svg>
-          </button>
+          </Link>
           <Link href="/notifications" className="relative flex items-center justify-center w-11 h-11 -m-[11px]" onClick={() => setUnreadCount(0)}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
@@ -678,7 +676,6 @@ function HomePageInner() {
         address={mapReco?.meta?.location}
       />
 
-      <ManualAddSheet open={manualAddOpen} onClose={() => setManualAddOpen(false)} />
 
       <BeenThereSheet
         open={!!beenThereReco}

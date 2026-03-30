@@ -152,10 +152,13 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   if (reco.why_text && whyMessages.length === 0) whyMessages.push(reco.why_text)
   const currentWhy = whyMessages[whyIndex] ?? reco.why_text ?? ''
 
-  const recommenderNames = reco.recommenders
-    ?.map((r) => r.profile.display_name.split(' ')[0])
-    .slice(0, 2)
-    .join(' & ') ?? ''
+  const manualSender = reco.meta?.manual_sender_name as string | undefined
+  const recommenderNames = manualSender
+    ? manualSender.split(' ')[0]
+    : reco.recommenders
+      ?.map((r) => r.profile.display_name.split(' ')[0])
+      .slice(0, 2)
+      .join(' & ') ?? ''
   const when = reco.created_at ? timeAgo(reco.created_at) : ''
   const details = getDetailPills(reco)
   const pills = pillClasses(reco.category)
