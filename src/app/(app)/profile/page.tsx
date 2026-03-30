@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
-import { CategoryChip } from '@/components/ui/CategoryChip'
 import { createClient } from '@/lib/supabase/client'
 import { initials } from '@/lib/utils'
 import { fetchUserPicks, addPick, updatePick, removePick, type Pick } from '@/lib/data/picks'
@@ -43,15 +42,6 @@ export default function ProfilePage() {
 
 
   // Add pick form
-  const [showAddPick, setShowAddPick] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(null)
-  const [customCategoryName, setCustomCategoryName] = useState('')
-  const [newPickTitle, setNewPickTitle] = useState('')
-  const [newPickWhy, setNewPickWhy] = useState('')
-  const [newPickCity, setNewPickCity] = useState('')
-  const [newPickLinks, setNewPickLinks] = useState<string[]>([''])
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [addingPick, setAddingPick] = useState(false)
 
   // Collapsed state per category (all start collapsed)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -206,28 +196,6 @@ export default function ProfilePage() {
     }
     load()
   }, [])
-
-  async function handleAddPick() {
-    if (!profile || !selectedCategory || !newPickTitle.trim()) return
-    const category = selectedCategory === 'custom' ? customCategoryName.trim() : selectedCategory
-    if (!category) return
-    setAddingPick(true)
-    const locationStr = newPickCity.trim() ? await geocodeCity(newPickCity.trim()) : ''
-    const { error } = await addPick(profile.id, category, newPickTitle, newPickWhy, newPickLinks, locationStr)
-    if (!error) {
-      const updated = await fetchUserPicks(profile.id)
-      setPicks(updated)
-      setNewPickTitle('')
-      setNewPickWhy('')
-      setNewPickCity('')
-      setNewPickLinks([''])
-      setCustomCategoryName('')
-      setSelectedCategory(null)
-      setDetailsOpen(false)
-      setShowAddPick(false)
-    }
-    setAddingPick(false)
-  }
 
   async function handleRemovePick(pickId: string) {
     await removePick(pickId)
@@ -453,124 +421,6 @@ export default function ProfilePage() {
               </svg>
               Add to your TOP 03
             </Link>
-
-            {/* Old add form removed — now uses /profile/top3 page */}
-            {false && (
-              <div>
-
-                {/* Category full warning */}
-                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length >= 3 && (
-                  <div className="bg-bad/5 border border-bad/20 rounded-card px-4 py-3 text-[13px] text-bad leading-[1.5]">
-                    You already have 3 in {getCategoryLabel(selectedCategory)}. Remove one to add another, or pick a different category.
-                  </div>
-                )}
-
-                {/* Name */}
-                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
-                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
-                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Name</div>
-                    <input
-                      autoFocus
-                      value={newPickTitle}
-                      onChange={(e) => setNewPickTitle(e.target.value)}
-                      placeholder="Name it…"
-                      className="bg-transparent outline-none text-white font-sans text-[17px] w-full tracking-[-0.3px] placeholder:text-[#2a2a30]"
-                    />
-                  </div>
-                )}
-
-                {/* Location — required for restaurants */}
-                {selectedCategory === 'restaurant' && (
-                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
-                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">
-                      City <span className="normal-case font-normal text-[11px] text-red-400">required</span>
-                    </div>
-                    <input
-                      value={newPickCity}
-                      onChange={(e) => setNewPickCity(e.target.value)}
-                      placeholder="e.g. London"
-                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white placeholder:text-text-faint outline-none focus:border-accent"
-                    />
-                  </div>
-                )}
-
-                {/* Why */}
-                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
-                  <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
-                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Why?</div>
-                    <textarea
-                      value={newPickWhy}
-                      onChange={(e) => setNewPickWhy(e.target.value)}
-                      placeholder="What makes it worth recommending…"
-                      rows={3}
-                      className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans resize-none"
-                    />
-                  </div>
-                )}
-
-                {/* Links & details — collapsible */}
-                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
-                  <div className="bg-bg-card border border-border rounded-card">
-                    <button
-                      onClick={() => setDetailsOpen((o) => !o)}
-                      className="w-full flex items-center justify-between px-4 py-3.5 active:opacity-60 transition-opacity"
-                    >
-                      <span className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">
-                        Links &amp; details
-                        <span className="ml-1.5 normal-case font-normal text-[11px] text-text-faint">optional</span>
-                      </span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#777780" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-200 flex-shrink-0 ${detailsOpen ? 'rotate-180' : ''}`}>
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
-                    </button>
-                    {detailsOpen && (
-                      <div className="border-t border-border px-4 pt-4 pb-4 flex flex-col gap-2">
-                        {newPickLinks.map((link, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 flex-1 bg-bg-base border border-border rounded-input px-3 py-2">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
-                                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
-                              </svg>
-                              <input
-                                className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-border font-sans"
-                                placeholder="Paste a URL…"
-                                value={link}
-                                onChange={(e) => { const n = [...newPickLinks]; n[i] = e.target.value; setNewPickLinks(n) }}
-                              />
-                            </div>
-                            {newPickLinks.length > 1 && (
-                              <button onClick={() => setNewPickLinks(newPickLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button onClick={() => setNewPickLinks([...newPickLinks, ''])} className="flex items-center gap-1.5 text-[12px] font-semibold text-text-dim hover:text-text-secondary transition-colors mt-0.5">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                          </svg>
-                          Add another link
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Submit */}
-                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
-                  <button
-                    onClick={handleAddPick}
-                    disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickCity.trim())}
-                    className="w-full py-4 rounded-btn bg-accent text-accent-fg text-[15px] font-bold disabled:opacity-40 transition-opacity"
-                  >
-                    {addingPick ? 'Adding…' : 'Add reco'}
-                  </button>
-                )}
-              </div>
-            )}
 
             {/* Picks list */}
             {picks.length === 0 ? (

@@ -72,7 +72,6 @@ function HomePageInner() {
   const previewMode = searchParams.get('preview')
 
   const [userId, setUserId] = useState<string | null>(null)
-  const [firstName, setFirstName] = useState('there')
   const [userInitials, setUserInitials] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [friendCount, setFriendCount] = useState<number | null>(null)
@@ -108,7 +107,7 @@ function HomePageInner() {
     if (collapseRef.current) {
       setCollapseHeight(collapseRef.current.scrollHeight)
     }
-  }, [firstName])
+  }, [])
 
   function handleFeedScroll(e: React.UIEvent<HTMLDivElement>) {
     const el = e.currentTarget
@@ -178,7 +177,6 @@ function HomePageInner() {
         .eq('id', user.id)
         .single()
       if (profile?.display_name) {
-        setFirstName(profile.display_name.split(' ')[0])
         setUserInitials(initials(profile.display_name))
       }
       if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
