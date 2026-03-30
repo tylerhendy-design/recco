@@ -141,6 +141,7 @@ function GivePageInner() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [manualArtist, setManualArtist] = useState('')
+  const [suggestionSelected, setSuggestionSelected] = useState(false)
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
 
   // Custom constraint tabs
@@ -190,6 +191,7 @@ function GivePageInner() {
     setAddingCustomConstraint(false)
     setCustomConstraintInput('')
     setVoiceResult(null)
+    setSuggestionSelected(false)
   }, [category])
 
   function handleTitleChange(val: string) {
@@ -219,6 +221,7 @@ function GivePageInner() {
 
   async function selectSuggestion(s: Suggestion) {
     setTitle(s.title)
+    setSuggestionSelected(true)
     if (s.imageUrl) setImageUrl(s.imageUrl)
     if (s.meta?.genre)   setConstraints(p => ({ ...p, genre: s.meta!.genre! }))
     if (s.meta?.artist)  setManualArtist(s.meta.artist)
@@ -576,8 +579,39 @@ function GivePageInner() {
                   )}
                 </div>
 
+              {/* ── Auto-filled details from search ── */}
+              {suggestionSelected && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {constraints.location && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#1a1a1e] text-text-muted">
+                      {PIN} {constraints.location}
+                    </span>
+                  )}
+                  {constraints.address && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#1a1a1e] text-text-muted">
+                      {PIN} {constraints.address}
+                    </span>
+                  )}
+                  {manualArtist && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#1a1a1e] text-text-muted">
+                      {MUSIC} {manualArtist}
+                    </span>
+                  )}
+                  {constraints.genre && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#1a1a1e] text-text-muted">
+                      {FILM} {constraints.genre}
+                    </span>
+                  )}
+                  {constraints.streaming && (
+                    <span className="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#1a1a1e] text-text-muted">
+                      {TV} {constraints.streaming}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* ── Secondary: autofill with a link ── */}
-              {!linkMeta && !showLinkInput && (
+              {!linkMeta && !showLinkInput && !suggestionSelected && (
                 <button
                   onClick={() => setShowLinkInput(true)}
                   className="mb-4 text-[14px] text-text-muted hover:text-white transition-colors"
