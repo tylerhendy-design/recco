@@ -495,6 +495,155 @@ function GivePageInner() {
 
 
 
+  // ─── Forward mode ─────────────────────────────────────────────────────────
+  if (isForward && forwardTitle) {
+    const forwardCanSend = selectedFriends.length > 0 && !sending
+
+    async function handleForwardSend() {
+      if (!forwardCanSend || !userId || !forwardCategory) return
+      setSending(true)
+      setSendError(null)
+      try {
+        const meta: Record<string, unknown> = {}
+        if (forwardImage) meta.artwork_url = forwardImage
+        if (forwardFrom) meta.forwarded_from = forwardFrom
+
+        const { error } = await sendReco({
+          senderId: userId,
+          category: forwardCategory,
+          title: forwardTitle,
+          whyText: forwardWhy || undefined,
+          meta,
+          recipientIds: selectedFriends.map((f) => f.id),
+        })
+        if (error) { setSendError(error); setSending(false); return }
+        setSending(false)
+        setSent(true)
+      } catch (e: any) {
+        setSendError(e?.message ?? 'Something went wrong')
+        setSending(false)
+      }
+    }
+
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <StatusBar />
+        <NavHeader title="Forward Reco" closeHref="/home" />
+
+        <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
+          {/* Reco being forwarded */}
+          <div className="bg-bg-card border border-border rounded-card px-4 py-4 mb-4">
+            <div className="flex items-center gap-3">
+              {forwardImage && (
+                <img src={forwardImage} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-[17px] font-bold text-white tracking-[-0.3px] truncate">{forwardTitle}</div>
+                <div className="text-[12px] text-text-faint mt-0.5">
+                  {getCategoryLabel(forwardCategory)} {forwardFrom ? `· originally from ${forwardFrom}` : ''}
+                </div>
+              </div>
+            </div>
+            {forwardWhy && (
+              <div className="text-[13px] text-text-muted leading-[1.5] mt-3 pt-3 border-t border-border">"{forwardWhy}"</div>
+            )}
+          </div>
+
+          {/* Who to send to */}
+          <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-3">Send to</div>
+
+          <div className="relative mb-3">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              className="w-full bg-bg-card border border-border rounded-input pl-8 pr-3 text-[13px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
+              style={{ minHeight: '44px' }}
+              placeholder="Search friends..."
+              value={friendSearch}
+              onChange={(e) => setFriendSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Search results */}
+          {friendSearch.trim().length > 0 && (
+            <div className="flex flex-col gap-0.5 mb-3">
+              {filteredFriends.filter((f) => !f.selected).length === 0 ? (
+                <div className="text-[12px] text-text-faint px-2 py-1">No friends found.</div>
+              ) : (
+                filteredFriends.filter((f) => !f.selected).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => { toggleFriend(f.id); setFriendSearch('') }}
+                    className="flex items-center gap-2.5 px-2 py-2.5 rounded-lg hover:bg-bg-card transition-colors text-left w-full"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-[10px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                      {f.avatar_url ? <img src={f.avatar_url} alt={f.name} className="w-full h-full object-cover" /> : initials(f.name)}
+                    </div>
+                    <span className="text-[14px] font-medium text-white">{f.name}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Selected friends */}
+          {selectedFriends.length > 0 && (
+            <div className="flex flex-wrap gap-[5px] mb-3">
+              {selectedFriends.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => toggleFriend(f.id)}
+                  className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-chip border transition-all"
+                  style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
+                >
+                  {f.name.split(' ')[0]}
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* All friends (when no search) */}
+          {!friendSearch.trim() && friends.filter(f => !f.selected).length > 0 && (
+            <div className="flex flex-col gap-0.5">
+              {friends.filter(f => !f.selected).map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => toggleFriend(f.id)}
+                  className="flex items-center gap-2.5 px-2 py-2.5 rounded-lg hover:bg-bg-card transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-[10px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+                    {f.avatar_url ? <img src={f.avatar_url} alt={f.name} className="w-full h-full object-cover" /> : initials(f.name)}
+                  </div>
+                  <span className="text-[14px] font-medium text-white">{f.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {loadingFriends && (
+            <div className="flex justify-center py-4">
+              <div className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin" />
+            </div>
+          )}
+
+          {sendError && <div className="mt-3 text-[13px] text-red-400 text-center">{sendError}</div>}
+        </div>
+
+        <button
+          onClick={handleForwardSend}
+          disabled={!forwardCanSend}
+          className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
+            forwardCanSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+          }`}
+        >
+          {sending ? 'Forwarding...' : `Forward to ${selectedFriends.length > 0 ? selectedFriends.map(f => f.name.split(' ')[0]).join(', ') : '...'}`}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
@@ -515,19 +664,6 @@ function GivePageInner() {
               </div>
             ) : null
           })()}
-
-          {/* Forward banner */}
-          {isForward && forwardFrom && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-4 rounded-xl bg-accent/8 border border-accent/20">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
-                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              <div className="text-[13px] text-accent leading-[1.4]">
-                <span className="font-semibold">Forwarding {forwardFrom}'s reco.</span>{' '}
-                <span className="text-accent/70">Pick who to send it to.</span>
-              </div>
-            </div>
-          )}
 
           {/* ── Category prompt ── */}
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
