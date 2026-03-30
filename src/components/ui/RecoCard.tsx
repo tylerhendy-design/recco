@@ -343,12 +343,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
       {hasImage && <img src={reco.meta.artwork_url!} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
-      {!hasImage && <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: pills.bg.replace('bg-', ''), border: `1px solid ${getCategoryColor(reco.category)}33` }}>
+      {!hasImage && <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${getCategoryColor(reco.category)}15`, border: `1px solid ${getCategoryColor(reco.category)}33` }}>
         <span className="w-2 h-2 rounded-full" style={{ background: getCategoryColor(reco.category) }} />
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] text-text-faint truncate">{getCategoryLabel(reco.category)} {recommenderNames ? `· ${recommenderNames}` : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getCategoryLabel(reco.category)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
