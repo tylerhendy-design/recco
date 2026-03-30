@@ -120,18 +120,30 @@ export default function AddFriendsPage() {
 
         {/* Invite section */}
         <div className="px-6 mt-6 border-t border-bg-card pt-5">
-          <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase mb-2">
-            Invite someone
+          <div className="text-[15px] font-semibold text-white mb-1">Know someone who should be here?</div>
+          <div className="text-[13px] text-text-muted leading-[1.6] mb-4">
+            Recos are better with friends. Invite people you trust.
           </div>
-          <div className="text-[13px] text-text-dim leading-[1.6] mb-3">
-            Send a link to someone not on Reco yet.
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'Join me on reco.', text: 'Your friends have recommendations for you.', url: 'https://givemeareco.com' }).catch(() => {})
+                } else {
+                  copyInvite()
+                }
+              }}
+              className="flex-1 py-3.5 bg-accent text-accent-fg rounded-btn text-[14px] font-bold text-center"
+            >
+              Share invite
+            </button>
+            <button
+              onClick={copyInvite}
+              className="py-3.5 px-5 border border-border rounded-btn text-[13px] font-semibold text-text-muted hover:text-white transition-colors"
+            >
+              {inviteCopied ? 'Copied' : 'Copy link'}
+            </button>
           </div>
-          <button
-            onClick={copyInvite}
-            className="w-full border border-border rounded-btn p-3.5 text-center text-[13px] font-semibold text-accent hover:bg-accent/5 transition-colors"
-          >
-            {inviteCopied ? 'Link copied!' : 'Copy invite link'}
-          </button>
         </div>
       </div>
     </div>

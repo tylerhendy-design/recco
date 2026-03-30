@@ -74,6 +74,7 @@ function HomePageInner() {
   const [firstName, setFirstName] = useState('there')
   const [userInitials, setUserInitials] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [friendCount, setFriendCount] = useState<number | null>(null)
   const [dbRecos, setDbRecos] = useState<Reco[]>([])
   const [doneRecos, setDoneRecos] = useState<Reco[]>([])
   const [noGoRecos, setNoGoRecos] = useState<Reco[]>([])
@@ -162,6 +163,14 @@ function HomePageInner() {
         setUserInitials(initials(profile.display_name))
       }
       if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
+
+      // Friend count
+      const { count: fc } = await supabase
+        .from('friend_connections')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+      setFriendCount(fc ?? 0)
+
       loadFeed(user.id)
       loadDone(user.id)
       loadNoGo(user.id)
@@ -508,7 +517,23 @@ function HomePageInner() {
             </div>
           ))}
 
-          {!loading && filtered.length === 0 && (
+          {!loading && filtered.length === 0 && friendCount === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-8">
+              <div className="text-[40px] mb-1">👋</div>
+              <div className="text-[20px] font-bold text-white tracking-[-0.5px]">Add your friends first</div>
+              <div className="text-[14px] text-text-muted leading-[1.6]">
+                Recos come from people you trust. Add friends to start giving and getting recommendations.
+              </div>
+              <Link href="/friends/add" className="mt-3 w-full py-3.5 bg-accent text-accent-fg rounded-btn text-[15px] font-bold text-center">
+                Find friends
+              </Link>
+              <Link href="/friends/add" className="text-text-faint text-[13px]">
+                Search by username or share your invite link
+              </Link>
+            </div>
+          )}
+
+          {!loading && filtered.length === 0 && friendCount !== 0 && (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
               <div className="text-[40px] mb-2">🎯</div>
               <div className="text-[17px] font-semibold text-white">No recos yet</div>
