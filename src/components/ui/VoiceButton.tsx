@@ -329,14 +329,14 @@ export function VoiceButton({ onRecorded, onStart, onClear }: VoiceButtonProps) 
       type="button"
       onClick={startRecording}
       aria-label="Record voice note"
-      className="h-[34px] px-3 rounded-full border border-border flex items-center gap-1.5 text-[11px] text-text-faint hover:border-accent hover:text-accent transition-colors flex-shrink-0"
+      className="h-[36px] px-3.5 rounded-full border border-border flex items-center gap-2 text-[12px] text-text-faint hover:border-accent hover:text-accent transition-colors flex-shrink-0"
     >
       <svg width="11" height="14" viewBox="0 0 14 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
         <rect x="4" y="1" width="6" height="10" rx="3" />
         <path d="M1 10c0 3.31 2.69 6 6 6s6-2.69 6-6" />
         <line x1="7" y1="16" x2="7" y2="18" />
       </svg>
-      Yap
+      CBF typing? Yap instead.
     </button>
   )
 }

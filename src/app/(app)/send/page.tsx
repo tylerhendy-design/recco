@@ -1116,7 +1116,6 @@ function GivePageInner() {
             }}
           />
           <div className="mt-2">
-            {!voiceResult && <div className="text-[11px] text-text-faint mb-2">CBF typing? Yap instead.</div>}
             <VoiceButton onRecorded={(r) => setVoiceResult(r)} onClear={() => setVoiceResult(null)} />
           </div>
           </div>{/* end group 2 */}
