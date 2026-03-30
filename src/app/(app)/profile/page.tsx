@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { CategoryChip } from '@/components/ui/CategoryChip'
 import { createClient } from '@/lib/supabase/client'
@@ -269,8 +270,9 @@ export default function ProfilePage() {
   const joinYear = profile?.joined_at ? new Date(profile.joined_at).getFullYear() : null
 
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
-    if (!acc[p.category]) acc[p.category] = []
-    acc[p.category].push(p)
+    const key = p.category.toLowerCase().trim()
+    if (!acc[key]) acc[key] = []
+    acc[key].push(p)
     return acc
   }, {})
 
@@ -421,7 +423,7 @@ export default function ProfilePage() {
             {(() => {
               // Count picks per category
               const catCounts: Record<string, number> = {}
-              for (const p of picks) { catCounts[p.category] = (catCounts[p.category] ?? 0) + 1 }
+              for (const p of picks) { const k = p.category.toLowerCase().trim(); catCounts[k] = (catCounts[k] ?? 0) + 1 }
               const completedCategories = Object.values(catCounts).filter(c => c >= 3).length
               const hasAnyComplete = completedCategories > 0
 
@@ -442,58 +444,29 @@ export default function ProfilePage() {
             })()}
 
             {/* Add CTA */}
-            {!showAddPick && (
-              <button
-                onClick={() => { setShowAddPick(true); setSelectedCategory(null); setNewPickTitle('') }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Add to your TOP 03
-              </button>
-            )}
+            <Link
+              href="/profile/top3"
+              className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add to your TOP 03
+            </Link>
 
-            {/* Add form */}
-            {showAddPick && (
-              <div className="flex flex-col gap-3 mb-4">
-
-                {/* Category */}
-                <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase">Category</div>
-                    <button onClick={() => { setShowAddPick(false); setSelectedCategory(null); setNewPickTitle(''); setNewPickWhy(''); setNewPickLinks(['']); setDetailsOpen(false) }} className="text-[12px] text-text-faint hover:text-white transition-colors">Cancel</button>
-                  </div>
-                  <div className="flex flex-wrap gap-[7px]">
-                    {CATEGORIES.map((cat) => (
-                      <CategoryChip
-                        key={cat.id}
-                        id={cat.id}
-                        selected={selectedCategory === cat.id}
-                        dashed={cat.id === 'custom'}
-                        onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-                      />
-                    ))}
-                  </div>
-                  {selectedCategory === 'custom' && (
-                    <input
-                      value={customCategoryName}
-                      onChange={(e) => setCustomCategoryName(e.target.value)}
-                      placeholder="Category name (e.g. Architects, Barbers…)"
-                      className="w-full mt-3 bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent"
-                    />
-                  )}
-                </div>
+            {/* Old add form removed — now uses /profile/top3 page */}
+            {false && (
+              <div>
 
                 {/* Category full warning */}
-                {selectedCategory && picks.filter(p => p.category === selectedCategory).length >= 3 && (
+                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length >= 3 && (
                   <div className="bg-bad/5 border border-bad/20 rounded-card px-4 py-3 text-[13px] text-bad leading-[1.5]">
                     You already have 3 in {getCategoryLabel(selectedCategory)}. Remove one to add another, or pick a different category.
                   </div>
                 )}
 
                 {/* Name */}
-                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
+                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Name</div>
                     <input
@@ -522,7 +495,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Why */}
-                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
+                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card px-4 pt-4 pb-4">
                     <div className="text-[13px] font-semibold text-text-muted tracking-[0.3px] uppercase mb-3">Why?</div>
                     <textarea
@@ -536,7 +509,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Links & details — collapsible */}
-                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
+                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
                   <div className="bg-bg-card border border-border rounded-card">
                     <button
                       onClick={() => setDetailsOpen((o) => !o)}
@@ -587,7 +560,7 @@ export default function ProfilePage() {
                 )}
 
                 {/* Submit */}
-                {selectedCategory && picks.filter(p => p.category === selectedCategory).length < 3 && (
+                {selectedCategory && picks.filter(p => p.category.toLowerCase().trim() === (selectedCategory ?? '').toLowerCase().trim()).length < 3 && (
                   <button
                     onClick={handleAddPick}
                     disabled={addingPick || !newPickTitle.trim() || (selectedCategory === 'custom' && !customCategoryName.trim()) || (selectedCategory === 'restaurant' && !newPickCity.trim())}
@@ -600,7 +573,7 @@ export default function ProfilePage() {
             )}
 
             {/* Picks list */}
-            {picks.length === 0 && !showAddPick ? (
+            {picks.length === 0 ? (
               <p className="text-[13px] text-text-faint leading-[1.5] pb-4">
                 Add your favourite restaurants, films, books and more. The stuff that shows people who you are. The stuff that changed your life.
               </p>
