@@ -87,7 +87,6 @@ function HomePageInner() {
   const [tab, setTab] = useState<Tab>('todo')
   const TAB_LABELS: Record<Tab, string> = { todo: 'To Do', done: 'Done', nogo: 'No Gos' }
   const TAB_ORDER: Tab[] = ['todo', 'done', 'nogo']
-  const swipeRef = useRef<HTMLDivElement>(null)
   type ViewMode = 'full' | 'compact' | 'list'
   const VIEW_LABELS: Record<ViewMode, string> = { full: 'Full', compact: 'Compact', list: 'List' }
   const VIEW_CYCLE: ViewMode[] = ['full', 'compact', 'list']
@@ -299,25 +298,6 @@ function HomePageInner() {
     router.push(`/send?${params.toString()}`)
   }
 
-  function scrollToTab(t: Tab) {
-    const idx = TAB_ORDER.indexOf(t)
-    if (swipeRef.current) {
-      const width = swipeRef.current.offsetWidth
-      swipeRef.current.scrollTo({ left: idx * width, behavior: 'smooth' })
-    }
-    setTab(t)
-    setHeaderVisible(true)
-    lastScrollY.current = 0
-  }
-
-  function handleSwipeScroll() {
-    if (!swipeRef.current) return
-    const { scrollLeft, offsetWidth } = swipeRef.current
-    const idx = Math.round(scrollLeft / offsetWidth)
-    const newTab = TAB_ORDER[idx]
-    if (newTab && newTab !== tab) setTab(newTab)
-  }
-
   function closeAllDD() {
     setCatDDOpen(false)
     setTimeDDOpen(false)
@@ -399,13 +379,18 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
-            {TAB_LABELS[tab]}
+          <button onClick={() => setTab(TAB_ORDER[(TAB_ORDER.indexOf(tab) + 1) % TAB_ORDER.length])} className="flex items-baseline gap-2">
+            <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
+              {TAB_LABELS[tab]}
+            </h1>
             {(() => {
               const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : noGoList.length
-              return count > 0 ? <span className="ml-2 text-[14px] font-semibold text-text-faint">{count}</span> : null
+              return count > 0 ? <span className="text-[14px] font-semibold text-text-faint">{count}</span> : null
             })()}
-          </h1>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="3" strokeLinecap="round" className="ml-0.5">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -469,15 +454,9 @@ function HomePageInner() {
       </div>
 
 
-      {/* ── Swipeable tab container ── */}
-      <div
-        ref={swipeRef}
-        onScroll={handleSwipeScroll}
-        className="flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-none"
-        style={{ WebkitOverflowScrolling: 'touch', display: 'flex' }}
-      >
-        {/* ── TO DO TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
+      {/* ── TO DO TAB ── */}
+      {tab === 'todo' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
           <div className="px-5 pb-6" onClick={closeAllDD}>
           {loading && (
             <div className="flex items-center justify-center py-20">
@@ -529,9 +508,11 @@ function HomePageInner() {
           )}
           </div>
         </div>
+      )}
 
-        {/* ── DONE TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
+      {/* ── DONE TAB ── */}
+      {tab === 'done' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingDone && (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -581,9 +562,11 @@ function HomePageInner() {
             )
           })}
         </div>
+      )}
 
-        {/* ── NO GOS TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
+      {/* ── NO GOS TAB ── */}
+      {tab === 'nogo' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingNoGo ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -602,7 +585,7 @@ function HomePageInner() {
             </div>
           )}
         </div>
-      </div>{/* end swipe container */}
+      )}
 
       {/* Filter overlays — fixed, always on top */}
       {(catDDOpen || timeDDOpen || senderDDOpen) && (
