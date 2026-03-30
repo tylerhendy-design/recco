@@ -206,10 +206,16 @@ async function searchRestaurantsGoogle(q: string, lat?: string, lng?: string): P
       if (!r.meta?.place_id) return
       try {
         const detailRes = await fetch(
-          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.meta.place_id}&fields=photos,website&key=${key}`
+          `https://maps.googleapis.com/maps/api/place/details/json?place_id=${r.meta.place_id}&fields=photos,website,address_components&key=${key}`
         )
         const detail = await detailRes.json()
         if (detail.result?.website) r.meta!.website = detail.result.website
+        // Extract clean city name from address_components
+        const components = detail.result?.address_components ?? []
+        const cityComponent = components.find((c: any) => c.types?.includes('locality'))
+          ?? components.find((c: any) => c.types?.includes('postal_town'))
+          ?? components.find((c: any) => c.types?.includes('administrative_area_level_1'))
+        if (cityComponent) r.meta!.city = cityComponent.long_name
         const photoRef = detail.result?.photos?.[0]?.photo_reference
         if (photoRef) {
           const photoRes = await fetch(

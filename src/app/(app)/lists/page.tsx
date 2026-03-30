@@ -71,74 +71,55 @@ export default function ListsPage() {
     })
   }, [])
 
-  // Known city aliases — map variants to a canonical name
+  // Aliases for common regional names → clean city
   const CITY_ALIASES: Record<string, string> = {
-    'greater london': 'London',
-    'city of london': 'London',
-    'central london': 'London',
-    'east london': 'London',
-    'west london': 'London',
-    'south london': 'London',
-    'north london': 'London',
-    'inner london': 'London',
-    'outer london': 'London',
-    'greater manchester': 'Manchester',
-    'city of westminster': 'London',
-    'borough of hackney': 'London',
+    'greater london': 'London', 'city of london': 'London', 'central london': 'London',
+    'inner london': 'London', 'outer london': 'London', 'city of westminster': 'London',
+    'greater manchester': 'Manchester', 'city of manchester': 'Manchester',
+    'city of edinburgh': 'Edinburgh', 'city of bristol': 'Bristol',
+    'ile-de-france': 'Paris', 'arrondissement de paris': 'Paris',
+    'north holland': 'Amsterdam', 'noord-holland': 'Amsterdam',
+    'comunidad de madrid': 'Madrid', 'provincia de barcelona': 'Barcelona',
+    'metropolitan city of rome': 'Rome', 'citta metropolitana di roma': 'Rome',
+    'metropolitan city of milan': 'Milan', 'citta metropolitana di milano': 'Milan',
+    'new york county': 'New York', 'manhattan': 'New York', 'brooklyn': 'New York',
+    'queens': 'New York', 'the bronx': 'New York', 'staten island': 'New York',
   }
 
-  // London neighbourhoods
-  const LONDON_AREAS = new Set([
-    'shoreditch', 'hoxton', 'dalston', 'hackney', 'islington', 'camden',
-    'soho', 'covent garden', 'mayfair', 'marylebone', 'fitzrovia',
-    'notting hill', 'kensington', 'chelsea', 'fulham', 'hammersmith',
-    'brixton', 'peckham', 'bermondsey', 'borough', 'southwark', 'waterloo',
-    'battersea', 'clapham', 'balham', 'tooting', 'streatham', 'dulwich',
-    'hampstead', 'highgate', 'crouch end', 'stoke newington', 'finsbury park',
-    'angel', 'clerkenwell', 'farringdon', 'barbican', 'old street',
-    'bethnal green', 'whitechapel', 'mile end', 'bow', 'stratford',
-    'canary wharf', 'greenwich', 'deptford', 'lewisham',
-    'wimbledon', 'richmond', 'putney', 'wandsworth', 'ealing',
-    'shepherd\'s bush', 'ladbroke grove', 'queens park', 'kilburn',
-    'kentish town', 'holloway', 'archway', 'tottenham', 'wood green',
-    'walthamstow', 'leyton', 'leytonstone', 'forest gate',
-    'kings cross', 'st pancras', 'euston', 'paddington', 'victoria',
-    'pimlico', 'vauxhall', 'elephant and castle', 'london bridge',
-    'tower bridge', 'wapping', 'limehouse', 'poplar', 'docklands',
-  ])
-
   function extractCity(reco: Reco): string | null {
-    const loc = reco.meta?.location as string | undefined
+    // Prefer the clean city from Place Details (set by search API)
     const city = reco.meta?.city as string | undefined
-    const address = reco.meta?.address as string | undefined
+    const loc = reco.meta?.location as string | undefined
+
+    // If city is already clean (no comma, not a postcode), use it
+    if (city && !city.includes(',') && !/^\d/.test(city)) {
+      const lower = city.toLowerCase()
+      if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
+      return city
+    }
+
     const raw = loc || city
     if (!raw) return null
 
     const parts = raw.split(',').map(p => p.trim()).filter(Boolean)
 
-    // Check each part against aliases and known areas
+    // Try each part — skip postcodes, check aliases
     for (const part of parts) {
       const lower = part.toLowerCase()
-
-      // Skip postcodes (e.g. "1032 KD", "SW1A 1AA", "75001")
-      if (/^\d/.test(lower) || /^[A-Z]{1,2}\d/.test(part)) continue
-
-      // Check aliases
+      // Skip postcodes (digits first, or UK-style "SW1A")
+      if (/^\d/.test(lower) || /^[A-Z]{1,2}\d/i.test(part)) continue
+      // Skip very short parts (usually postal area codes)
+      if (part.length <= 2) continue
       if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-
-      // Check if it's a London neighbourhood
-      if (LONDON_AREAS.has(lower)) return 'London'
     }
 
-    // If we still have parts, take the last meaningful one (usually the city)
+    // Take the last non-postcode part (usually the city or country)
     for (let i = parts.length - 1; i >= 0; i--) {
       const part = parts[i].trim()
+      if (/^\d/.test(part) || /^[A-Z]{1,2}\d/i.test(part) || part.length <= 2) continue
       const lower = part.toLowerCase()
-      if (/^\d/.test(lower) || /^[A-Z]{1,2}\d/.test(part)) continue
       if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-      if (LONDON_AREAS.has(lower)) return 'London'
-      // Return this part as the city, capitalised
-      return part.charAt(0).toUpperCase() + part.slice(1)
+      return part
     }
 
     return parts[0] || null
