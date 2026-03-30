@@ -416,7 +416,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               'fixed bottom-0 left-1/2 -translate-x-1/2 z-50 w-full max-w-[390px] bg-bg-card rounded-t-[24px] overflow-y-auto transition-transform duration-300 ease-out',
               animating ? 'translate-y-0' : 'translate-y-full'
             )}
-            style={{ maxHeight: '92dvh' }}
+            style={{ maxHeight: '80dvh' }}
             onPointerDown={(e) => { ptrDown.current = { x: e.clientX, y: e.clientY } }}
             onPointerUp={(e) => {
               if (!ptrDown.current) return
