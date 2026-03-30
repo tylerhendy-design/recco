@@ -505,6 +505,14 @@ function HomePageInner() {
               )}
             </span>
           </div>
+          {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
+            <button
+              onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all') }}
+              className="mt-2 text-[12px] text-text-faint underline underline-offset-2 hover:text-white transition-colors"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -544,14 +552,6 @@ function HomePageInner() {
           {viewMode === 'compact' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>}
           {viewMode === 'list' && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>}
         </button>
-        {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
-          <button
-            onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all') }}
-            className="text-[11px] text-text-faint underline underline-offset-2 hover:text-white transition-colors"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
       {/* ── TO DO TAB ── */}
