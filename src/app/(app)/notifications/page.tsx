@@ -387,7 +387,7 @@ function NotifRow({
       if (score != null) {
         scoreLozenge = {
           score,
-          title: recoTitle,
+          title: undefined,
           feedbackText: notif.payload?.feedback_text,
           category,
         }
@@ -412,40 +412,34 @@ function NotifRow({
     : ({ children, className }: { children: React.ReactNode; className: string }) => <div className={className}>{children}</div>
 
   return (
-    <Wrapper className={`block px-6 py-4 border-b border-[#0e0e10] ${!notif.read ? 'bg-bg-card/40' : ''}`}>
+    <Wrapper className={`block px-6 py-4 border-b border-[#0e0e10] ${!notif.read ? 'border-l-2 border-l-accent' : ''}`}>
       <div className="flex items-start gap-3">
-        {/* Unread dot */}
-        <div className="pt-1 w-2 flex-shrink-0">
-          {!notif.read && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
-        </div>
-
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
-          {actor.avatar_url
-            ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
-            : initials(actor.display_name)
-          }
+        {/* Avatar + score badge */}
+        <div className="relative flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-bg-card border border-border flex items-center justify-center text-[11px] font-bold text-text-secondary overflow-hidden">
+            {actor.avatar_url
+              ? <img src={actor.avatar_url} alt={actor.display_name} className="w-full h-full object-cover" />
+              : initials(actor.display_name)
+            }
+          </div>
+          {scoreLozenge != null && scoreLozenge.score >= 0 && (() => {
+            const c = getScoreColor(scoreLozenge.score)
+            return (
+              <div
+                className="absolute -top-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-black border-2 border-[#0c0c0e]"
+                style={{ background: c, color: '#fff' }}
+              >
+                {scoreLozenge.score}
+              </div>
+            )
+          })()}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="text-[12px] font-bold text-white tracking-[0.3px] mb-0.5">{heading}</div>
-          <div className="text-[13px] text-text-muted leading-[1.5]">
-            {body}
-            {scoreLozenge != null && scoreLozenge.score >= 0 && (() => {
-              const c = getScoreColor(scoreLozenge.score)
-              return (
-                <span
-                  className="inline-flex items-center ml-1.5 px-2 py-0.5 rounded-chip text-[11px] font-bold"
-                  style={{ color: c, background: `${c}22`, border: `1px solid ${c}44` }}
-                >
-                  {scoreLozenge.score}/10
-                </span>
-              )
-            })()}
-          </div>
-          {scoreLozenge?.title || scoreLozenge?.feedbackText ? (
+          <div className="text-[13px] text-text-muted leading-[1.5]">{body}</div>
+          {scoreLozenge?.feedbackText ? (
             <div className="text-[12px] text-text-muted mt-0.5 leading-[1.4]">
-              {scoreLozenge.title && <span className="font-medium text-white">{scoreLozenge.title}: </span>}
               {scoreLozenge.feedbackText}
             </div>
           ) : null}
