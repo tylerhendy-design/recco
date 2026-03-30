@@ -11,7 +11,6 @@ import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 import { fetchBlockedCategories, fetchSinBinnedByFriend, fetchSinBinOffences, fetchFriendInMySinBin, releaseSinBin, type SinBinEntry } from '@/lib/data/sinbin'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
-import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
 
 function getLinkLabel(url: string): string {
   try {
@@ -55,7 +54,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [removing, setRemoving] = useState(false)
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [giveRecoOpen, setGiveRecoOpen] = useState(false)
   const [blockedCategories, setBlockedCategories] = useState<string[]>([])
   const [sinBinnedByFriend, setSinBinnedByFriend] = useState<(SinBinEntry & { offences: string[] })[]>([])
   const [friendInMySinBin, setFriendInMySinBin] = useState<SinBinEntry[]>([])
@@ -148,15 +146,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
 
           {/* Give / Get buttons */}
           <div className="px-6 py-4 border-b border-bg-card flex gap-3">
-            <button
-              onClick={() => setGiveRecoOpen(true)}
+            <Link
+              href={`/send?to=${id}`}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
               <span className="text-[14px] font-semibold text-text-secondary">Give reco</span>
-            </button>
+            </Link>
             <Link
               href={`/get?from=${id}`}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
@@ -329,17 +327,6 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      {/* Give reco sheet */}
-      {currentUserId && (
-        <GiveRecoSheet
-          open={giveRecoOpen}
-          onClose={() => setGiveRecoOpen(false)}
-          senderId={currentUserId}
-          recipientId={id}
-          recipientName={profile?.display_name ?? ''}
-          blockedCategories={blockedCategories}
-        />
-      )}
 
       {/* Friends list overlay */}
       {showFriends && (

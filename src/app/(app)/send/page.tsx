@@ -37,7 +37,7 @@ type ConstraintDef = { key: string; label: string; placeholder: string; icon: Re
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 const PIN = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-const MONEY = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v1.5m0 9V18m-2.5-8.5c0-1 .9-1.5 2.5-1.5s2.5.8 2.5 2c0 2.5-5 2-5 4.5 0 1.2 1.1 1.5 2.5 1.5s2.5-.4 2.5-1.5"/></svg>
+const MONEY = <span className="text-[10px] font-bold leading-none">£</span>
 const STAR = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
 const TV = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
 const MUSIC = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -657,9 +657,9 @@ function GivePageInner() {
                 </div>
               )}
 
-              {/* ── Photo banner (shown once we have title from either path) ── */}
-              {(title || linkMeta) && imageUrl && isRestaurant && (
-                <div className="w-full h-[180px] rounded-xl overflow-hidden mb-3 relative">
+              {/* ── Photo banner (shown for any category when we have an image) ── */}
+              {(title || linkMeta) && imageUrl && (
+                <div className="w-full h-[180px] rounded-xl overflow-hidden mb-2 relative">
                   <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                   {imageUploading && (
@@ -683,6 +683,26 @@ function GivePageInner() {
                 </div>
               )}
 
+              {/* ── Photo CTA (directly below image or as standalone) ── */}
+              {(title || linkMeta) && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full mb-3 py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                    imageUrl
+                      ? 'bg-[#1a1a1e] text-[#888] text-[12px]'
+                      : 'bg-accent/10 border border-accent/30 text-accent text-[13px] font-semibold'
+                  }`}
+                >
+                  {CAM}
+                  {imageUploading
+                    ? <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> Uploading…</>
+                    : imageUrl
+                      ? 'Replace photo'
+                      : 'Add a photo — makes your reco stand out'
+                  }
+                </button>
+              )}
+
               {imageError && (
                 <div className="mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-input text-[11px] text-red-400 leading-[1.5]">
                   {imageError}
@@ -703,29 +723,29 @@ function GivePageInner() {
           </div>
 
           {/* ── Constraint tabs (horizontal scroll) ── */}
-          <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2 mb-1">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2 mb-1">
             {allDefs.map((def) => {
               const filled = (constraints[def.key] ?? '').trim().length > 0
               const isOpen = openConstraint === def.key
+              const active = filled || isOpen
               return (
                 <button
                   key={def.key}
                   onClick={() => {
                     setOpenConstraint(isOpen ? null : def.key)
                     setAddingCustomConstraint(false)
-                    // Pre-fill currency for price fields
                     if (!isOpen && def.key === 'price' && !(constraints.price ?? '').trim()) {
                       setConstraints(p => ({ ...p, price: '£' }))
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
-                  style={filled || isOpen
-                    ? { color: '#D4E23A', border: '1px solid #D4E23A55', background: 'rgba(212,226,58,0.08)' }
-                    : { color: '#666', border: '1px dashed #2e2e33' }
-                  }
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0 ${
+                    active
+                      ? 'bg-accent text-accent-fg'
+                      : 'bg-[#1a1a1e] text-[#888]'
+                  }`}
                 >
                   {def.icon}
-                  {filled ? constraints[def.key] : `+ ${def.label}`}
+                  {filled ? constraints[def.key] : def.label}
                 </button>
               )
             })}
@@ -733,8 +753,7 @@ function GivePageInner() {
             {/* Add custom tab */}
             <button
               onClick={() => { setAddingCustomConstraint(true); setOpenConstraint(null) }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip text-[12px] font-medium transition-all flex-shrink-0"
-              style={{ color: '#999', border: '1px dashed #555' }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0 bg-[#1a1a1e] text-[#555] border border-dashed border-[#333]"
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add
@@ -802,38 +821,6 @@ function GivePageInner() {
             </div>
           )}
 
-          {/* ── Add Photo CTA ── */}
-          {!imageUrl ? (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full mt-1 mb-1 py-3 rounded-xl border border-dashed flex items-center justify-center gap-2 transition-colors"
-              style={{ borderColor: '#2a2a30', color: '#555' }}
-            >
-              {CAM}
-              <span className="text-[13px] font-medium">Add a photo</span>
-              <span className="text-[11px] text-[#3a3a42]">— optional but encouraged</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full mt-1 mb-1 py-2 rounded-xl border flex items-center justify-center gap-2 transition-colors"
-              style={imageUploaded
-                ? { borderColor: '#D4E23A55', background: 'rgba(212,226,58,0.06)', color: '#D4E23A' }
-                : imageError
-                  ? { borderColor: '#F56E6E55', background: 'rgba(245,110,110,0.06)', color: '#F56E6E' }
-                  : { borderColor: '#333', color: '#888' }
-              }
-            >
-              {imageUploading
-                ? <><div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /><span className="text-[12px]">Uploading…</span></>
-                : imageUploaded
-                  ? <><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg><span className="text-[12px]">Photo saved — tap to replace</span></>
-                  : imageError
-                    ? <><span className="text-[12px]">Upload failed — tap to retry</span></>
-                    : <><span className="text-[12px]">Upload your own photo</span></>
-              }
-            </button>
-          )}
           </div>{/* end group 1 */}
 
           {/* ── Group 2: Why ── */}
