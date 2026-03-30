@@ -205,7 +205,11 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
   const score = notif.payload?.score
   const subtype = notif.payload?.subtype
 
-  // Stinker (score <= 3)
+  // Proper stinker (score <= 2)
+  if (notif.type === 'feedback_received' && score != null && score <= 2) {
+    return { emoji: '🚨💩🚨', bg: '#2a1a0a' }
+  }
+  // Stinker (score 3)
   if (notif.type === 'feedback_received' && score != null && score <= 3) {
     return { emoji: '💩', bg: '#2a1a0a' }
   }
@@ -250,11 +254,11 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
   }
   // Request received
   if (notif.type === 'request_received') {
-    return { emoji: '🙏', bg: '#2a1a2a' }
+    return { emoji: '🤲', bg: '#2a1a2a' }
   }
   // Sin bin
   if (notif.type === 'sin_bin' && subtype === 'plea') {
-    return { emoji: '🙇', bg: '#2a1a0a' }
+    return { emoji: '👁️👄👁️', bg: '#2a1a0a' }
   }
   if (notif.type === 'sin_bin' && subtype === 'released') {
     return { emoji: '\u{1F513}', bg: '#0a2a1a' }
