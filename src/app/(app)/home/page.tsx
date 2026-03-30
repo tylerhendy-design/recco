@@ -163,6 +163,8 @@ function HomePageInner() {
       }
       if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
       loadFeed(user.id)
+      loadDone(user.id)
+      loadNoGo(user.id)
 
       // Unread notification count
       const fetchUnread = async () => {
