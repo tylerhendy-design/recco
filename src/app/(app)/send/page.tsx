@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { VoiceButton, type VoiceResult } from '@/components/ui/VoiceButton'
-import { CATEGORIES, type CategoryId, getCategoryLabel } from '@/constants/categories'
+import { CATEGORIES, type CategoryId, getCategoryLabel, getCategoryColor, getCategoryBg } from '@/constants/categories'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriends } from '@/lib/data/friends'
 import { sendReco, checkDuplicateReco } from '@/lib/data/recos'
@@ -532,22 +532,29 @@ function GivePageInner() {
 
         <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
           {/* Reco being forwarded */}
-          <div className="bg-bg-card border border-border rounded-card px-4 py-4 mb-4">
-            <div className="flex items-center gap-3">
-              {forwardImage && (
-                <img src={forwardImage} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="text-[17px] font-bold text-white tracking-[-0.3px] truncate">{forwardTitle}</div>
-                <div className="text-[12px] text-text-faint mt-0.5">
-                  {getCategoryLabel(forwardCategory)} {forwardFrom ? `· originally from ${forwardFrom}` : ''}
+          {(() => {
+            const catColor = forwardCategory ? getCategoryColor(forwardCategory) : '#888'
+            const catBg = forwardCategory ? getCategoryBg(forwardCategory) : '#1a1a1e'
+            return (
+              <div className="rounded-card px-4 py-4 mb-4" style={{ background: catBg, border: `1.5px solid ${catColor}44` }}>
+                <div className="flex items-center gap-3">
+                  {forwardImage && (
+                    <img src={forwardImage} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" style={{ border: `1px solid ${catColor}44` }} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[18px] font-bold text-white tracking-[-0.4px] truncate">{forwardTitle}</div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.5px]" style={{ color: catColor }}>{getCategoryLabel(forwardCategory!)}</span>
+                      {forwardFrom && <span className="text-[12px] text-text-faint">from {forwardFrom}</span>}
+                    </div>
+                  </div>
                 </div>
+                {forwardWhy && (
+                  <div className="text-[13px] text-text-muted leading-[1.5] mt-3 pt-3" style={{ borderTop: `1px solid ${catColor}22` }}>"{forwardWhy}"</div>
+                )}
               </div>
-            </div>
-            {forwardWhy && (
-              <div className="text-[13px] text-text-muted leading-[1.5] mt-3 pt-3 border-t border-border">"{forwardWhy}"</div>
-            )}
-          </div>
+            )
+          })()}
 
           {/* Who to send to */}
           <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-3">Send to</div>
