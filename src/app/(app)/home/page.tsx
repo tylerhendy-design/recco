@@ -433,14 +433,16 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Greeting + filters — collapses on scroll down */}
+      {/* Greeting + filters — only on To Do tab, collapses on scroll */}
       <div
         style={{
-          height: headerVisible ? collapseHeight || 'auto' : 0,
-          opacity: headerVisible ? 1 : 0,
+          height: headerVisible && tab === 'todo' ? collapseHeight || 'auto' : 0,
+          opacity: headerVisible && tab === 'todo' ? 1 : 0,
           overflow: 'hidden',
           transition: 'height 280ms ease-in-out, opacity 200ms ease-in-out',
           flexShrink: 0,
+          position: 'relative',
+          zIndex: 20,
         }}
         onClick={closeAllDD}
       >
