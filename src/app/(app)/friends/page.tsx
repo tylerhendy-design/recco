@@ -92,7 +92,7 @@ function FriendsPageInner() {
         </Link>
       </div>
 
-      {friends.length > 0 && previewMode !== 'nofriends' && (
+      {friends.length > 0 && previewMode !== 'new' && (
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -147,7 +147,7 @@ function FriendsPageInner() {
           <div className="flex justify-center py-12">
             <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
           </div>
-        ) : (filtered.length === 0 && requests.length === 0) || previewMode === 'nofriends' ? (
+        ) : (filtered.length === 0 && requests.length === 0) || previewMode === 'new' ? (
           <div className="flex flex-col items-center justify-center py-14 px-8 text-center gap-3">
             <div className="text-[40px] mb-1">👋</div>
             <div className="text-[20px] font-bold text-white tracking-[-0.5px]">No friends yet</div>
