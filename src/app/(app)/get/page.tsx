@@ -85,6 +85,7 @@ function GetPageInner() {
   const [userId, setUserId] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
+  const [recoCount, setRecoCount] = useState(1)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -135,7 +136,7 @@ function GetPageInner() {
     const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
     const payload = {
       category: effectiveCat,
-      count: 1,
+      count: recoCount,
       constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
       details: details.trim() || null,
     }
@@ -257,6 +258,26 @@ function GetPageInner() {
                 onChange={(e) => setCustomCat(e.target.value)}
               />
             )}
+          </div>
+
+          {/* How many */}
+          <div className="border-t border-[#0e0e10] pt-4 mb-4">
+            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">How many recos?</div>
+            <div className="flex gap-2">
+              {[1, 2, 3, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setRecoCount(n)}
+                  className={`flex-1 py-2.5 rounded-lg text-[14px] font-bold transition-all ${
+                    recoCount === n
+                      ? 'bg-accent text-accent-fg'
+                      : 'bg-[#1a1a1e] text-[#888]'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Extra details section */}
