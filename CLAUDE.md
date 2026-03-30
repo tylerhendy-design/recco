@@ -19,6 +19,9 @@ Before calling a feature done: open it on your phone, use it like a real person 
 ### 5. Typography rules
 Never use italic text anywhere in the app unless explicitly asked. All text must follow a clear typographic hierarchy: large bold headings, medium-weight subheadings, regular body text, small muted secondary text. Consistent sizing, consistent weight progression, consistent spacing. Good hierarchy means users can scan any screen and instantly know what matters most.
 
+### 7. Dropdowns and overlays
+Every dropdown must appear directly below (or adjacent to) the element that triggered it — never at the bottom of the screen disconnected from context. Use `position: relative` on the trigger parent with `position: absolute; top: 100%` on the dropdown. The trigger's container must get a high `z-index` when the dropdown is open so it sits above all other content. Always add a fixed `bg-black/30` backdrop behind the dropdown that covers the full screen and closes the dropdown on tap. No dropdown should ever be hidden behind other content — it must be the top layer of the entire app when open. The only exception is action menus (like the three-dot menu on reco cards) where a bottom sheet makes sense because the actions are not tied to a specific word or label.
+
 ### 6. Colour contrast
 Always ensure legible colour contrast for important information. White text on light backgrounds (yellow, green, light grey) is not readable. Use dark text (#000 or #111) on light/bright backgrounds and light text (#fff) on dark backgrounds. Scores, badges, labels, and any data the user needs to read at a glance must pass this check. If in doubt, use black text on coloured backgrounds.
 
