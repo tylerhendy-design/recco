@@ -380,18 +380,38 @@ function HomePageInner() {
               : <span className="text-[11px] font-bold text-accent">{userInitials}</span>
             }
           </Link>
-          <button onClick={() => setTabDDOpen(o => !o)} className="flex items-baseline gap-2">
-            <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
-              {TAB_LABELS[tab]}
-            </h1>
-            {(() => {
-              const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : noGoList.length
-              return count > 0 ? <span className="text-[14px] font-semibold text-text-faint">{count}</span> : null
-            })()}
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="3" strokeLinecap="round" className="ml-0.5">
-              <path d="M6 9l6 6 6-6"/>
-            </svg>
-          </button>
+          <div className="relative" style={{ zIndex: tabDDOpen ? 1001 : 'auto' }}>
+            <button onClick={() => setTabDDOpen(o => !o)} className="flex items-baseline gap-2">
+              <h1 className="text-[26px] font-bold text-white tracking-[-0.6px]">
+                {TAB_LABELS[tab]}
+              </h1>
+              {(() => {
+                const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : noGoList.length
+                return count > 0 ? <span className="text-[14px] font-semibold text-text-faint">{count}</span> : null
+              })()}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="3" strokeLinecap="round" className="ml-0.5">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+            {tabDDOpen && (
+              <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[180px]">
+                {TAB_ORDER.map((t) => {
+                  const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
+                  const active = tab === t
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => { setTab(t); setTabDDOpen(false); setHeaderVisible(true) }}
+                      className={`w-full flex items-center justify-between px-4 py-3 text-[14px] border-b border-[#1a1a1e] transition-colors ${active ? 'text-accent font-bold' : 'text-text-secondary font-semibold'}`}
+                    >
+                      {TAB_LABELS[t]}
+                      {count > 0 && <span className={`text-[12px] ${active ? 'text-accent/70' : 'text-text-faint'}`}>{count}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -590,28 +610,7 @@ function HomePageInner() {
 
       {/* Tab picker overlay */}
       {tabDDOpen && (
-        <>
-          <div className="fixed inset-0 z-[1000] bg-black/50" onClick={() => setTabDDOpen(false)} />
-          <div className="fixed inset-x-0 bottom-0 z-[1001] p-4 pb-8">
-            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
-              {TAB_ORDER.map((t) => {
-                const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
-                const active = tab === t
-                return (
-                  <button
-                    key={t}
-                    onClick={() => { setTab(t); setTabDDOpen(false); setHeaderVisible(true) }}
-                    className={`w-full flex items-center justify-between px-5 py-4 text-[15px] border-b border-[#1a1a1e] transition-colors ${active ? 'text-accent font-bold' : 'text-text-secondary font-semibold'}`}
-                  >
-                    {TAB_LABELS[t]}
-                    {count > 0 && <span className={`text-[13px] ${active ? 'text-accent/70' : 'text-text-faint'}`}>{count}</span>}
-                  </button>
-                )
-              })}
-              <button onClick={() => setTabDDOpen(false)} className="w-full text-center px-5 py-3 text-[14px] font-semibold text-text-faint border-t border-border">Cancel</button>
-            </div>
-          </div>
-        </>
+        <div className="fixed inset-0 z-[1000] bg-black/30" onClick={() => setTabDDOpen(false)} />
       )}
 
       {/* Filter overlays — fixed, always on top */}
