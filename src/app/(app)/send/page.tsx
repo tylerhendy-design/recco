@@ -215,9 +215,9 @@ function GivePageInner() {
       ])
       const pCount = picksData?.length ?? 0
       setPicksCount(pCount)
-      // Check if any category has 3+ picks
+      // Check if any category has 3+ picks (normalise to lowercase)
       const catCounts: Record<string, number> = {}
-      for (const p of (picksData ?? [])) { catCounts[p.category] = (catCounts[p.category] ?? 0) + 1 }
+      for (const p of (picksData ?? [])) { const k = p.category.toLowerCase().trim(); catCounts[k] = (catCounts[k] ?? 0) + 1 }
       setHasCompleteCategory(Object.values(catCounts).some(c => c >= 3))
       setFriends(fetched.map((f: any) => ({
         id: f.id, name: f.display_name, username: f.username,
