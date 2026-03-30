@@ -994,9 +994,14 @@ function GivePageInner() {
             <div className="text-[12px] text-text-faint mb-3">Optional — more context makes a better reco</div>
           </div>
 
-          {/* ── Constraint tabs (horizontal scroll) ── */}
+          {/* ── Constraint tabs (horizontal scroll) — hide auto-filled ones ── */}
           <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-4 px-4 pb-2 mb-1">
-            {allDefs.map((def) => {
+            {allDefs.filter((def) => {
+              // If this was auto-filled from search and shown as a pill above, hide it from tabs
+              if (!suggestionSelected) return true
+              const autoFilledKeys = ['location', 'address', 'genre', 'streaming']
+              return !(autoFilledKeys.includes(def.key) && (constraints[def.key] ?? '').trim().length > 0)
+            }).map((def) => {
               const filled = (constraints[def.key] ?? '').trim().length > 0
               const isOpen = openConstraint === def.key
               const active = filled || isOpen
