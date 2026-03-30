@@ -135,31 +135,32 @@ function ThreadPageInner() {
       <StatusBar />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#0e0e10] flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <Link href="/notifications" className="text-[20px] text-text-faint leading-none p-1">
-            &#8249;
-          </Link>
-          <div className="w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-[10px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
-            {friendAvatar
-              ? <img src={friendAvatar} alt={friendName} className="w-full h-full object-cover" />
-              : friendInitials
-            }
-          </div>
-          <div className="min-w-0">
-            <div className="text-[15px] font-semibold text-white tracking-[-0.3px] truncate">
-              {firstName} {recoTitle ? `\u00b7 ${recoTitle}` : ''}
-            </div>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#0e0e10] flex-shrink-0">
+        <Link href="/notifications" className="flex items-center justify-center w-11 h-11 -ml-2 flex-shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+        </Link>
+        <div className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-[10px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+          {friendAvatar
+            ? <img src={friendAvatar} alt={friendName} className="w-full h-full object-cover" />
+            : friendInitials
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-semibold text-white tracking-[-0.3px] truncate">{firstName}</div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-[12px] text-text-faint truncate">{recoTitle}</span>
+            {score != null && (
+              <span
+                className="text-[11px] font-bold px-2 py-0.5 rounded-chip flex-shrink-0"
+                style={{ color: scoreColor!, background: `${scoreColor}22`, border: `1px solid ${scoreColor}44` }}
+              >
+                {score}/10
+              </span>
+            )}
           </div>
         </div>
-        {score != null && (
-          <span
-            className="text-[11px] font-bold px-2.5 py-1 rounded-chip"
-            style={{ color: scoreColor!, background: `${scoreColor}22`, border: `1px solid ${scoreColor}44` }}
-          >
-            {score}/10
-          </span>
-        )}
       </div>
 
       {/* Messages area */}
@@ -172,19 +173,22 @@ function ThreadPageInner() {
           <>
             {/* Feedback context as first "message" */}
             {(feedbackText || score != null) && (
-              <div className="self-start max-w-[80%]">
-                <div className="bg-[#161618] rounded-2xl rounded-bl-sm px-3.5 py-3">
+              <div className="self-start max-w-[85%]">
+                <div className="bg-[#161618] rounded-2xl rounded-bl-sm px-4 py-3.5">
                   {score != null && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[20px] font-black tabular-nums" style={{ color: scoreColor! }}>{score}/10</span>
-                      <span className="text-[11px] text-text-faint">{getScoreReaction(score)}</span>
+                    <div className="mb-2.5">
+                      <div className="text-[16px] font-bold text-white leading-[1.3]">{getScoreReaction(score)}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[22px] font-black tabular-nums" style={{ color: scoreColor! }}>{score}/10</span>
+                        <span className="text-[12px] text-text-faint">{recoCategory}</span>
+                      </div>
                     </div>
                   )}
                   {feedbackText && (
-                    <div className="text-[13px] text-text-secondary leading-[1.6]">{feedbackText}</div>
+                    <div className="text-[14px] text-text-secondary leading-[1.6]">{feedbackText}</div>
                   )}
                 </div>
-                <div className="text-[10px] text-text-faint mt-1 pl-1">{firstName}'s review</div>
+                <div className="text-[11px] text-text-faint mt-1 pl-1">{firstName}'s review</div>
               </div>
             )}
 
@@ -200,11 +204,11 @@ function ThreadPageInner() {
                         : 'bg-[#161618] rounded-bl-sm'
                     }`}
                   >
-                    <div className={`text-[13px] leading-[1.5] ${isMe ? 'text-accent' : 'text-text-secondary'}`}>
+                    <div className={`text-[14px] leading-[1.5] ${isMe ? 'text-accent' : 'text-text-secondary'}`}>
                       {msg.body}
                     </div>
                   </div>
-                  <div className={`text-[10px] text-text-faint mt-1 px-1 ${isMe ? 'text-right' : ''}`}>
+                  <div className={`text-[11px] text-text-faint mt-1 px-1 ${isMe ? 'text-right' : ''}`}>
                     {isMe ? 'You' : firstName} {msg.created_at ? `\u00b7 ${formatTime(msg.created_at)}` : ''}
                   </div>
                 </div>
@@ -214,7 +218,7 @@ function ThreadPageInner() {
             {/* Empty state — no messages yet */}
             {messages.length === 0 && !feedbackText && score == null && (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="text-[13px] text-text-faint">Start the conversation about {recoTitle || 'this reco'}.</div>
+                <div className="text-[14px] text-text-faint">Start the conversation about {recoTitle || 'this reco'}.</div>
               </div>
             )}
           </>
@@ -224,7 +228,7 @@ function ThreadPageInner() {
       {/* Reply bar */}
       <div className="px-4 py-3 border-t border-[#0e0e10] flex gap-2 items-center flex-shrink-0">
         <input
-          className="flex-1 bg-bg-card border border-border rounded-input px-3 py-2.5 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+          className="flex-1 bg-bg-card border border-border rounded-input px-3 py-2.5 text-[14px] text-white outline-none placeholder:text-[#444] font-sans"
           placeholder={score != null && score >= 7 ? 'Told you so...' : score != null && score <= 3 ? 'In my defence...' : 'Say something...'}
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
