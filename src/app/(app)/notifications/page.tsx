@@ -205,7 +205,11 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
   const score = notif.payload?.score
   const subtype = notif.payload?.subtype
 
-  // Proper stinker (score <= 2)
+  // Absolute zero (score 1)
+  if (notif.type === 'feedback_received' && score != null && score <= 1) {
+    return { emoji: '💀', bg: '#1a0a0a' }
+  }
+  // Proper stinker (score 2)
   if (notif.type === 'feedback_received' && score != null && score <= 2) {
     return { emoji: '🚨💩🚨', bg: '#2a1a0a' }
   }
@@ -365,6 +369,7 @@ function NotifRow({
       else if (score != null && score >= 7) heading = `${icon.emoji} Solid reco`
       else if (score != null && score >= 5) heading = `${icon.emoji} Meh`
       else if (score != null && score >= 3) heading = `${icon.emoji} Stinker`
+      else if (score != null && score <= 1) heading = `${icon.emoji} Unforgivable`
       else if (score != null) heading = `${icon.emoji} Proper stinker`
       else heading = `${icon.emoji} Review`
 

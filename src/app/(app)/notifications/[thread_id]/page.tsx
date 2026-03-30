@@ -17,7 +17,8 @@ function getScoreReaction(score: number, title: string): string {
   if (score >= 7) return `${title} was a solid reco.`
   if (score >= 5) return `${title} was just okay.`
   if (score >= 3) return `${title} was not good enough. A stinker.`
-  return `${title} was a disaster. A proper stinker.`
+  if (score >= 2) return `${title} was a disaster. A proper stinker.`
+  return `${title} was unforgivable. Dead to them.`
 }
 
 function ThreadPageInner() {
