@@ -163,7 +163,7 @@ function FriendsPageInner() {
                   navigator.clipboard.writeText('https://givemeareco.com')
                 }
               }}
-              className="text-text-faint text-[13px] hover:text-white transition-colors"
+              className="text-text-faint text-[13px] underline underline-offset-2 hover:text-white transition-colors"
             >
               Or share your invite link
             </button>
