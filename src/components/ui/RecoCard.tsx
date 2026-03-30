@@ -203,7 +203,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             </svg>
           </button>
         )}
-        {hasActions && <div style={{ position: 'relative' }}>
+        {hasActions && <div>
           <button
             className="flex gap-[5px] items-center p-1"
             onPointerDown={(e) => e.stopPropagation()}
@@ -211,28 +211,6 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           >
             {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
           </button>
-          {menuOpen && (
-            <div
-              className="absolute right-0 top-8 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
-                onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
-              >
-                <div className="font-semibold text-white">🔄 Been there, done that</div>
-                <div className="text-[11px] text-white/60 mt-0.5">Already done this — rate it or request something new</div>
-              </button>
-              <button
-                className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
-                onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
-              >
-                <div className="font-semibold text-bad">🚫 No go</div>
-                <div className="text-[11px] text-white/60 mt-0.5">Can't or won't do this — give them a reason</div>
-              </button>
-            </div>
-          )}
         </div>}
       </div>
 
@@ -293,7 +271,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             </svg>
           </button>
         )}
-        {hasActions && <div className="relative flex-shrink-0">
+        {hasActions && <div className="flex-shrink-0">
           <button
             className="flex gap-[4px] items-center pt-1 p-1"
             onPointerDown={(e) => e.stopPropagation()}
@@ -301,28 +279,6 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           >
             {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-text-faint" />)}
           </button>
-          {menuOpen && (
-            <div
-              className="absolute right-0 top-7 z-20 bg-bg-elevated border border-border rounded-input overflow-hidden shadow-xl min-w-[200px]"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="w-full text-left px-4 py-3 text-[13px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
-                onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
-              >
-                <div className="font-semibold text-white">Been there, done that</div>
-                <div className="text-[11px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
-              </button>
-              <button
-                className="w-full text-left px-4 py-3 text-[13px] hover:bg-bg-card transition-colors"
-                onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
-              >
-                <div className="font-semibold text-bad">No go</div>
-                <div className="text-[11px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
-              </button>
-            </div>
-          )}
         </div>}
       </div>
     </div>
@@ -333,6 +289,37 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   return (
     <>
       {dormant}
+
+      {/* Three-dot menu overlay — fixed position, always on top */}
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 z-[999]" onClick={() => setMenuOpen(false)} />
+          <div className="fixed inset-x-0 bottom-0 z-[1000] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+              <button
+                className="w-full text-left px-5 py-4 text-[14px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
+                onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
+              >
+                <div className="font-semibold text-white">🔄 Been there, done that</div>
+                <div className="text-[12px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
+              </button>
+              <button
+                className="w-full text-left px-5 py-4 text-[14px] hover:bg-bg-card transition-colors border-b border-border"
+                onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
+              >
+                <div className="font-semibold text-bad">🚫 No go</div>
+                <div className="text-[12px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
+              </button>
+              <button
+                className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint hover:bg-bg-card transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {expanded && (
         <>
