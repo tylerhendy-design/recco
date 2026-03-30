@@ -136,8 +136,8 @@ function ThreadPageInner() {
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#0e0e10] flex-shrink-0">
+      {/* Header: back + name */}
+      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0">
         <Link href="/notifications" className="flex items-center justify-center w-11 h-11 -ml-2 flex-shrink-0">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -151,19 +151,34 @@ function ThreadPageInner() {
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold text-white tracking-[-0.3px] truncate">{firstName}</div>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-[12px] text-text-faint truncate">{recoTitle}</span>
+        </div>
+      </div>
+
+      {/* Review card — pinned context */}
+      {(feedbackText || score != null || recoTitle) && (
+        <div className="mx-4 mb-3 px-4 py-3.5 rounded-xl bg-bg-card border border-border flex-shrink-0">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <div className="text-[16px] font-bold text-white tracking-[-0.3px] truncate">{recoTitle}</div>
             {score != null && (
               <span
-                className="text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
-                style={{ color: scoreColor!, background: `${scoreColor}22`, border: `1px solid ${scoreColor}44` }}
+                className="text-[13px] font-black tabular-nums flex-shrink-0"
+                style={{ color: scoreColor! }}
               >
                 {score}/10
               </span>
             )}
           </div>
+          {score != null && (
+            <div className="text-[13px] text-text-muted leading-[1.4] mb-1">{getScoreReaction(score, recoTitle || 'this reco')}</div>
+          )}
+          {recoCategory && (
+            <div className="text-[11px] text-text-faint uppercase tracking-[0.5px]">{recoCategory}</div>
+          )}
+          {feedbackText && (
+            <div className="text-[13px] text-text-secondary leading-[1.6] mt-2 pt-2 border-t border-border">"{feedbackText}"</div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-none px-4 py-4 flex flex-col gap-3">
@@ -173,26 +188,6 @@ function ThreadPageInner() {
           </div>
         ) : (
           <>
-            {/* Feedback context as first "message" */}
-            {(feedbackText || score != null) && (
-              <div className="self-start max-w-[85%]">
-                <div className="bg-white rounded-2xl px-4 py-3.5">
-                  {score != null && (
-                    <div className="mb-2.5">
-                      <div className="text-[16px] font-bold text-[#222] leading-[1.3]">{getScoreReaction(score, recoTitle || 'this reco')}</div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[22px] font-black tabular-nums" style={{ color: scoreColor! }}>{score}/10</span>
-                        <span className="text-[12px] text-[#888]">{recoCategory}</span>
-                      </div>
-                    </div>
-                  )}
-                  {feedbackText && (
-                    <div className="text-[14px] text-[#333] leading-[1.6]">{feedbackText}</div>
-                  )}
-                </div>
-                <div className="text-[11px] text-text-faint mt-1 pl-1">{firstName}'s review</div>
-              </div>
-            )}
 
             {/* Actual messages */}
             {messages.map((msg) => {
