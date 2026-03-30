@@ -99,6 +99,7 @@ export default function GivePage() {
 function GivePageInner() {
   const searchParams = useSearchParams()
   const preselectedId = searchParams.get('to')
+  const sendContext = searchParams.get('context')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
@@ -449,6 +450,20 @@ function GivePageInner() {
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
+
+          {/* ── Context banner (from notifications) ── */}
+          {sendContext === 'prove' && preselectedId && (() => {
+            const friend = friends.find(f => f.id === preselectedId)
+            return friend ? (
+              <div className="flex items-center gap-2.5 px-3 py-2.5 mb-4 rounded-xl bg-accent/8 border border-accent/20">
+                <span className="text-[14px]">{'\u{1F513}'}</span>
+                <div className="text-[13px] text-accent leading-[1.4]">
+                  <span className="font-semibold">Prove yourself to {friend.name.split(' ')[0]}.</span>{' '}
+                  <span className="text-accent/70">Make this one count.</span>
+                </div>
+              </div>
+            ) : null
+          })()}
 
           {/* ── Category prompt ── */}
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">

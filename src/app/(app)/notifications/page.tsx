@@ -404,7 +404,7 @@ function NotifRow({
   else if (notif.type === 'feedback_received' && notif.reco_id) href = `/notifications/${notif.reco_id}?with=${notif.actor_id}`
   else if (notif.type === 'friend_accepted') href = `/friends/${notif.actor_id}`
   else if (notif.type === 'sin_bin' && !isPlea && !isReleased) href = '/sinbin'
-  else if (isReleased) href = `/send?to=${notif.actor_id}`
+  else if (isReleased) href = `/send?to=${notif.actor_id}&context=prove`
 
   const Wrapper = href
     ? ({ children, className }: { children: React.ReactNode; className: string }) => <Link href={href!} className={className}>{children}</Link>
