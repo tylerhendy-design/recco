@@ -415,7 +415,7 @@ function NotifRow({
   if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
     href = notif.reco_id ? `/notifications/${notif.reco_id}?with=${notif.actor_id}` : '/notifications'
   } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'forwarded') {
-    href = '/home'
+    href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
   } else if (notif.type === 'reco_received') {
     href = notif.reco_id ? `/home?reco=${notif.reco_id}` : '/home'
   }

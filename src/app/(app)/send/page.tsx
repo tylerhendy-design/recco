@@ -509,7 +509,7 @@ function GivePageInner() {
         if (forwardImage) meta.artwork_url = forwardImage
         if (forwardFrom) meta.forwarded_from = forwardFrom
 
-        const { error } = await sendReco({
+        const { recoId, error } = await sendReco({
           senderId: userId,
           category: forwardCategory,
           title: forwardTitle,
@@ -527,6 +527,7 @@ function GivePageInner() {
             user_id: originalSenderId,
             type: 'reco_received' as const,
             actor_id: userId,
+            reco_id: recoId,
             payload: {
               subtype: 'forwarded',
               title: forwardTitle,

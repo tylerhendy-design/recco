@@ -247,6 +247,9 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
           </div>
         )}
+        {reco.meta?.forwarded_from && (
+          <div className="text-[12px] text-white/50 mt-1">Originally from {reco.meta.forwarded_from}</div>
+        )}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => {
@@ -271,6 +274,9 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
           {(recommenderNames || when) && (
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
+          )}
+          {reco.meta?.forwarded_from && (
+            <div className="text-[11px] text-text-faint mt-0.5">Originally from {reco.meta.forwarded_from}</div>
           )}
         </div>
         {onForward && reco.status === 'done' && (
@@ -444,6 +450,16 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                   </span>
                 )}
               </div>
+
+              {/* Forwarded attribution */}
+              {reco.meta?.forwarded_from && (
+                <div className="flex items-center gap-1.5 mb-3 text-[12px] text-text-faint">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Originally reco'd by <span className="text-accent font-semibold">{reco.meta.forwarded_from}</span>
+                </div>
+              )}
 
               {/* Why */}
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Why?</div>
