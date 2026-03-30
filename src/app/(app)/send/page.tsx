@@ -514,30 +514,30 @@ function GivePageInner() {
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
             {category ? `What ${singular}?` : "What's the reco?"}
           </div>
-          <div className="flex gap-1.5 flex-wrap mb-4">
+          <div className="flex gap-2 flex-wrap mb-4">
             {displayedCats.map((cat) => {
               const active = category === cat.id
               return (
                 <button
                   key={cat.id}
                   onClick={() => setCategory(active ? null : cat.id as CategoryId)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip border transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip border transition-all text-[12px] font-semibold tracking-[0.3px] uppercase"
                   style={active
                     ? { color: cat.color, borderColor: cat.color, background: cat.bgColor }
-                    : { color: '#444', borderColor: '#222226' }
+                    : { color: '#777', borderColor: '#2a2a30' }
                   }
                 >
-                  <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: active ? cat.color : '#444' }} />
+                  <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: active ? cat.color : '#555' }} />
                   {cat.label}
                 </button>
               )
             })}
             <button
               onClick={() => setCategory(category === 'custom' ? null : 'custom')}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip transition-all text-[12px] font-semibold tracking-[0.3px] uppercase"
               style={category === 'custom'
                 ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
-                : { color: '#555', border: '1px dashed #333' }
+                : { color: '#777', border: '1px dashed #3a3a40' }
               }
             >
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
