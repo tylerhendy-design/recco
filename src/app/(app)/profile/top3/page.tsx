@@ -30,6 +30,7 @@ function Top3Inner() {
   const [title, setTitle] = useState('')
   const [why, setWhy] = useState('')
   const [city, setCity] = useState('')
+  const [links, setLinks] = useState<string[]>([''])
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const whyRef = useRef<HTMLTextAreaElement>(null)
@@ -105,7 +106,7 @@ function Top3Inner() {
     setSending(true)
     try {
       const finalCat = category === 'custom' ? customCat.trim().toLowerCase() : category
-      await addPick(userId, finalCat, title.trim(), why.trim() || null, city.trim() || null, [])
+      await addPick(userId, finalCat, title.trim(), why.trim() || undefined, links.filter(l => l.trim()), city.trim() || undefined)
       setSending(false)
       setSent(true)
     } catch {
@@ -135,7 +136,7 @@ function Top3Inner() {
               Back to profile
             </Link>
             <button
-              onClick={() => { setSent(false); setTitle(''); setWhy(''); setCity(''); setSuggestions([]) }}
+              onClick={() => { setSent(false); setTitle(''); setWhy(''); setCity(''); setLinks(['']); setSuggestions([]) }}
               className="flex-1 py-3.5 bg-accent text-accent-fg rounded-btn text-[14px] font-bold"
             >
               Add another
@@ -280,16 +281,52 @@ function Top3Inner() {
                 </div>
               )}
 
-              {/* City for venues */}
-              {title.trim().length > 0 && isVenue && (
+              {/* Location — for venues and custom categories */}
+              {title.trim().length > 0 && (isVenue || category === 'custom') && (
                 <div className="anim-in mb-4">
-                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">City</div>
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Location</div>
                   <input
                     className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none placeholder:text-[#333] font-sans"
                     placeholder="e.g. London, Paris, New York..."
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
+                </div>
+              )}
+
+              {/* Links */}
+              {title.trim().length > 0 && (
+                <div className="anim-in mb-4">
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">
+                    Links <span className="normal-case font-normal text-[10px]">optional</span>
+                  </div>
+                  {links.map((link, i) => (
+                    <div key={i} className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 flex-1 bg-bg-base border border-border rounded-input px-3 py-2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
+                          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                        </svg>
+                        <input
+                          className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#333] font-sans"
+                          placeholder="Paste a URL..."
+                          value={link}
+                          onChange={(e) => { const n = [...links]; n[i] = e.target.value; setLinks(n) }}
+                        />
+                      </div>
+                      {links.length > 1 && (
+                        <button onClick={() => setLinks(links.filter((_, j) => j !== i))} className="text-text-faint hover:text-bad transition-colors flex-shrink-0">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => setLinks([...links, ''])} className="flex items-center gap-1.5 text-[12px] font-semibold text-text-faint hover:text-accent transition-colors mt-1">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add another link
+                  </button>
                 </div>
               )}
             </>
