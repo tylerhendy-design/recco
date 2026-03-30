@@ -19,7 +19,13 @@ type ProfileStats = {
   recos_sent: number
   friends_count: number
   recos_completed: number
+  recos_received: number
   stinkers_sent: number
+  hit_rate: number
+  avg_score: string
+  avg_completion_days: number
+  top_category: string | null
+  times_forwarded: number
 }
 
 export default function ProfilePage() {
@@ -81,16 +87,60 @@ export default function ProfilePage() {
       ])
 
       const sentIds = sentRecos?.map((r) => r.id) ?? []
-      let stinkersSent = 0
-      if (sentIds.length > 0) {
-        const { count } = await supabase
-          .from('reco_recipients')
-          .select('*', { count: 'exact', head: true })
-          .in('reco_id', sentIds)
-          .eq('status', 'done')
-          .lte('score', 3)
-        stinkersSent = count ?? 0
+
+      // Rich stats queries in parallel
+      const [
+        { count: stinkersCount },
+        { count: recosReceived },
+        { data: completionTimes },
+        { data: scoredRecos },
+        { count: forwardCount },
+        { data: topCatData },
+      ] = await Promise.all([
+        // Stinkers sent
+        sentIds.length > 0
+          ? supabase.from('reco_recipients').select('*', { count: 'exact', head: true }).in('reco_id', sentIds).eq('status', 'done').lte('score', 3)
+          : Promise.resolve({ count: 0 }),
+        // Recos received (total)
+        supabase.from('reco_recipients').select('*', { count: 'exact', head: true }).eq('recipient_id', user.id),
+        // Completion times (for avg time to complete)
+        supabase.from('reco_recipients').select('created_at, rated_at').eq('recipient_id', user.id).eq('status', 'done').not('rated_at', 'is', null),
+        // All scored recos I sent (for hit rate)
+        sentIds.length > 0
+          ? supabase.from('reco_recipients').select('score').in('reco_id', sentIds).eq('status', 'done').not('score', 'is', null)
+          : Promise.resolve({ data: [] }),
+        // Times my recos were forwarded
+        sentIds.length > 0
+          ? supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('type', 'reco_received').contains('payload', { subtype: 'forwarded' })
+          : Promise.resolve({ count: 0 }),
+        // Top category sent
+        supabase.from('recommendations').select('category').eq('sender_id', user.id),
+      ])
+
+      const stinkersSent = stinkersCount ?? 0
+      const totalReceived = recosReceived ?? 0
+
+      // Avg time to complete (in days)
+      let avgCompletionDays = 0
+      if (completionTimes && completionTimes.length > 0) {
+        const totalMs = completionTimes.reduce((sum, r) => {
+          const diff = new Date(r.rated_at!).getTime() - new Date(r.created_at).getTime()
+          return sum + Math.max(0, diff)
+        }, 0)
+        avgCompletionDays = Math.round(totalMs / completionTimes.length / 86400000)
       }
+
+      // Hit rate (% scored 7+)
+      const scores = (scoredRecos ?? []).map((r: any) => r.score).filter((s: number) => s != null)
+      const hitRate = scores.length > 0 ? Math.round((scores.filter((s: number) => s >= 7).length / scores.length) * 100) : 0
+      const avgScore = scores.length > 0 ? (scores.reduce((a: number, b: number) => a + b, 0) / scores.length).toFixed(1) : '—'
+
+      // Top category
+      const catCounts: Record<string, number> = {}
+      for (const r of (topCatData ?? [])) {
+        catCounts[r.category] = (catCounts[r.category] ?? 0) + 1
+      }
+      const topCategory = Object.entries(catCounts).sort(([,a], [,b]) => b - a)[0]?.[0] ?? null
 
       if (prof) {
         setProfile({
@@ -102,7 +152,13 @@ export default function ProfilePage() {
           recos_sent: sentIds.length,
           friends_count: friendsCount ?? 0,
           recos_completed: recosCompleted ?? 0,
+          recos_received: totalReceived,
           stinkers_sent: stinkersSent,
+          hit_rate: hitRate,
+          avg_score: avgScore,
+          avg_completion_days: avgCompletionDays,
+          top_category: topCategory,
+          times_forwarded: forwardCount ?? 0,
         })
       }
 
@@ -242,13 +298,67 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Sent / Received / Completed ratio bar */}
+            {(() => {
+              const sent = profile.recos_sent
+              const received = profile.recos_received
+              const completed = profile.recos_completed
+              const max = Math.max(sent, received, 1)
+              return (
+                <div className="mb-4 bg-bg-base border border-border rounded-xl px-4 py-3.5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">Reco flow</span>
+                    {profile.avg_completion_days > 0 && (
+                      <span className="text-[11px] text-text-faint">Avg {profile.avg_completion_days}d to complete</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] font-semibold text-accent">Given</span>
+                        <span className="text-[13px] font-bold text-white">{sent}</span>
+                      </div>
+                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
+                        <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${(sent / max) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] font-semibold text-[#5BC4F5]">Received</span>
+                        <span className="text-[13px] font-bold text-white">{received}</span>
+                      </div>
+                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#5BC4F5] rounded-full transition-all" style={{ width: `${(received / max) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] font-semibold text-[#2DD4BF]">Completed</span>
+                        <span className="text-[13px] font-bold text-white">{completed}</span>
+                      </div>
+                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
+                        <div className="h-full bg-[#2DD4BF] rounded-full transition-all" style={{ width: `${(completed / max) * 100}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Stat grid */}
             <div className="flex gap-2.5 mb-2.5">
-              <StatBox value={String(profile.recos_sent)} label="Recos sent" />
-              <StatBox value={String(profile.friends_count)} label="Friends" />
+              <StatBox value={`${profile.hit_rate}%`} label="Hit rate" />
+              <StatBox value={profile.avg_score} label="Avg score" />
+            </div>
+            <div className="flex gap-2.5 mb-2.5">
+              <StatBox value={String(profile.stinkers_sent)} label="Stinkers" danger onPress={() => setShowStinkers(true)} />
+              <StatBox value={String(profile.times_forwarded)} label="Forwarded" />
             </div>
             <div className="flex gap-2.5">
-              <StatBox value={String(profile.recos_completed)} label="Completed" />
-              <StatBox value={String(profile.stinkers_sent)} label="Stinkers sent" danger onPress={() => setShowStinkers(true)} />
+              <StatBox value={String(profile.friends_count)} label="Friends" />
+              {profile.top_category && (
+                <StatBox value={getCategoryLabel(profile.top_category)} label="Top category" />
+              )}
             </div>
           </div>
 

@@ -214,12 +214,12 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Stats */}
           <div className="px-6 py-5 border-b border-bg-card">
             <div className="flex gap-2.5 mb-2.5">
-              <StatBox value={String(stats.recos_sent)} label="Recos sent" />
-              <StatBox value={String(stats.friends_count)} label="Friends" onPress={() => setShowFriends(true)} />
+              <StatBox value={String(stats.recos_sent)} label="Recos given" />
+              <StatBox value={String(stats.recos_completed)} label="Completed" />
             </div>
             <div className="flex gap-2.5">
-              <StatBox value={String(stats.recos_completed)} label="Completed" />
-              <StatBox value={String(stats.stinkers_sent)} label="Stinkers sent" danger />
+              <StatBox value={String(stats.stinkers_sent)} label="Stinkers" danger />
+              <StatBox value={String(stats.friends_count)} label="Friends" onPress={() => setShowFriends(true)} />
             </div>
           </div>
 
