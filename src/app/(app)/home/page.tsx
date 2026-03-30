@@ -69,6 +69,7 @@ function HomePageInner() {
   const supabase = createClient()
   const searchParams = useSearchParams()
   const openRecoId = searchParams.get('reco')
+  const previewMode = searchParams.get('preview')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [firstName, setFirstName] = useState('there')
@@ -517,7 +518,7 @@ function HomePageInner() {
             </div>
           ))}
 
-          {!loading && filtered.length === 0 && friendCount === 0 && (
+          {!loading && filtered.length === 0 && (friendCount === 0 || previewMode === 'nofriends') && (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-8">
               <div className="text-[40px] mb-1">👋</div>
               <div className="text-[20px] font-bold text-white tracking-[-0.5px]">Add your friends first</div>
