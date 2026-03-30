@@ -476,7 +476,7 @@ function HomePageInner() {
         style={{ WebkitOverflowScrolling: 'touch', display: 'flex' }}
       >
         {/* ── TO DO TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-center snap-always overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
+        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
           <div className="px-5 pb-6" onClick={closeAllDD}>
           {loading && (
             <div className="flex items-center justify-center py-20">
@@ -530,7 +530,7 @@ function HomePageInner() {
         </div>
 
         {/* ── DONE TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-center snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
+        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingDone && (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
@@ -582,7 +582,7 @@ function HomePageInner() {
         </div>
 
         {/* ── NO GOS TAB ── */}
-        <div className="min-w-full flex-shrink-0 snap-center snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
+        <div className="min-w-full flex-shrink-0 snap-start snap-always overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingNoGo ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
