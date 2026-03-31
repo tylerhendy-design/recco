@@ -82,14 +82,20 @@ export default function NotificationsPage() {
     const connectionId = notif.payload?.connection_id
     if (!connectionId) return
     setHandled((prev) => ({ ...prev, [notif.id]: 'accepted' }))
-    await acceptFriendRequest(connectionId, notif.actor_id, userId)
+    await Promise.all([
+      acceptFriendRequest(connectionId, notif.actor_id, userId),
+      markNotificationHandled(notif.id, notif.payload, 'accepted'),
+    ])
   }
 
   async function handleDecline(notif: NotificationRow) {
     const connectionId = notif.payload?.connection_id
     if (!connectionId) return
     setHandled((prev) => ({ ...prev, [notif.id]: 'declined' }))
-    await declineFriendRequest(connectionId)
+    await Promise.all([
+      declineFriendRequest(connectionId),
+      markNotificationHandled(notif.id, notif.payload, 'declined'),
+    ])
   }
 
   function buildRequestContext(payload: Record<string, any>): string | null {
