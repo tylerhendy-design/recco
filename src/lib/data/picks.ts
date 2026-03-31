@@ -7,6 +7,7 @@ export type Pick = {
   why: string | null
   location: string | null
   links: string[]
+  image_url: string | null
   created_at: string
 }
 
@@ -14,10 +15,10 @@ export async function fetchUserPicks(userId: string): Promise<Pick[]> {
   const supabase = createClient()
   const { data } = await supabase
     .from('profile_picks')
-    .select('id, category, title, why, location, links, created_at')
+    .select('id, category, title, why, location, links, image_url, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: true })
-  return (data ?? []).map((r) => ({ ...r, links: r.links ?? [] }))
+  return (data ?? []).map((r) => ({ ...r, links: r.links ?? [], image_url: r.image_url ?? null }))
 }
 
 export async function addPick(
@@ -27,6 +28,7 @@ export async function addPick(
   why?: string,
   links?: string[],
   location?: string,
+  imageUrl?: string,
 ) {
   const supabase = createClient()
   const { error } = await supabase
@@ -38,6 +40,7 @@ export async function addPick(
       why: why?.trim() || null,
       location: location?.trim() || null,
       links: (links ?? []).filter((l) => l.trim()),
+      image_url: imageUrl || null,
     })
   return { error: error?.message ?? null }
 }

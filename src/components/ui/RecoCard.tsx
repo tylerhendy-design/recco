@@ -161,7 +161,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
     setEditSaving(false)
     setEditing(false)
   }
-  const hasImage = !!reco.meta?.artwork_url
+  const hasImage = !!(localMeta?.artwork_url || reco.meta?.artwork_url)
   const hasActions = !!(onMarkDone || onBeenThere || onNoGo)
   const ptrDown = useRef<{ x: number; y: number } | null>(null)
 
@@ -222,7 +222,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       {/* Image — absolute, fills the fixed-height wrapper */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={reco.meta.artwork_url!}
+        src={localMeta?.artwork_url ?? reco.meta.artwork_url!}
         alt={reco.title}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
@@ -341,7 +341,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       style={{ height: 140 }}
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
-      <img src={reco.meta.artwork_url!} alt={reco.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      <img src={localMeta?.artwork_url ?? reco.meta.artwork_url!} alt={reco.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%)', pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 14px', zIndex: 10 }}>
         <div className="text-[20px] font-black text-white leading-[1.1] tracking-[-0.5px] truncate">{reco.title}</div>
@@ -401,7 +401,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       className="flex items-center gap-3 px-1 py-2.5 cursor-pointer border-b border-[#1a1a1e]"
       onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}
     >
-      {hasImage && <img src={reco.meta.artwork_url!} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
+      {hasImage && <img src={localMeta?.artwork_url ?? reco.meta.artwork_url!} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />}
       {!hasImage && <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${getCategoryColor(reco.category)}15`, border: `1px solid ${getCategoryColor(reco.category)}33` }}>
         <span className="w-2 h-2 rounded-full" style={{ background: getCategoryColor(reco.category) }} />
       </div>}
@@ -480,7 +480,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             <div className="relative">
               {hasImage && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
+                <img src={localMeta?.artwork_url ?? reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
               )}
               {/* Back button — top-left over image */}
               <button
@@ -661,6 +661,29 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               {/* ── Edit form ── */}
               {editing && (
                 <div className="mb-2 pt-3 border-t border-border" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Image</div>
+                  <label className="flex items-center gap-2 px-3.5 py-3 border border-dashed border-border rounded-xl text-[12px] text-text-faint hover:border-accent hover:text-accent transition-colors cursor-pointer mb-3">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+                    </svg>
+                    {localMeta?.artwork_url ? 'Swap image' : 'Add an image'}
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const localUrl = URL.createObjectURL(file)
+                      setLocalMeta(prev => ({ ...prev, artwork_url: localUrl }))
+                      const form = new FormData()
+                      form.append('file', file)
+                      form.append('userId', reco.sender_id)
+                      const res = await fetch('/api/upload-image', { method: 'POST', body: form })
+                      const data = await res.json()
+                      if (data.url) {
+                        setLocalMeta(prev => ({ ...prev, artwork_url: data.url }))
+                        await updateRecoMeta(reco.id, { artwork_url: data.url })
+                      }
+                    }} />
+                  </label>
+
                   <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Your notes</div>
                   <textarea
                     className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px] mb-3"

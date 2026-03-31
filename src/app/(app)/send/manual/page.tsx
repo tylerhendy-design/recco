@@ -291,6 +291,55 @@ function ManualAddInner() {
             </div>
           )}
 
+          {/* Image preview + upload */}
+          {title.trim().length > 0 && (
+            <div className="anim-in mb-4">
+              {selectedImage ? (
+                <div className="relative rounded-xl overflow-hidden" style={{ height: 160 }}>
+                  <img src={selectedImage} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 right-3 flex gap-2">
+                    <label className="px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white cursor-pointer">
+                      Swap
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file || !userId) return
+                        setSelectedImage(URL.createObjectURL(file))
+                        const form = new FormData()
+                        form.append('file', file)
+                        form.append('userId', userId)
+                        const res = await fetch('/api/upload-image', { method: 'POST', body: form })
+                        const data = await res.json()
+                        if (data.url) setSelectedImage(data.url)
+                      }} />
+                    </label>
+                    <button onClick={() => setSelectedImage(null)} className="px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 px-3.5 py-3 border border-dashed border-border rounded-xl text-[12px] text-text-faint hover:border-accent hover:text-accent transition-colors cursor-pointer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+                  </svg>
+                  Add a photo
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file || !userId) return
+                    setSelectedImage(URL.createObjectURL(file))
+                    const form = new FormData()
+                    form.append('file', file)
+                    form.append('userId', userId)
+                    const res = await fetch('/api/upload-image', { method: 'POST', body: form })
+                    const data = await res.json()
+                    if (data.url) setSelectedImage(data.url)
+                  }} />
+                </label>
+              )}
+            </div>
+          )}
+
           {/* Step 4: Why (optional) */}
           {title.trim().length > 0 && (
             <div className="anim-in">

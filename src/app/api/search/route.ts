@@ -55,7 +55,7 @@ async function searchTMDB(q: string, type: 'movie' | 'tv'): Promise<SearchResult
       return {
         title: title ?? null,
         subtitle: [genre, year].filter(Boolean).join(' · ') || null,
-        imageUrl: r.poster_path ? `https://image.tmdb.org/t/p/w500${r.poster_path}` : null,
+        imageUrl: r.poster_path ? `https://image.tmdb.org/t/p/w780${r.poster_path}` : null,
         meta: { genre, year: year ?? undefined },
       }
     })
@@ -157,7 +157,7 @@ async function searchBooks(q: string): Promise<SearchResult[]> {
       return {
         title: b.title ?? null,
         subtitle: author,
-        imageUrl: b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg` : null,
+        imageUrl: b.cover_i ? `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg` : null,
         meta: author ? { author } : undefined,
       }
     })
@@ -219,7 +219,7 @@ async function searchRestaurantsGoogle(q: string, lat?: string, lng?: string): P
         const photoRef = detail.result?.photos?.[0]?.photo_reference
         if (photoRef) {
           const photoRes = await fetch(
-            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=100&photo_reference=${photoRef}&key=${key}`,
+            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${photoRef}&key=${key}`,
             { redirect: 'follow' }
           )
           r.imageUrl = photoRes.url
