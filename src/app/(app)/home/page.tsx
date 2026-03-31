@@ -137,6 +137,7 @@ function HomePageInner() {
   }
 
   const [doneExpanded, setDoneExpanded] = useState<Record<string, boolean>>({})
+  const [listExpanded, setListExpanded] = useState<Record<string, boolean>>({})
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
   const [successState, setSuccessState] = useState<{ reco: Reco; score: number; sinBinWarning?: { category: string; remaining: number } } | null>(null)
   const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
@@ -525,7 +526,45 @@ function HomePageInner() {
             </div>
           )}
 
-          {!loading && previewMode !== 'nofriends' && filtered.map((reco, i) => (
+          {/* Cards — list mode uses category accordion, others render flat */}
+          {!loading && previewMode !== 'nofriends' && viewMode === 'list' && filtered.length > 0 && (() => {
+            const byCat: Record<string, typeof filtered> = {}
+            for (const r of filtered) {
+              if (!byCat[r.category]) byCat[r.category] = []
+              byCat[r.category].push(r)
+            }
+            return Object.entries(byCat).map(([cat, recos]) => (
+              <div key={cat} className="border-b border-[#1a1a1e]">
+                <button
+                  onClick={() => setListExpanded(prev => ({ ...prev, [cat]: !prev[cat] }))}
+                  className="w-full flex items-center justify-between px-2 py-3 hover:bg-bg-card/30 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getCategoryColor(cat) }} />
+                    <span className="text-[14px] font-semibold text-white tracking-[-0.3px]">{getCategoryLabel(cat)}</span>
+                    <span className="text-[12px] text-text-faint">{recos.length}</span>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="2.5" strokeLinecap="round"
+                    className={`transition-transform duration-200 flex-shrink-0 ${listExpanded[cat] ? 'rotate-180' : ''}`}>
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                {listExpanded[cat] && recos.map((reco) => (
+                  <RecoCard
+                    key={reco.id}
+                    reco={reco}
+                    viewMode="list"
+                    initialOpen={openRecoId === reco.id}
+                    onMarkDone={setFeedbackReco}
+                    onBeenThere={setBeenThereReco}
+                    onNoGo={setNoGoReco}
+                  />
+                ))}
+              </div>
+            ))
+          })()}
+
+          {!loading && previewMode !== 'nofriends' && viewMode !== 'list' && filtered.map((reco, i) => (
             <div key={reco.id} className="mb-3">
             <RecoCard
               reco={reco}
