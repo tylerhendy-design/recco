@@ -432,12 +432,9 @@ function HomePageInner() {
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
-          <Link href="/send/manual" aria-label="Add reco manually" className="flex items-center justify-center w-9 h-9">
+          <Link href="/send/manual" aria-label="Instant add" className="flex items-center justify-center w-9 h-9">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="2" width="6" height="4" rx="1"/>
-              <path d="M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2"/>
-              <line x1="12" y1="11" x2="12" y2="17"/>
-              <line x1="9" y1="14" x2="15" y2="14"/>
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
           </Link>
           <Link href="/notifications" className="relative flex items-center justify-center w-9 h-9" onClick={() => setUnreadCount(0)}>

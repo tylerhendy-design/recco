@@ -34,14 +34,61 @@ function ManualAddInner() {
   const [error, setError] = useState<string | null>(null)
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
-  // Load user
+  // Autocomplete
+  type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null; meta?: Record<string, string> }
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const userLocation = useRef<{ lat: number; lng: number } | null>(null)
+
+  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars'])
+  const isVenue = category !== null && VENUE_CATEGORIES.has(category)
+
+  // Load user + geolocation
   useState(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id)
     })
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { userLocation.current = { lat: pos.coords.latitude, lng: pos.coords.longitude } },
+        () => { userLocation.current = { lat: 51.5074, lng: -0.1278 } }
+      )
+    }
   })
 
   const singular = category ? (SINGULAR[category] ?? getCategoryLabel(category).toLowerCase()) : ''
+
+  function handleTitleChange(val: string) {
+    setTitle(val)
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+    if (!val.trim() || val.trim().length < 2 || !category) {
+      setSuggestions([])
+      return
+    }
+    searchTimeout.current = setTimeout(async () => {
+      setSuggestionsLoading(true)
+      try {
+        let url = `/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`
+        if (isVenue && userLocation.current) {
+          url += `&lat=${userLocation.current.lat}&lng=${userLocation.current.lng}`
+        }
+        const res = await fetch(url)
+        const data = await res.json()
+        setSuggestions(data)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setSuggestionsLoading(false)
+      }
+    }, 300)
+  }
+
+  function selectSuggestion(s: Suggestion) {
+    setTitle(s.title)
+    setSuggestions([])
+    if (searchTimeout.current) clearTimeout(searchTimeout.current)
+  }
   const canSend = category !== null && title.trim().length > 0 && senderName.trim().length > 0 && !sending
 
   async function handleSend() {
@@ -92,7 +139,7 @@ function ManualAddInner() {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
-        <NavHeader title="Manually Add a Reco" closeHref="/home" />
+        <NavHeader title="Instant Add" closeHref="/home" />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
           <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -114,7 +161,7 @@ function ManualAddInner() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="Manually Add a Reco" closeHref="/home" />
+      <NavHeader title="Instant Add" closeHref="/home" />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
@@ -176,17 +223,60 @@ function ManualAddInner() {
             </div>
           )}
 
-          {/* Step 3: Name of the reco */}
+          {/* Step 3: Name of the reco + autocomplete */}
           {category && (
             <div className="anim-in">
               <div className="border-t border-[#0e0e10] mb-4" />
-              <input
-                autoFocus
-                className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans mb-4"
-                placeholder={`Name of ${singular}...`}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <div className="mb-4">
+                <input
+                  autoFocus
+                  className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
+                  placeholder={`Name of ${singular}...`}
+                  value={title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                />
+                {(suggestions.length > 0 || suggestionsLoading) && (
+                  <div className="mt-2 rounded-xl border border-border bg-bg-base overflow-hidden max-h-[280px] overflow-y-auto">
+                    {suggestionsLoading && suggestions.length === 0 ? (
+                      <div className="flex items-center justify-center py-3">
+                        <div className="w-3.5 h-3.5 border-2 border-border border-t-white/50 rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        {suggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            onClick={() => selectSuggestion(s)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border last:border-b-0 active:bg-white/5 transition-colors"
+                          >
+                            {s.imageUrl ? (
+                              <img src={s.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-lg bg-bg-card flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-semibold text-white truncate">{s.title}</div>
+                              {s.subtitle && <div className="text-[11px] text-text-faint truncate">{s.subtitle}</div>}
+                            </div>
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => { setSuggestions([]); if (searchTimeout.current) clearTimeout(searchTimeout.current) }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 border-t border-border active:bg-white/5 transition-colors"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center flex-shrink-0">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-white truncate">Use "{title}"</div>
+                            <div className="text-[11px] text-text-faint">Add it manually</div>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
