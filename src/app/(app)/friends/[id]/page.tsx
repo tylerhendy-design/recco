@@ -121,8 +121,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   }
 
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
-    const city = p.location ? p.location.split(',')[0].trim() : null
-    const key = city ? `${p.category}||${city}` : p.category
+    const key = p.category.toLowerCase().trim()
     if (!acc[key]) acc[key] = []
     acc[key].push(p)
     return acc
@@ -255,10 +254,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 {profile.display_name.split(' ')[0]} hasn't set their top 3 yet.
               </p>
             ) : (
-              Object.entries(picksByCategory).map(([key, items]) => {
-                const [category] = key.split('||')
+              Object.entries(picksByCategory).map(([category, items]) => {
                 const color = getCategoryColor(category)
-                const isOpen = expanded[key] ?? false
+                const isOpen = expanded[category] ?? false
                 const byCityMap = items.reduce<Record<string, Pick[]>>((acc, p) => {
                   const city = p.location ? p.location.split(',')[0].trim() : ''
                   const k = city || '__none__'
@@ -268,15 +266,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 }, {})
                 const hasCities = Object.keys(byCityMap).some((k) => k !== '__none__')
                 return (
-                  <div key={key} className="border border-border rounded-card overflow-hidden mb-2">
+                  <div key={category} className="border border-border rounded-card overflow-hidden mb-2">
                     <button
-                      onClick={() => setExpanded((prev) => ({ ...prev, [key]: !prev[key] }))}
+                      onClick={() => setExpanded((prev) => ({ ...prev, [category]: !prev[category] }))}
                       className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
                         <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
-                        <span className="text-[11px] text-text-faint">{items.length}</span>
+                        <span className={`text-[11px] font-semibold ${items.length >= 3 ? 'text-accent' : 'text-text-faint'}`}>{items.length}/3</span>
                       </div>
                       <svg
                         width="14" height="14" viewBox="0 0 24 24" fill="none"
