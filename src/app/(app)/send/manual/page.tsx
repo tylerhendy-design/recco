@@ -229,7 +229,7 @@ function ManualAddInner() {
               <div className="border-t border-[#0e0e10] mb-4" />
               <div className="mb-4">
                 <input
-                  autoFocus
+                  autoFocus={category !== 'custom' || customCat.trim().length > 0}
                   className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
                   placeholder={`Name of ${singular}...`}
                   value={title}
