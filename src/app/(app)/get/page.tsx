@@ -4,11 +4,12 @@ import { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { CATEGORIES } from '@/constants/categories'
+import { CATEGORIES, getCategoryLabel } from '@/constants/categories'
 import { fetchFriends } from '@/lib/data/friends'
 import { createClient } from '@/lib/supabase/client'
 import { initials } from '@/lib/utils'
 import Link from 'next/link'
+import QRCode from 'qrcode'
 
 type Friend = { id: string; display_name: string; username: string; avatar_url: string | null }
 
@@ -86,6 +87,7 @@ function GetPageInner() {
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [recoCount, setRecoCount] = useState(1)
+  const [requestId, setRequestId] = useState<string | null>(null)
 
   useEffect(() => {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
@@ -140,6 +142,19 @@ function GetPageInner() {
       constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
       details: details.trim() || null,
     }
+
+    // Save a shareable request record via API (bypasses RLS)
+    try {
+      const res = await fetch('/api/share-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: effectiveCat, payload }),
+      })
+      const data = await res.json()
+      if (data.id) setRequestId(data.id)
+    } catch {} // share link is optional — don't block the send
+
+    // Send notifications to selected friends
     await Promise.all(
       selectedIds.map((friendId) =>
         (supabase.from('notifications') as any).insert({
@@ -155,6 +170,8 @@ function GetPageInner() {
   }
 
   if (sent) {
+    const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
+    const shareUrl = requestId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/request/${requestId}` : null
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
@@ -173,6 +190,10 @@ function GetPageInner() {
               Request sent to {allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name.split(' ')[0] : `${selectedIds.length} people`}.
             </div>
           </div>
+
+          {/* Share externally */}
+          {shareUrl && <ShareRequest url={shareUrl} category={effectiveCat} />}
+
           <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">
             Back home
           </Link>
@@ -427,6 +448,75 @@ function GetPageInner() {
           {sending ? 'Sending…' : 'Request reco'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function ShareRequest({ url, category }: { url: string; category: string | null }) {
+  const [showQR, setShowQR] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState<string>('')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (showQR && !qrDataUrl) {
+      QRCode.toDataURL(url, {
+        width: 200,
+        margin: 2,
+        color: { dark: '#0c0c0e', light: '#ffffff' },
+      }).then(setQrDataUrl)
+    }
+  }, [showQR, url, qrDataUrl])
+
+  async function handleShare() {
+    const shareText = category
+      ? `I'm looking for a ${category} recommendation. Got one for me?`
+      : `I'm looking for a recommendation. Got one for me?`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'RECO — Give me a reco', text: shareText, url })
+        return
+      } catch {}
+    }
+    // Fallback: copy to clipboard
+    await navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="w-full">
+      <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Know someone not on RECO?</div>
+      <div className="flex gap-2">
+        <button
+          onClick={handleShare}
+          className="flex-1 flex items-center justify-center gap-2 py-3 border border-border rounded-input text-[13px] font-semibold text-text-secondary hover:border-accent hover:text-accent transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          {copied ? 'Link copied' : 'Share link'}
+        </button>
+        <button
+          onClick={() => setShowQR(!showQR)}
+          className={`px-4 py-3 border rounded-input text-[13px] font-semibold transition-colors ${showQR ? 'border-accent text-accent' : 'border-border text-text-secondary hover:border-accent hover:text-accent'}`}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="4" height="4"/><rect x="20" y="14" width="2" height="2"/><rect x="14" y="20" width="2" height="2"/><rect x="20" y="20" width="2" height="2"/>
+          </svg>
+        </button>
+      </div>
+      {showQR && (
+        <div className="mt-3 flex flex-col items-center">
+          <div className="w-[180px] h-[180px] bg-white rounded-xl flex items-center justify-center mb-2">
+            {qrDataUrl
+              ? <img src={qrDataUrl} alt="QR code" width={180} height={180} className="rounded-xl" />
+              : <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+            }
+          </div>
+          <div className="text-[11px] text-text-faint">Scan to see your request and send a reco</div>
+        </div>
+      )}
     </div>
   )
 }

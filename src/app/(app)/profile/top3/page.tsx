@@ -104,7 +104,7 @@ function Top3Inner() {
     // Generate Google Maps link for venues
     if (isVenue && s.title) {
       const mapsQuery = [s.title, s.meta?.address, s.meta?.city].filter(Boolean).join(', ')
-      autoLinks.push(`https://maps.google.com/maps?q=${encodeURIComponent(mapsQuery)}`)
+      autoLinks.push(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`)
     }
     if (autoLinks.length > 0) setLinks([...autoLinks, ''])
 

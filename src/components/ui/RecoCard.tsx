@@ -232,11 +232,8 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       {/* Gradient */}
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.95) 100%)', pointerEvents: 'none' }} />
 
-      {/* Category pill + dots — top left/right */}
-      <div style={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-        <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
-          {getRecoCategory(reco)}
-        </span>
+      {/* Top-right: forward / three-dot */}
+      <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 6, zIndex: 10 }}>
         {onForward && reco.status === 'done' && (
           <button
             className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
@@ -248,19 +245,31 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             </svg>
           </button>
         )}
-        {hasActions && <div>
+        {hasActions && (
           <button
-            className="flex gap-[5px] items-center p-1"
+            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex gap-[5px] items-center justify-center"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
           >
-            {[0, 1, 2].map((i) => <div key={i} className="w-[7px] h-[7px] rounded-full bg-white opacity-80" />)}
+            {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-white opacity-80" />)}
           </button>
-        </div>}
+        )}
       </div>
 
-      {/* Title + Reco'd by + pills — bottom */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 16px 24px', zIndex: 10 }}>
+      {/* Bottom content — category, sender, date above title; data lozenges below */}
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 16px 20px', zIndex: 10 }}>
+        {/* Category · sender · date */}
+        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
+            {getRecoCategory(reco)}
+          </span>
+          {recommenderNames && <span className="text-[11px] text-white/60">from {recommenderNames}</span>}
+          {when && <span className="text-[11px] text-white/40">· {when}</span>}
+        </div>
+        {reco.meta?.forwarded_from && (
+          <div className="text-[11px] text-white/40 mb-1">Originally from {reco.meta.forwarded_from}</div>
+        )}
+        {/* Title */}
         <div className={`font-black text-white leading-[1.05] tracking-[-1px] line-clamp-2 ${
           reco.title.length > 30 ? 'text-[26px]' :
           reco.title.length > 18 ? 'text-[32px]' :
@@ -268,14 +277,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         }`}>
           {reco.title}
         </div>
-        {(recommenderNames || when) && (
-          <div className="text-[14px] text-white/75 mt-2">
-            Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}
-          </div>
-        )}
-        {reco.meta?.forwarded_from && (
-          <div className="text-[12px] text-white/50 mt-1">Originally from {reco.meta.forwarded_from}</div>
-        )}
+        {/* Data lozenges below title */}
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => {
@@ -284,7 +286,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 ? "flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.3px] px-3 py-1.5 rounded-chip border border-white/40 bg-white/15 text-white backdrop-blur-sm"
                 : "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
               const mapsHref = isLocation
-                ? `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
+                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
                 : null
               return mapsHref
                 ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
@@ -509,18 +511,35 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </button>
               )}
 
-              {/* Category dot */}
-              <div className="flex justify-end mb-3">
+              {/* ── Header: category · date · sender ── */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
                 <CategoryDot category={reco.category} customLabel={reco.custom_cat} />
+                {reco.created_at && (
+                  <span className="text-[11px] text-text-faint">
+                    · {(() => {
+                      const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
+                      return days === 0 ? 'Today' : days === 1 ? '1 day ago' : days < 7 ? `${days} days ago` : days < 30 ? `${Math.floor(days / 7)}w ago` : `${Math.floor(days / 30)}mo ago`
+                    })()}
+                  </span>
+                )}
+                <span className="text-[11px] text-text-faint">
+                  · from {manualSender ? (
+                    <span className="text-text-secondary font-medium">{manualSender}</span>
+                  ) : reco.recommenders && reco.recommenders.length > 0 ? (
+                    <span className="text-text-secondary font-medium">{reco.recommenders.map((r) => r.profile.display_name.split(' ')[0]).slice(0, 2).join(' & ')}</span>
+                  ) : reco.sender?.display_name ? (
+                    <span className="text-text-secondary font-medium">{reco.sender.display_name.split(' ')[0]}</span>
+                  ) : null}
+                </span>
               </div>
 
-              {/* Title */}
+              {/* ── Title ── */}
               {primaryLink ? (
-                <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1 block">
+                <a href={primaryLink} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-2 block">
                   {reco.title}
                 </a>
               ) : (
-                <div className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-1">
+                <div className="text-[28px] font-semibold text-white tracking-[-0.7px] leading-[1.05] mb-2">
                   {reco.title}
                 </div>
               )}
@@ -530,74 +549,35 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 <div className="mb-2"><SpotifyPill /></div>
               )}
 
-              {/* Meta pills (date, location) */}
-              <div className="flex items-center gap-1.5 flex-wrap mb-3">
+              {/* ── Data lozenges below title: Maps, Website, Instagram, streaming ── */}
+              <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 {reco.meta?.streaming_service && <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>}
-                {reco.created_at && (
-                  <MetaPill icon="calendar">
-                    {(() => {
-                      const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
-                      return days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`
-                    })()}
-                  </MetaPill>
-                )}
-                {reco.meta?.location && (
+                {(reco.meta?.location || reco.meta?.address) && (
                   <a
-                    href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta.location].filter(Boolean).join(', '))}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
                     target="_blank" rel="noopener noreferrer"
-                    onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
                   >
-                    <MetaPill icon="pin" color="#D4E23A">{reco.meta.location}</MetaPill>
+                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.address || reco.meta?.location}</MetaPill>
+                  </a>
+                )}
+                {localMeta?.website && (
+                  <a href={localMeta.website} target="_blank" rel="noopener noreferrer">
+                    <MetaPill icon="map" color="#D4E23A">Website</MetaPill>
                   </a>
                 )}
                 {reco.meta?.instagram && (
                   <a
                     href={`https://instagram.com/${reco.meta.instagram.replace('@', '')}`}
                     target="_blank" rel="noopener noreferrer"
-                    onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
                   >
-                    <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>
+                    <MetaPill icon="instagram" color="#D4E23A">@{reco.meta.instagram.replace('@', '')}</MetaPill>
                   </a>
                 )}
-              </div>
-              {/* Prominent Map button */}
-              {(reco.meta?.location || reco.meta?.address) && (
-                <a
-                  href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
-                  target="_blank" rel="noopener noreferrer"
-                  onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-accent/30 bg-accent/8 mb-3 w-full"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-accent">Open in Google Maps</div>
-                    {reco.meta?.address && <div className="text-[11px] text-text-faint truncate">{reco.meta.address}{reco.meta?.location ? `, ${reco.meta.location}` : ''}</div>}
-                  </div>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
-                </a>
-              )}
-
-              {/* Reco'd by */}
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Reco'd by</div>
-              <div className="flex flex-wrap gap-[5px] mb-3">
-                {manualSender ? (
-                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border text-text-secondary">
-                    {manualSender}
-                  </span>
-                ) : (
-                  <>
-                    {reco.recommenders?.map((rec) => (
-                      <span key={rec.profile.id} className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border cursor-pointer text-text-secondary">
-                        {rec.profile.display_name.split(' ')[0]}
-                      </span>
-                    ))}
-                    {(reco.recommenders?.length ?? 0) > 3 && (
-                      <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-[#222226] text-text-faint cursor-pointer">
-                        +{(reco.recommenders?.length ?? 0) - 3} others
-                      </span>
-                    )}
-                  </>
-                )}
+                {localMeta?.links?.map((link, i) => (
+                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-medium text-accent px-2 py-[3px] rounded-md bg-bg-card">
+                    {getLinkLabel(link)}
+                  </a>
+                ))}
               </div>
 
               {/* Forwarded attribution */}
@@ -610,7 +590,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </div>
               )}
 
-              {/* Why */}
+              {/* ── Why section ── */}
               <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">Why?</div>
               {details.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
@@ -618,7 +598,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     const isLocation = d.key === 'address' || d.key === 'location'
                     const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
                     if (isLocation) {
-                      const mapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
+                      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
                       return (
                         <a key={i} href={mapsUrl} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className={pillClass}>
                           {DETAIL_ICON[d.key]}{d.value}
@@ -641,7 +621,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 />
               )}
 
-              {/* Why nav dots — stopPropagation so navigation doesn't close sheet */}
+              {/* Why nav dots */}
               {whyMessages.length > 1 && (
                 <div className="flex items-center gap-2 mt-1.5 mb-3">
                   <button onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setWhyIndex((i) => (i - 1 + whyMessages.length) % whyMessages.length) }}
@@ -655,65 +635,20 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               )}
               {whyMessages.length <= 1 && <div className="mb-3" />}
 
-              {/* Links — stopPropagation so tapping a link navigates without closing */}
-              {((localMeta?.links?.length ?? 0) > 0 || localMeta?.website) && (
-                <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  {localMeta?.website && (
-                    <a href={localMeta.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-medium text-accent px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/5">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                      Website
-                    </a>
-                  )}
-                  {localMeta?.links?.map((link, i) => (
-                    <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">
-                      {getLinkLabel(link)}
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {/* Done button — stopPropagation so it runs its action, not just close */}
-              {reco.status !== 'done' && reco.status !== 'no_go' && hasActions && (
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); onMarkDone?.(reco) }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-muted hover:border-accent hover:text-accent transition-colors mt-1"
-                >
-                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="8" cy="8" r="7" /><path d="M5 8l2.5 2.5L11 5.5" />
-                  </svg>
-                  Done? Give them your review
-                </button>
-              )}
-
-              {/* Forward button — only on completed recos */}
-              {reco.status === 'done' && onForward && (
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); onForward(reco) }}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-accent-fg rounded-input text-[14px] font-bold mt-2"
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-                  </svg>
-                  Forward this reco
-                </button>
-              )}
-
-              {/* Personal notes */}
+              {/* ── Personal notes ── */}
               {(localMeta as any)?.personal_notes && !editing && (
-                <div className="mt-3 pt-3 border-t border-border">
+                <div className="mb-3 pt-3 border-t border-border">
                   <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1">Your notes</div>
                   <div className="text-[13px] text-text-secondary leading-[1.5]">{(localMeta as any).personal_notes}</div>
                 </div>
               )}
 
-              {/* Edit button */}
+              {/* ── Edit button (add links, notes, details) ── */}
               {!editing && (
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); startEditing() }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-faint hover:border-accent hover:text-accent transition-colors mt-3"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-faint hover:border-accent hover:text-accent transition-colors mb-2"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -723,9 +658,9 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </button>
               )}
 
-              {/* Edit form */}
+              {/* ── Edit form ── */}
               {editing && (
-                <div className="mt-3 pt-3 border-t border-border" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                <div className="mb-2 pt-3 border-t border-border" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                   <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Your notes</div>
                   <textarea
                     className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px] mb-3"
@@ -773,6 +708,34 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* ── Done CTA — always at the bottom ── */}
+              {reco.status !== 'done' && reco.status !== 'no_go' && hasActions && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onMarkDone?.(reco) }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-accent-fg rounded-input text-[14px] font-bold mt-1"
+                >
+                  Done? Give them your review
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="8" r="7" /><path d="M5 8l2.5 2.5L11 5.5" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Forward button — only on completed recos */}
+              {reco.status === 'done' && onForward && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onForward(reco) }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-accent text-accent-fg rounded-input text-[14px] font-bold mt-2"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Forward this reco
+                </button>
               )}
             </div>
           </div>

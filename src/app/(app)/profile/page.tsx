@@ -656,7 +656,7 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
               {/* Auto-generate Google Maps link for venue picks without links */}
               {pick.links.length === 0 && pick.location && (
                 <a
-                  href={`https://maps.google.com/maps?q=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-[11px] text-accent underline underline-offset-2"

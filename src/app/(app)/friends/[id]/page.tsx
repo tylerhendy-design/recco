@@ -336,7 +336,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                                         <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
                                         ))}
                                         {pick.links.length === 0 && pick.location && (
-                                          <a href={`https://maps.google.com/maps?q=${encodeURIComponent([pick.title, pick.location].join(', '))}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">Google Maps</a>
+                                          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">Google Maps</a>
                                         )}
                                       </div>
                                   </div>
@@ -353,7 +353,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                                     <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
                                   ))}
                                   {pick.links.length === 0 && pick.location && (
-                                    <a href={`https://maps.google.com/maps?q=${encodeURIComponent([pick.title, pick.location].join(', '))}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">Google Maps</a>
+                                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">Google Maps</a>
                                   )}
                                 </div>
                               </div>

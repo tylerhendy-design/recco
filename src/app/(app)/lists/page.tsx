@@ -87,42 +87,57 @@ export default function ListsPage() {
   }
 
   function extractCity(reco: Reco): string | null {
-    // Prefer the clean city from Place Details (set by search API)
     const city = reco.meta?.city as string | undefined
     const loc = reco.meta?.location as string | undefined
 
-    // If city is already clean (no comma, not a postcode), use it
-    if (city && !city.includes(',') && !/^\d/.test(city)) {
-      const lower = city.toLowerCase()
-      if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-      return city
+    // Strip postcodes from start/end of a string (e.g. "1016 HD Amsterdam" → "Amsterdam", "London SW1A 2AA" → "London")
+    function stripPostcodes(s: string): string {
+      return s
+        // Leading: "1016 HD Amsterdam" or "EC2R 8AH London"
+        .replace(/^[\dA-Z]{1,4}\s*[A-Z]{0,2}\s*/i, '')
+        // Trailing: "London SW1A 2AA" or "Amsterdam 1016"
+        .replace(/\s+[\dA-Z]{1,4}\s*[A-Z]{0,3}\s*\d*$/i, '')
+        .trim()
     }
 
-    const raw = loc || city
-    if (!raw) return null
+    // Clean the raw city/location value
+    function cleanCity(raw: string): string | null {
+      // Split by comma and process each part
+      const parts = raw.split(',').map(p => p.trim()).filter(Boolean)
 
-    const parts = raw.split(',').map(p => p.trim()).filter(Boolean)
+      for (const part of parts) {
+        const cleaned = stripPostcodes(part)
+        if (!cleaned || cleaned.length <= 2) continue
+        const lower = cleaned.toLowerCase()
+        if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
+        // Skip if it's still just a postcode after cleaning
+        if (/^\d/.test(cleaned) || /^[A-Z]{1,2}\d/i.test(cleaned)) continue
+        return cleaned
+      }
 
-    // Try each part — skip postcodes, check aliases
-    for (const part of parts) {
-      const lower = part.toLowerCase()
-      // Skip postcodes (digits first, or UK-style "SW1A")
-      if (/^\d/.test(lower) || /^[A-Z]{1,2}\d/i.test(part)) continue
-      // Skip very short parts (usually postal area codes)
-      if (part.length <= 2) continue
-      if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
+      // Fallback: try last non-postcode part
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const cleaned = stripPostcodes(parts[i])
+        if (!cleaned || cleaned.length <= 2) continue
+        if (/^\d/.test(cleaned) || /^[A-Z]{1,2}\d/i.test(cleaned)) continue
+        const lower = cleaned.toLowerCase()
+        if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
+        return cleaned
+      }
+
+      return null
     }
 
-    // Take the last non-postcode part (usually the city or country)
-    for (let i = parts.length - 1; i >= 0; i--) {
-      const part = parts[i].trim()
-      if (/^\d/.test(part) || /^[A-Z]{1,2}\d/i.test(part) || part.length <= 2) continue
-      const lower = part.toLowerCase()
-      if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-      return part
+    if (city) {
+      const result = cleanCity(city)
+      if (result) return result
+    }
+    if (loc) {
+      const result = cleanCity(loc)
+      if (result) return result
     }
 
-    return parts[0] || null
+    return null
   }
 
   // Group recos by city
