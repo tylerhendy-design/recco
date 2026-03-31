@@ -83,10 +83,19 @@ function getDetailPills(reco: Reco): DetailPill[] {
     ['vibes', m.vibes],
     ['budget', m.budget],
   ]
-  return candidates
+  const pills = candidates
     .filter((c): c is [string, string] => typeof c[1] === 'string' && c[1].length > 0 && !c[1].startsWith('http'))
-    .slice(0, 3)
     .map(([key, value]) => ({ key, value }))
+
+  // Add custom details
+  const customDetails = (m as any)?.custom_details as { label: string; value: string }[] | undefined
+  if (customDetails) {
+    for (const cd of customDetails) {
+      pills.push({ key: cd.label.toLowerCase(), value: `${cd.label}: ${cd.value}` })
+    }
+  }
+
+  return pills.slice(0, 5)
 }
 
 // Full Tailwind class strings per category — must be static for JIT to include them

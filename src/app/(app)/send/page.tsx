@@ -423,9 +423,18 @@ function GivePageInner() {
 
     // All constraint fields — map key names to meta field names
     const KEY_MAP: Record<string, string> = { streaming: 'streaming_service' }
+    const customDetails: { label: string; value: string }[] = []
     for (const [key, val] of Object.entries(constraints)) {
-      if (val) meta[KEY_MAP[key] ?? key] = val
+      if (!val) continue
+      // Custom constraints — save with their label
+      if (key.startsWith('custom_')) {
+        const def = customConstraintDefs.find(d => d.key === key)
+        if (def) customDetails.push({ label: def.label, value: val })
+      } else {
+        meta[KEY_MAP[key] ?? key] = val
+      }
     }
+    if (customDetails.length > 0) meta.custom_details = customDetails
 
     const links: string[] = []
     if (linkInput.trim()) links.push(linkInput.trim())
