@@ -808,7 +808,7 @@ function GivePageInner() {
               <div className="mb-4">
                 <input
                   autoFocus
-                  className="text-[24px] font-semibold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                  className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
                   placeholder={`Name of ${singular}…`}
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
@@ -1152,7 +1152,7 @@ function GivePageInner() {
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-3">Why?</div>
           <textarea
             ref={whyRef}
-            className="w-full bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.6] min-h-[60px]"
+            className="w-full bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#444] font-sans resize-none leading-[1.6] min-h-[60px]"
             placeholder="Why will they love it? Be specific — that's what makes a reco actually useful."
             rows={1}
             value={why}

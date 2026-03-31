@@ -182,7 +182,7 @@ function ManualAddInner() {
               <div className="border-t border-[#0e0e10] mb-4" />
               <input
                 autoFocus
-                className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans mb-4"
+                className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans mb-4"
                 placeholder={`Name of ${singular}...`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

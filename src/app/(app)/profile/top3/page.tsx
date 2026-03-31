@@ -212,7 +212,7 @@ function Top3Inner() {
               <div className="mb-4">
                 <input
                   autoFocus
-                  className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#2a2a30] font-sans"
+                  className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
                   placeholder={`Name of ${singular}...`}
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
