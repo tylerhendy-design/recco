@@ -73,6 +73,8 @@ export interface RecoMeta {
   why_audio_transcript?: string
   why_audio_waveform?: number[]
   why_audio_duration?: number
+  // Manual/instant add
+  manual_sender_name?: string
   // Custom details (user-added lozenges)
   custom_details?: { label: string; value: string }[]
   // Generic links
