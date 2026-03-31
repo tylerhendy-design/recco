@@ -805,7 +805,7 @@ function GivePageInner() {
           {category === 'custom' && (
             <input
               autoFocus
-              className="mb-4 w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+              className="mb-4 w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="e.g. Architecture, Coffee, Barbers…"
               value={customCat}
               onChange={(e) => setCustomCat(e.target.value)}
@@ -820,7 +820,7 @@ function GivePageInner() {
               {/* ── Primary: title input + autocomplete ── */}
               <div className="mb-4">
                 <input
-                  autoFocus
+                  autoFocus={category !== 'custom' || customCat.trim().length > 0}
                   className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
                   placeholder={`Name of ${singular}…`}
                   value={title}
