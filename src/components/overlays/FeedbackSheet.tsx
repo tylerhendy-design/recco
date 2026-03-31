@@ -69,28 +69,27 @@ export function FeedbackSheet({
         </div>
         <ScoreSlider value={score} onChange={setScore} className="mb-4" />
 
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase">
-            Give them your reasons
-          </div>
-          <div className="text-[10px] text-text-faint">voice or type</div>
+        <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">
+          Your review
         </div>
 
-        <div className="flex gap-2.5 items-start">
+        <textarea
+          rows={1}
+          className={`w-full bg-bg-card border rounded-input px-3.5 py-3 text-[14px] text-text-secondary outline-none font-sans resize-none min-h-[60px] focus:border-accent ${
+            showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-[#444]'
+          }`}
+          placeholder="Tell them what you thought. Details matter."
+          value={text}
+          onChange={(e) => { setText(e.target.value); setShowError(false); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+        />
+
+        <div className="mt-2">
           <VoiceButton onRecorded={() => { setHasVoice(true); setShowError(false) }} />
-          <textarea
-            rows={1}
-            className={`flex-1 bg-bg-card border rounded-input px-3.5 py-3 text-[14px] text-text-secondary outline-none font-sans resize-none min-h-[44px] focus:border-accent ${
-              showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-[#444]'
-            }`}
-            placeholder="Tell them what you thought. Details matter."
-            value={text}
-            onChange={(e) => { setText(e.target.value); setShowError(false); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
-          />
+          <div className="text-[10px] text-text-faint mt-1">We transcribe it so they can read or listen.</div>
         </div>
 
         {showError && !hasReason && (
-          <div className="text-[11px] text-bad mt-2 ml-[46px]">
+          <div className="text-[11px] text-bad mt-2">
             A reason is required — the recommender deserves to know why.
           </div>
         )}

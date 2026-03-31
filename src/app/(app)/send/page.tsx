@@ -1179,6 +1179,7 @@ function GivePageInner() {
           />
           <div className="mt-2">
             <VoiceButton onRecorded={(r) => setVoiceResult(r)} onClear={() => setVoiceResult(null)} />
+            <div className="text-[10px] text-text-faint mt-1">We transcribe it so they can read or listen.</div>
           </div>
           </div>{/* end group 2 */}
 
@@ -1212,13 +1213,14 @@ function GivePageInner() {
             />
           </div>
 
-          {/* Search results */}
-          {friendSearch.trim().length > 0 && (
-            <div className="flex flex-col gap-0.5 mb-2">
-              {filteredFriends.filter((f) => !f.selected).length === 0 ? (
-                <div className="text-[12px] text-text-faint px-2 py-1">No friends found.</div>
-              ) : (
-                filteredFriends.filter((f) => !f.selected).map((f) => (
+          {/* Friends list — show suggestions when empty, search results when typing */}
+          {(() => {
+            const unselected = (friendSearch.trim() ? filteredFriends : friends).filter((f) => !f.selected)
+            const toShow = friendSearch.trim() ? unselected : unselected.slice(0, 5)
+            return toShow.length > 0 ? (
+              <div className="flex flex-col gap-0.5 mb-2">
+                {!friendSearch.trim() && <div className="text-[10px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1 px-2">Suggestions</div>}
+                {toShow.map((f) => (
                   <button
                     key={f.id}
                     onClick={() => { toggleFriend(f.id); setFriendSearch('') }}
@@ -1230,10 +1232,12 @@ function GivePageInner() {
                     <span className="text-[12px] font-medium text-text-secondary">{f.name}</span>
                     {f.username && <span className="text-[11px] text-text-faint">@{f.username}</span>}
                   </button>
-                ))
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : friendSearch.trim() ? (
+              <div className="text-[12px] text-text-faint px-2 py-1 mb-2">No friends found.</div>
+            ) : null
+          })()}
 
           {/* Selected friends chips */}
           {selectedFriends.length > 0 && (

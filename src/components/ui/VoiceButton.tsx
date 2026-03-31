@@ -336,7 +336,7 @@ export function VoiceButton({ onRecorded, onStart, onClear }: VoiceButtonProps) 
         <path d="M1 10c0 3.31 2.69 6 6 6s6-2.69 6-6" />
         <line x1="7" y1="16" x2="7" y2="18" />
       </svg>
-      CBF typing? Yap instead.
+      Record a voice note
     </button>
   )
 }
