@@ -44,8 +44,8 @@ export function NoGoSheet({ open, onClose, onSubmit, recoTitle, senderName }: No
         <textarea
           rows={1}
           autoFocus
-          className={`w-full bg-bg-card border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none font-sans transition-colors resize-none min-h-[44px] ${
-            showError ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-border'
+          className={`w-full bg-bg-card border rounded-input px-3.5 py-3 text-[14px] text-text-secondary outline-none font-sans resize-none min-h-[44px] focus:border-accent ${
+            showError ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-[#444]'
           }`}
           placeholder="e.g. I'm vegetarian, too far away, already been…"
           value={reason}

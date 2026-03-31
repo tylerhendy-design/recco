@@ -80,8 +80,8 @@ export function FeedbackSheet({
           <VoiceButton onRecorded={() => { setHasVoice(true); setShowError(false) }} />
           <textarea
             rows={1}
-            className={`flex-1 bg-bg-card border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none font-sans transition-colors resize-none min-h-[44px] ${
-              showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-border'
+            className={`flex-1 bg-bg-card border rounded-input px-3.5 py-3 text-[14px] text-text-secondary outline-none font-sans resize-none min-h-[44px] focus:border-accent ${
+              showError && !hasReason ? 'border-bad/60 placeholder:text-bad/40' : 'border-border placeholder:text-[#444]'
             }`}
             placeholder="Tell them what you thought. Details matter."
             value={text}

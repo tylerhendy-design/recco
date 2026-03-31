@@ -106,7 +106,7 @@ export default function EditProfilePage() {
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
             maxLength={30}
             autoFocus
-            className="w-full bg-bg-card border border-border rounded-input pl-8 pr-10 py-3.5 text-[15px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent"
+            className="w-full bg-bg-card border border-border rounded-input pl-8 pr-10 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             {checkingUsername && <span className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin block" />}

@@ -123,7 +123,7 @@ function ManualAddInner() {
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Who gave you this reco?</div>
           <input
             autoFocus
-            className="w-full bg-bg-base border border-border rounded-input px-3 py-3 text-[16px] font-semibold text-white outline-none placeholder:text-[#333] font-sans mb-4"
+            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
             placeholder="Their name..."
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
@@ -167,7 +167,7 @@ function ManualAddInner() {
               {category === 'custom' && (
                 <input
                   autoFocus
-                  className="mb-4 w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                  className="mb-4 w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
                   placeholder="e.g. Architecture, Coffee, Barbers..."
                   value={customCat}
                   onChange={(e) => setCustomCat(e.target.value)}
@@ -196,9 +196,9 @@ function ManualAddInner() {
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Why did they recommend it?</div>
               <textarea
                 ref={whyRef}
-                className="w-full bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#2a2a30] font-sans resize-none leading-[1.6] min-h-[50px]"
+                className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]"
                 placeholder="What did they say about it?"
-                rows={2}
+                rows={1}
                 value={why}
                 onChange={(e) => {
                   setWhy(e.target.value)

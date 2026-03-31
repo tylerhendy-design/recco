@@ -26,8 +26,7 @@ export default function NewListPage() {
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase mb-2">Title</div>
           <input
             autoFocus
-            className="bg-transparent outline-none text-white font-sans text-[19px] font-normal w-full pb-2 tracking-[-0.3px] placeholder:text-[#222226]"
-            style={{ borderBottom: '1px solid #2a2a30' }}
+            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
             placeholder="e.g. Paris — a few things"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -37,8 +36,7 @@ export default function NewListPage() {
         <div>
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase mb-2">Description <span className="normal-case font-normal text-text-faint tracking-normal">(optional)</span></div>
           <input
-            className="bg-transparent outline-none text-white font-sans text-base font-normal w-full pb-2 placeholder:text-[#222226]"
-            style={{ borderBottom: '1px solid #2a2a30' }}
+            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
             placeholder="What's this list for?"
             value={description}
             onChange={(e) => setDescription(e.target.value)}

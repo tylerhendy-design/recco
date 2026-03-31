@@ -167,7 +167,7 @@ export default function AddFriendsPage() {
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
             placeholder="Search by username..."
-            className="w-full bg-bg-card border border-border rounded-input px-4 py-3.5 text-[15px] text-white placeholder:text-text-faint focus:outline-none focus:border-accent"
+            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
           />
         </div>
 
@@ -232,9 +232,10 @@ export default function AddFriendsPage() {
                 <textarea
                   autoFocus
                   value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
+                  onChange={(e) => { setEmailInput(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
                   placeholder={"Paste email addresses here, one per line\ne.g.\nfriend@gmail.com\nmate@icloud.com"}
-                  className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[13px] text-white outline-none placeholder:text-[#333] font-sans resize-none min-h-[100px] mb-2"
+                  rows={1}
+                  className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px] mb-2"
                 />
                 <div className="flex gap-2">
                   <button

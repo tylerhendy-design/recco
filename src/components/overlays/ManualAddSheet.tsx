@@ -210,7 +210,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
               <span className="normal-case font-normal text-[10px] text-text-faint">optional — category auto-detected</span>
             </div>
             <textarea
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none placeholder:text-border font-sans resize-none leading-[1.5] min-h-[44px]"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px] leading-[1.5]"
               placeholder={'e.g. \u201cYou have to listen to the new Tame Impala album\u2026\u201d'}
               rows={1}
               value={pastedText}
@@ -223,7 +223,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
             <div className="text-[11px] font-semibold text-text-muted tracking-[0.5px] uppercase mb-1.5">What&apos;s the reco?</div>
             <input
               autoFocus
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-white outline-none placeholder:text-border font-sans"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="e.g. Tame Impala — The Slow Rush"
               value={recoTitle}
               onChange={(e) => setRecoTitle(e.target.value)}
@@ -235,7 +235,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
           <div>
             <div className="text-[11px] font-semibold text-text-muted tracking-[0.5px] uppercase mb-1.5">Why?</div>
             <input
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="Why did they recommend it?"
               value={why}
               onChange={(e) => setWhy(e.target.value)}
@@ -279,7 +279,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
                     <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                   </svg>
                   <input
-                    className="w-full bg-bg-base border border-border rounded-input pl-8 pr-3 py-2 text-[13px] text-white outline-none placeholder:text-border font-sans"
+                    className="w-full bg-bg-card border border-border rounded-input pl-8 pr-3 py-3 text-[14px] text-white outline-none placeholder:text-[#444] focus:border-accent font-sans"
                     placeholder="Search or add a category…"
                     value={catSearch}
                     onChange={(e) => setCatSearch(e.target.value)}
@@ -322,7 +322,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
               <span className="normal-case font-normal text-[10px] text-text-faint">optional</span>
             </div>
             <input
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="e.g. Sam Huckle"
               value={senderName}
               onChange={(e) => setSenderName(e.target.value)}
@@ -336,7 +336,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
               <span className="normal-case font-normal text-[10px] text-text-faint">optional — to invite them</span>
             </div>
             <input
-              className="w-full bg-bg-base border border-border rounded-input px-3 py-2.5 text-[14px] text-text-secondary outline-none placeholder:text-border font-sans"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="+44 7700… or name@email.com"
               value={contact}
               onChange={(e) => setContact(e.target.value)}

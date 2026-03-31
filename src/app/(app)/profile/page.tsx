@@ -621,14 +621,14 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
     <div className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
       {editingPick?.id === pick.id ? (
         <div className="flex flex-col gap-2.5">
-          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[14px] text-white outline-none focus:border-accent" />
+          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
           {pick.category === 'restaurant' && (
-            <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />
+            <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
           )}
-          <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={1} className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent resize-none font-sans min-h-[44px]" />
+          <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={1} className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]" />
           {editLinks.map((link, i) => (
             <div key={i} className="flex items-center gap-2">
-              <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link (optional)" className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent" />
+              <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link (optional)" className="flex-1 bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
               {editLinks.length > 1 && (
                 <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>

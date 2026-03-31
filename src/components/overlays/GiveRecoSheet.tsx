@@ -232,7 +232,7 @@ export function GiveRecoSheet({
                     value={customCat}
                     onChange={(e) => setCustomCat(e.target.value)}
                     placeholder="Category name…"
-                    className="w-full mt-2 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-white placeholder:text-text-faint outline-none focus:border-accent"
+                    className="w-full mt-2 bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
                   />
                 )}
               </>
@@ -251,7 +251,7 @@ export function GiveRecoSheet({
           <div>
             <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Name</div>
             <input
-              className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[15px] text-white placeholder:text-text-faint outline-none focus:border-accent font-sans"
+              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder={category ? `Name of ${getCategoryLabel(category)}…` : 'Name it…'}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -264,7 +264,7 @@ export function GiveRecoSheet({
             <div className="flex gap-2 items-start">
               <VoiceButton />
               <textarea
-                className="flex-1 bg-bg-card border border-border rounded-input px-3 py-2 text-[13px] text-text-secondary outline-none placeholder:text-text-faint font-sans resize-none focus:border-accent min-h-[44px]"
+                className="flex-1 bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]"
                 placeholder="Voice or type your reason…"
                 rows={1}
                 value={why}
@@ -300,7 +300,7 @@ export function GiveRecoSheet({
                       <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                     </svg>
                     <input
-                      className="flex-1 bg-transparent outline-none text-[13px] text-text-secondary placeholder:text-border font-sans"
+                      className="flex-1 bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#444] font-sans"
                       placeholder={isRestaurant && i === 0 ? 'Paste Google Maps link…' : 'Paste a URL…'}
                       value={link}
                       onChange={(e) => { const n = [...links]; n[i] = e.target.value; setLinks(n) }}

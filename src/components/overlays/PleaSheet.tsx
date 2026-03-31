@@ -68,11 +68,11 @@ export function PleaSheet({ open, onClose, fromUserId, toUserId, toName, categor
             <div>
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.6px] uppercase mb-2">Your plea</div>
               <textarea
-                rows={4}
-                className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[13px] text-text-secondary outline-none font-sans resize-none min-h-[100px] placeholder:text-text-faint focus:border-accent transition-colors"
+                rows={1}
+                className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]"
                 placeholder="Be specific. What's the reco, and why will they love it?"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => { setMessage(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
               />
             </div>
 

@@ -252,7 +252,7 @@ function GetPageInner() {
             {selectedCat === 'custom' && (
               <input
                 autoFocus
-                className="mt-2.5 w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                className="mt-2.5 w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
                 placeholder="e.g. Architecture, Coffee, Barbers…"
                 value={customCat}
                 onChange={(e) => setCustomCat(e.target.value)}
@@ -314,7 +314,7 @@ function GetPageInner() {
               <div className="mb-2.5">
                 <input
                   autoFocus
-                  className="w-full bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
+                  className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
                   placeholder={activeDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
                   value={constraints[openConstraint] ?? ''}
                   onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
@@ -327,7 +327,7 @@ function GetPageInner() {
             <div className="mt-4">
               <textarea
                 rows={1}
-                className="w-full bg-transparent outline-none text-[14px] text-text-secondary leading-[1.6] placeholder:text-[#383840] font-sans resize-none min-h-[44px]"
+                className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]"
                 placeholder="Anything else — where you'll be, what you've already tried, how picky you are…"
                 value={details}
                 onChange={(e) => {
@@ -360,7 +360,7 @@ function GetPageInner() {
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             <input
-              className="w-full bg-bg-base border border-border rounded-input pl-7 pr-3 py-1.5 text-[12px] text-text-secondary outline-none placeholder:text-[#333] font-sans"
+              className="w-full bg-bg-card border border-border rounded-input pl-7 pr-3 py-3 text-[14px] text-white outline-none placeholder:text-[#444] focus:border-accent font-sans"
               placeholder="Search friends…"
               value={friendSearch}
               onChange={(e) => setFriendSearch(e.target.value)}
