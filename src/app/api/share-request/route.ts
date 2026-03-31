@@ -4,7 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   // Verify the user is authenticated
-  const serverClient = createServerClient()
+  const serverClient = await createServerClient()
   const { data: { user } } = await serverClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

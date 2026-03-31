@@ -150,9 +150,13 @@ function GetPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: effectiveCat, payload }),
       })
-      const data = await res.json()
-      if (data.id) setRequestId(data.id)
-    } catch {} // share link is optional — don't block the send
+      if (res.ok) {
+        const data = await res.json()
+        if (data.id) setRequestId(data.id)
+      }
+    } catch (e) {
+      console.error('share-request failed:', e)
+    }
 
     // Send notifications to selected friends
     await Promise.all(
