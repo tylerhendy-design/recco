@@ -567,7 +567,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               )}
 
               {/* Why */}
-              <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Why?</div>
+              <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">Why?</div>
               {details.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
                   {details.map((d, i) => {
