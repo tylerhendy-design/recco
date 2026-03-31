@@ -296,7 +296,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
     <div className="bg-bg-card border border-border rounded-card px-4 py-4 cursor-pointer" onClick={(e) => { if ((e.target as HTMLElement).closest('a, button')) return; open() }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="mb-1.5"><CategoryDot category={reco.category} /></div>
+          <div className="mb-1.5"><CategoryDot category={reco.category} customLabel={reco.custom_cat} /></div>
           <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
           {(recommenderNames || when) && (
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
@@ -496,7 +496,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
 
               {/* Category dot */}
               <div className="flex justify-end mb-3">
-                <CategoryDot category={reco.category} />
+                <CategoryDot category={reco.category} customLabel={reco.custom_cat} />
               </div>
 
               {/* Title */}

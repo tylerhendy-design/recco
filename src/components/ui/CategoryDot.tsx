@@ -3,13 +3,14 @@ import { cn } from '@/lib/utils'
 
 interface CategoryDotProps {
   category: string
+  customLabel?: string
   showLabel?: boolean
   className?: string
 }
 
-export function CategoryDot({ category, showLabel = true, className }: CategoryDotProps) {
+export function CategoryDot({ category, customLabel, showLabel = true, className }: CategoryDotProps) {
   const color = getCategoryColor(category)
-  const label = getCategoryLabel(category)
+  const label = category === 'custom' && customLabel ? customLabel : getCategoryLabel(category)
 
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
