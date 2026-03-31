@@ -253,15 +253,27 @@ function HomePageInner() {
     [noGoRecos, dbNoGoRecos]
   )
 
-  // Derive sender options from grouped recos
+  // Derive sender options from grouped recos (including manual/instant-add senders)
   const senderOptions = useMemo(() => {
     const seen = new Map<string, { label: string; sub: string }>()
     for (const reco of grouped) {
-      for (const rec of reco.recommenders ?? []) {
-        seen.set(rec.profile.id, {
-          label: rec.profile.display_name.split(' ')[0],
-          sub: `@${rec.profile.username}`,
-        })
+      const manualName = reco.meta?.manual_sender_name as string | undefined
+      if (manualName) {
+        // Use a stable key for manual senders: "manual::Name"
+        const key = `manual::${manualName.trim().toLowerCase()}`
+        if (!seen.has(key)) {
+          seen.set(key, {
+            label: manualName.trim().split(' ')[0],
+            sub: manualName.trim(),
+          })
+        }
+      } else {
+        for (const rec of reco.recommenders ?? []) {
+          seen.set(rec.profile.id, {
+            label: rec.profile.display_name.split(' ')[0],
+            sub: `@${rec.profile.username}`,
+          })
+        }
       }
     }
     return [
@@ -282,10 +294,13 @@ function HomePageInner() {
         if (timeFilter === 'year') return ms < 365 * 86400000
         return true
       })
-      .filter((r) =>
-        senderFilter === 'all' ||
-        r.recommenders?.some((rec) => rec.profile.id === senderFilter)
-      )
+      .filter((r) => {
+        if (senderFilter === 'all') return true
+        // Match manual senders by "manual::name" key
+        const manualName = r.meta?.manual_sender_name as string | undefined
+        if (manualName && senderFilter === `manual::${manualName.trim().toLowerCase()}`) return true
+        return r.recommenders?.some((rec) => rec.profile.id === senderFilter) ?? false
+      })
   }, [grouped, catFilter, timeFilter, senderFilter])
 
   const doneByCategory = useMemo(() =>

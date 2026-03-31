@@ -195,9 +195,9 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   if (reco.why_text && whyMessages.length === 0) whyMessages.push(reco.why_text)
   const currentWhy = whyMessages[whyIndex] ?? reco.why_text ?? ''
 
-  const manualSender = reco.meta?.manual_sender_name as string | undefined
+  const manualSender = (reco.meta?.manual_sender_name as string | undefined)?.trim()
   const recommenderNames = manualSender
-    ? manualSender.split(' ')[0]
+    ? manualSender
     : reco.recommenders && reco.recommenders.length > 0
       ? reco.recommenders
           .map((r) => r.profile.display_name.split(' ')[0])
@@ -279,9 +279,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         {details.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {details.map((d, i) => {
-              const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-              const mapsHref = d.key === 'address'
-                ? `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
+              const isLocation = d.key === 'address' || d.key === 'location'
+              const pillClass = isLocation
+                ? "flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.3px] px-3 py-1.5 rounded-chip border border-white/40 bg-white/15 text-white backdrop-blur-sm"
+                : "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+              const mapsHref = isLocation
+                ? `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
                 : null
               return mapsHref
                 ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
@@ -344,6 +347,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-white/60">{recommenderNames}</span>}
         </div>
+        {(reco.meta?.location || reco.meta?.address) && (
+          <div className="flex items-center gap-1 mt-1">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity={0.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span className="text-[10px] text-white/50 truncate">{reco.meta?.address || reco.meta?.location}</span>
+          </div>
+        )}
       </div>
       {onForward && reco.status === 'done' && (
         <button className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
@@ -364,6 +373,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-text-faint">{recommenderNames}</span>}
         </div>
+        {(reco.meta?.location || reco.meta?.address) && (
+          <div className="flex items-center gap-1 mt-0.5">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-text-faint flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span className="text-[10px] text-text-faint truncate">{reco.meta?.address || reco.meta?.location}</span>
+          </div>
+        )}
       </div>
       {onForward && reco.status === 'done' && (
         <button className="w-7 h-7 rounded-full bg-bg-base border border-border flex items-center justify-center flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
@@ -390,7 +405,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{(reco.meta?.location || reco.meta?.address) ? <span className="text-text-faint"> · {reco.meta?.location || reco.meta?.address}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
@@ -526,33 +541,62 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     })()}
                   </MetaPill>
                 )}
-                {reco.meta?.location && <MetaPill icon="pin">{reco.meta.location}</MetaPill>}
-                {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
-                {(reco.meta?.location || reco.meta?.address) && (
+                {reco.meta?.location && (
                   <a
-                    href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={(e) => e.stopPropagation()}
+                    href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta.location].filter(Boolean).join(', '))}`}
+                    target="_blank" rel="noopener noreferrer"
+                    onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
                   >
-                    <MetaPill icon="map">Map</MetaPill>
+                    <MetaPill icon="pin" color="#D4E23A">{reco.meta.location}</MetaPill>
+                  </a>
+                )}
+                {reco.meta?.instagram && (
+                  <a
+                    href={`https://instagram.com/${reco.meta.instagram.replace('@', '')}`}
+                    target="_blank" rel="noopener noreferrer"
+                    onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
+                  >
+                    <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>
                   </a>
                 )}
               </div>
+              {/* Prominent Map button */}
+              {(reco.meta?.location || reco.meta?.address) && (
+                <a
+                  href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
+                  target="_blank" rel="noopener noreferrer"
+                  onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-accent/30 bg-accent/8 mb-3 w-full"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-accent">Open in Google Maps</div>
+                    {reco.meta?.address && <div className="text-[11px] text-text-faint truncate">{reco.meta.address}{reco.meta?.location ? `, ${reco.meta.location}` : ''}</div>}
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17L17 7"/><path d="M7 7h10v10"/></svg>
+                </a>
+              )}
 
               {/* Reco'd by */}
               <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5">Reco'd by</div>
               <div className="flex flex-wrap gap-[5px] mb-3">
-                {reco.recommenders?.map((rec) => (
-                  <span key={rec.profile.id} className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border cursor-pointer text-text-secondary">
-                    {rec.profile.display_name.split(' ')[0]}
+                {manualSender ? (
+                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border text-text-secondary">
+                    {manualSender}
                   </span>
-                ))}
-                {(reco.recommenders?.length ?? 0) > 3 && (
-                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-[#222226] text-text-faint cursor-pointer">
-                    +{(reco.recommenders?.length ?? 0) - 3} others
-                  </span>
+                ) : (
+                  <>
+                    {reco.recommenders?.map((rec) => (
+                      <span key={rec.profile.id} className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-border cursor-pointer text-text-secondary">
+                        {rec.profile.display_name.split(' ')[0]}
+                      </span>
+                    ))}
+                    {(reco.recommenders?.length ?? 0) > 3 && (
+                      <span className="text-[11px] font-medium px-2.5 py-1 rounded-chip border border-[#222226] text-text-faint cursor-pointer">
+                        +{(reco.recommenders?.length ?? 0) - 3} others
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
 

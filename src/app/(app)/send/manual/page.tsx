@@ -61,6 +61,8 @@ function ManualAddInner() {
 
   function handleTitleChange(val: string) {
     setTitle(val)
+    setSelectedMeta(null)
+    setSelectedImage(null)
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
     if (!val.trim() || val.trim().length < 2 || !category) {
       setSuggestions([])
@@ -84,8 +86,13 @@ function ManualAddInner() {
     }, 300)
   }
 
+  const [selectedMeta, setSelectedMeta] = useState<Record<string, string> | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+
   function selectSuggestion(s: Suggestion) {
     setTitle(s.title)
+    setSelectedMeta(s.meta ?? null)
+    if (s.imageUrl) setSelectedImage(s.imageUrl)
     setSuggestions([])
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
   }
@@ -103,6 +110,8 @@ function ManualAddInner() {
 
       const meta: Record<string, unknown> = {
         manual_sender_name: senderName.trim(),
+        ...(selectedMeta ?? {}),
+        ...(selectedImage ? { artwork_url: selectedImage } : {}),
       }
 
       // Insert the recommendation — sender is the current user but meta tracks who actually gave it
@@ -121,11 +130,13 @@ function ManualAddInner() {
       if (recoErr) { setError(recoErr.message); setSending(false); return }
 
       // Add self as recipient with status 'unseen'
-      await supabase.from('reco_recipients').insert({
+      const { error: recipErr } = await supabase.from('reco_recipients').insert({
         reco_id: recoId,
         recipient_id: userId,
         status: 'unseen',
       })
+
+      if (recipErr) { setError(recipErr.message); setSending(false); return }
 
       setSending(false)
       setSent(true)
