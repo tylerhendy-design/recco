@@ -350,7 +350,14 @@ function NotifRow({
     const forwardedTo = notif.payload?.forwarded_to
     const count = notif.payload?.forwarded_count ?? 1
     heading = `${icon.emoji} Reco forwarded`
-    body = `${firstName} forwarded your reco${title ? ` "${title}"` : ''} to ${forwardedTo ?? `${count} ${count === 1 ? 'person' : 'people'}`}. Reco legend.`
+    const forwardLines = [
+      `${firstName} forwarded your reco${title ? ` "${title}"` : ''} to ${forwardedTo ?? `${count} ${count === 1 ? 'person' : 'people'}`}. You're becoming a tastemaker.`,
+      `${firstName} forwarded ${title ? `"${title}"` : 'your reco'}. This is how myths become legends.`,
+      `Another forward${title ? ` for "${title}"` : ''}. One more and you get a physical trophy.`,
+      `${firstName} forwarded ${title ? `"${title}"` : 'your reco'} to ${forwardedTo ?? 'a friend'}. Top jaw.`,
+      `Your reco${title ? ` "${title}"` : ''} is spreading. ${firstName} just forwarded it. Reco legend status.`,
+    ]
+    body = forwardLines[Math.abs(notif.id.charCodeAt(0)) % forwardLines.length]
   } else if (notif.type === 'reco_received' && notif.payload?.subtype === 'message') {
     const title = notif.payload?.title
     const preview = notif.payload?.message_preview
@@ -380,7 +387,12 @@ function NotifRow({
     const category = notif.payload?.reco_category
     const recoTitle = notif.payload?.reco_title
 
-    if (subtype === 'no_go') {
+    if (subtype === 'pick_rated') {
+      const pickTitle = notif.payload?.pick_title
+      const pickScore = notif.payload?.score
+      heading = `⭐ TOP 03 rated`
+      body = `${firstName} rated your pick${pickTitle ? ` "${pickTitle}"` : ''} ${pickScore}/10.`
+    } else if (subtype === 'no_go') {
       heading = `🚫 No go`
       body = `${firstName} is not doing${recoTitle ? ` "${recoTitle}"` : ' your reco'}.`
       if (notif.payload?.feedback_text) {

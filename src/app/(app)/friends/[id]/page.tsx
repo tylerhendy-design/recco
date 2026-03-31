@@ -54,6 +54,9 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   const [removing, setRemoving] = useState(false)
   const [memberNumber, setMemberNumber] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [ratingPickId, setRatingPickId] = useState<string | null>(null)
+  const [pickRating, setPickRating] = useState(5)
+  const [pickRated, setPickRated] = useState<Record<string, number>>({})
   const [blockedCategories, setBlockedCategories] = useState<string[]>([])
   const [sinBinnedByFriend, setSinBinnedByFriend] = useState<(SinBinEntry & { offences: string[] })[]>([])
   const [friendInMySinBin, setFriendInMySinBin] = useState<SinBinEntry[]>([])
@@ -98,6 +101,24 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
   }
 
   const joinYear = profile?.joined_at ? new Date(profile.joined_at).getFullYear() : null
+
+  async function ratePick(pickId: string, title: string, score: number) {
+    if (!currentUserId) return
+    setPickRated(prev => ({ ...prev, [pickId]: score }))
+    setRatingPickId(null)
+    // Notify the profile owner
+    const supabase = createClient()
+    await supabase.from('notifications').insert({
+      user_id: id,
+      type: 'feedback_received' as const,
+      actor_id: currentUserId,
+      payload: {
+        subtype: 'pick_rated',
+        pick_title: title,
+        score,
+      },
+    })
+  }
 
   const picksByCategory = picks.reduce<Record<string, Pick[]>>((acc, p) => {
     const city = p.location ? p.location.split(',')[0].trim() : null
@@ -277,8 +298,41 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                                 )}
                                 {cityPicks.map((pick) => (
                                   <div key={pick.id} className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
-                                    <div className="text-[14px] font-medium text-white">{pick.title}</div>
-                                    {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="text-[14px] font-medium text-white">{pick.title}</div>
+                                        {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
+                                      </div>
+                                      {pickRated[pick.id] ? (
+                                        <span className="text-[12px] font-bold text-accent flex-shrink-0">{pickRated[pick.id]}/10</span>
+                                      ) : (
+                                        <button
+                                          onClick={() => { setRatingPickId(ratingPickId === pick.id ? null : pick.id); setPickRating(5) }}
+                                          className="text-[11px] font-semibold text-text-faint hover:text-accent transition-colors flex-shrink-0 px-2 py-1 rounded-chip border border-border"
+                                        >
+                                          Rate
+                                        </button>
+                                      )}
+                                    </div>
+                                    {ratingPickId === pick.id && (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <input
+                                          type="range"
+                                          min={1}
+                                          max={10}
+                                          value={pickRating}
+                                          onChange={(e) => setPickRating(Number(e.target.value))}
+                                          className="flex-1"
+                                        />
+                                        <span className="text-[14px] font-bold text-white w-8 text-center">{pickRating}</span>
+                                        <button
+                                          onClick={() => ratePick(pick.id, pick.title, pickRating)}
+                                          className="px-3 py-1.5 rounded-chip bg-accent text-accent-fg text-[12px] font-bold"
+                                        >
+                                          Submit
+                                        </button>
+                                      </div>
+                                    )}
                                     {pick.links.length > 0 && (
                                       <div className="flex flex-wrap gap-1.5 mt-1.5">
                                         {pick.links.map((link, i) => (
