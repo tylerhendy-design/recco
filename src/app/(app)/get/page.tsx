@@ -130,11 +130,10 @@ function GetPageInner() {
 
   const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const canSend = selectedIds.length > 0
+  const hasRequest = selectedCat !== null
 
-  async function handleSend() {
-    if (!canSend || !userId || sending) return
-    setSending(true)
-    const supabase = createClient()
+  async function createShareableRequest(): Promise<string | null> {
+    if (!userId) return null
     const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
     const payload = {
       category: effectiveCat,
@@ -142,8 +141,6 @@ function GetPageInner() {
       constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
       details: details.trim() || null,
     }
-
-    // Save a shareable request record via API (bypasses RLS)
     try {
       const res = await fetch('/api/share-request', {
         method: 'POST',
@@ -152,23 +149,42 @@ function GetPageInner() {
       })
       if (res.ok) {
         const data = await res.json()
-        if (data.id) setRequestId(data.id)
+        if (data.id) { setRequestId(data.id); return data.id }
       }
     } catch (e) {
       console.error('share-request failed:', e)
     }
+    return null
+  }
 
-    // Send notifications to selected friends
-    await Promise.all(
-      selectedIds.map((friendId) =>
-        (supabase.from('notifications') as any).insert({
-          user_id: friendId,
-          type: 'request_received',
-          actor_id: userId,
-          payload,
-        })
+  async function handleSend() {
+    if (!userId || sending) return
+    setSending(true)
+
+    // Always create a shareable record
+    await createShareableRequest()
+
+    // Send notifications to selected friends (if any)
+    if (selectedIds.length > 0) {
+      const supabase = createClient()
+      const effectiveCat = selectedCat === 'custom' ? (customCat.trim() || null) : selectedCat
+      const payload = {
+        category: effectiveCat,
+        count: recoCount,
+        constraints: Object.fromEntries(Object.entries(constraints).filter(([, v]) => v.trim())),
+        details: details.trim() || null,
+      }
+      await Promise.all(
+        selectedIds.map((friendId) =>
+          (supabase.from('notifications') as any).insert({
+            user_id: friendId,
+            type: 'request_received',
+            actor_id: userId,
+            payload,
+          })
+        )
       )
-    )
+    }
     setSending(false)
     setSent(true)
   }
@@ -191,7 +207,9 @@ function GetPageInner() {
               Ask and you shall receive.
             </div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              Request sent to {allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name.split(' ')[0] : `${selectedIds.length} people`}.
+              {selectedIds.length > 0
+                ? `Request sent to ${allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name.split(' ')[0] : `${selectedIds.length} people`}.`
+                : 'Your request is ready to share.'}
             </div>
           </div>
 
@@ -200,6 +218,9 @@ function GetPageInner() {
 
           <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">
             Back home
+          </Link>
+          <Link href="/get/requests" className="text-[13px] text-text-faint underline underline-offset-2 mt-1">
+            View your past requests
           </Link>
         </div>
       </div>
@@ -212,6 +233,11 @@ function GetPageInner() {
       <NavHeader title="Get a reco" closeHref="/home" />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
+        <Link href="/get/requests" className="flex items-center justify-between px-4 py-3 bg-bg-card border border-border rounded-card mb-3">
+          <span className="text-[13px] text-text-secondary font-medium">Your past requests</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+        </Link>
+
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
           {/* Pre-selected friend banner */}
@@ -442,15 +468,30 @@ function GetPageInner() {
           </>}
         </div>
 
-        <button
-          onClick={handleSend}
-          disabled={!canSend || sending}
-          className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold text-center transition-all ${
-            canSend && !sending ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
-          }`}
-        >
-          {sending ? 'Sending…' : 'Request reco'}
-        </button>
+        <div className="mt-3 flex flex-col gap-2">
+          {canSend && (
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              className={`w-full py-[15px] rounded-btn text-[15px] font-bold text-center transition-all ${
+                !sending ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+              }`}
+            >
+              {sending ? 'Sending…' : `Request reco${selectedIds.length > 0 ? '' : ''}`}
+            </button>
+          )}
+          {hasRequest && !canSend && (
+            <button
+              onClick={handleSend}
+              disabled={sending}
+              className={`w-full py-[15px] rounded-btn text-[15px] font-bold text-center transition-all ${
+                !sending ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+              }`}
+            >
+              {sending ? 'Creating…' : 'Share request externally'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

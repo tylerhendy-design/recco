@@ -366,6 +366,17 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* Your requests */}
+          <Link href="/get/requests" className="mx-4 mt-4 flex items-center justify-between px-4 py-3.5 bg-bg-card border border-border rounded-card">
+            <div className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+              <span className="text-[14px] font-semibold text-white">Your requests</span>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+          </Link>
+
           {/* Sin bin statuses */}
           {sinBinStatuses.length > 0 && (
             <div className="mx-4 mt-4 rounded-card border border-bad/30 bg-bad/5 overflow-hidden">
