@@ -17,6 +17,11 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [handled, setHandled] = useState<Record<string, 'accepted' | 'declined' | 'released' | 'kept' | 'completed'>>({})
   const [filter, setFilter] = useState<string>('all')
+  const [archived, setArchived] = useState<Set<string>>(new Set())
+
+  function archiveNotif(id: string) {
+    setArchived(prev => new Set(prev).add(id))
+  }
 
   const FILTERS = [
     { value: 'all', label: 'All' },
@@ -26,11 +31,14 @@ export default function NotificationsPage() {
     { value: 'stinkers', label: 'Stinkers' },
     { value: 'friends', label: 'Friends' },
     { value: 'sinbin', label: 'Sin bin' },
+    { value: 'archived', label: 'Archived' },
   ]
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return notifs
-    return notifs.filter((n) => {
+    if (filter === 'archived') return notifs.filter(n => archived.has(n.id))
+    const active = notifs.filter(n => !archived.has(n.id))
+    if (filter === 'all') return active
+    return active.filter((n) => {
       if (filter === 'recos') return n.type === 'reco_received' && n.payload?.subtype !== 'message'
       if (filter === 'reviews') return n.type === 'feedback_received'
       if (filter === 'messages') return n.type === 'reco_received' && n.payload?.subtype === 'message'
@@ -162,6 +170,8 @@ export default function NotificationsPage() {
               key={n.id}
               notif={n}
               userId={userId}
+              onArchive={() => archiveNotif(n.id)}
+              isArchived={archived.has(n.id)}
               handled={handled[n.id]}
               onAccept={() => handleAccept(n)}
               onDecline={() => handleDecline(n)}
@@ -300,12 +310,16 @@ function NotifRow({
   onReleasePlea,
   onKeepPlea,
   onReply,
+  onArchive,
+  isArchived,
 }: {
   notif: NotificationRow
   userId: string | null
   handled?: 'accepted' | 'declined' | 'released' | 'kept' | 'completed'
   onAccept: () => void
   onDecline: () => void
+  onArchive: () => void
+  isArchived: boolean
   onReleasePlea: () => void
   onKeepPlea: () => Promise<void> | void
   onReply: () => void
@@ -473,7 +487,12 @@ function NotifRow({
             </div>
           ) : null}
           <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[11px] text-text-faint">{time}</span>
+            <span className="text-[11px] text-text-faint flex-1">{time}</span>
+            {!isArchived && (
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive() }} className="text-text-faint hover:text-white transition-colors p-0.5">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
             {href && (
               <svg
                 width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
