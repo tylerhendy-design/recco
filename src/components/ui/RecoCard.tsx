@@ -281,7 +281,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
             {details.map((d, i) => {
               const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
               const mapsHref = d.key === 'address'
-                ? `https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
+                ? `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
                 : null
               return mapsHref
                 ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
@@ -530,7 +530,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 {reco.meta?.instagram && <MetaPill icon="instagram">@{reco.meta.instagram.replace('@', '')}</MetaPill>}
                 {(reco.meta?.location || reco.meta?.address) && (
                   <a
-                    href={`https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
+                    href={`https://maps.google.com/maps?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     onPointerDown={(e) => e.stopPropagation()}
@@ -574,7 +574,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     const isLocation = d.key === 'address' || d.key === 'location'
                     const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
                     if (isLocation) {
-                      const mapsUrl = `https://www.google.com/maps/search/?q=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
+                      const mapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
                       return (
                         <a key={i} href={mapsUrl} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className={pillClass}>
                           {DETAIL_ICON[d.key]}{d.value}
