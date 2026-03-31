@@ -195,6 +195,7 @@ function GivePageInner() {
   // TOP 03 gate
   const [picksCount, setPicksCount] = useState<number | null>(null)
   const [hasCompleteCategory, setHasCompleteCategory] = useState(false)
+  const [totalRecosSent, setTotalRecosSent] = useState(0)
 
   // Request geolocation once on mount — used to bias restaurant search
   useEffect(() => {
@@ -209,10 +210,12 @@ function GivePageInner() {
     createClient().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-      const [fetched, { data: picksData }] = await Promise.all([
+      const [fetched, { data: picksData }, { count: sentCount }] = await Promise.all([
         fetchFriends(user.id),
         createClient().from('profile_picks').select('category').eq('user_id', user.id),
+        createClient().from('recommendations').select('*', { count: 'exact', head: true }).eq('sender_id', user.id),
       ])
+      setTotalRecosSent(sentCount ?? 0)
       const pCount = picksData?.length ?? 0
       setPicksCount(pCount)
       // Check if any category has 3+ picks (normalise to lowercase)
@@ -510,7 +513,8 @@ function GivePageInner() {
 
 
   // ─── TOP 03 gate ──────────────────────────────────────────────────────────
-  if (picksCount !== null && !hasCompleteCategory && !isForward) {
+  // Allow first 3 recos without TOP 03 gate — then require it
+  if (picksCount !== null && !hasCompleteCategory && !isForward && totalRecosSent >= 3) {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         <StatusBar />
