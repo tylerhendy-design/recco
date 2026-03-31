@@ -1064,7 +1064,7 @@ function GivePageInner() {
             }).map((def) => {
               const filled = (constraints[def.key] ?? '').trim().length > 0
               const isOpen = openConstraint === def.key
-              const active = filled || isOpen
+              const active = filled
               return (
                 <button
                   key={def.key}
@@ -1078,7 +1078,9 @@ function GivePageInner() {
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12px] font-semibold transition-all flex-shrink-0 ${
                     active
                       ? 'bg-accent text-accent-fg'
-                      : 'bg-[#1a1a1e] text-[#888]'
+                      : isOpen
+                        ? 'bg-[#1a1a1e] text-white border border-accent/50'
+                        : 'bg-[#1a1a1e] text-[#888]'
                   }`}
                 >
                   {def.icon}
