@@ -1162,7 +1162,7 @@ function GivePageInner() {
 
           {/* ── Group 2: Why ── */}
           <div className="anim-in" style={{ animationDelay: '80ms' }}>
-          <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1.5 mt-3">Why?</div>
+          <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-1.5 mt-3">Why?</div>
           <textarea
             ref={whyRef}
             className="w-full bg-transparent outline-none text-[14px] text-text-secondary placeholder:text-[#444] font-sans resize-none leading-[1.6] min-h-[60px]"

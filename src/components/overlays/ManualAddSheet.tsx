@@ -233,7 +233,7 @@ export function ManualAddSheet({ open, onClose }: ManualAddSheetProps) {
 
           {/* Why */}
           <div>
-            <div className="text-[11px] font-semibold text-text-muted tracking-[0.5px] uppercase mb-1.5">Why?</div>
+            <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-1.5">Why?</div>
             <input
               className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
               placeholder="Why did they recommend it?"

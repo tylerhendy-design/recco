@@ -260,7 +260,7 @@ export function GiveRecoSheet({
 
           {/* Why */}
           <div>
-            <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Why?</div>
+            <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">Why?</div>
             <div className="flex gap-2 items-start">
               <VoiceButton />
               <textarea
