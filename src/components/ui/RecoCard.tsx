@@ -5,6 +5,7 @@ import { CategoryDot } from './CategoryDot'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
+import { updateRecoMeta } from '@/lib/data/recos'
 
 function getLinkLabel(url: string): string {
   try {
@@ -121,6 +122,31 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editLinks, setEditLinks] = useState<string[]>([])
+  const [editNotes, setEditNotes] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [localMeta, setLocalMeta] = useState(reco.meta)
+
+  function startEditing() {
+    setEditLinks([...(localMeta?.links ?? []), ''])
+    setEditNotes((localMeta as any)?.personal_notes ?? '')
+    setEditing(true)
+  }
+
+  async function saveEdits() {
+    setEditSaving(true)
+    const cleanLinks = editLinks.filter(l => l.trim())
+    const updates: Record<string, unknown> = {}
+    if (cleanLinks.length > 0) updates.links = cleanLinks
+    if (editNotes.trim()) updates.personal_notes = editNotes.trim()
+    const { error } = await updateRecoMeta(reco.id, updates)
+    if (!error) {
+      setLocalMeta(prev => ({ ...prev, ...updates }))
+    }
+    setEditSaving(false)
+    setEditing(false)
+  }
   const hasImage = !!reco.meta?.artwork_url
   const hasActions = !!(onMarkDone || onBeenThere || onNoGo)
   const ptrDown = useRef<{ x: number; y: number } | null>(null)
@@ -572,15 +598,15 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               {whyMessages.length <= 1 && <div className="mb-3" />}
 
               {/* Links — stopPropagation so tapping a link navigates without closing */}
-              {((reco.meta?.links?.length ?? 0) > 0 || reco.meta?.website) && (
+              {((localMeta?.links?.length ?? 0) > 0 || localMeta?.website) && (
                 <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                  {reco.meta?.website && (
-                    <a href={reco.meta.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-medium text-accent px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/5">
+                  {localMeta?.website && (
+                    <a href={localMeta.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-medium text-accent px-2.5 py-1 rounded-chip border border-accent/40 bg-accent/5">
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
                       Website
                     </a>
                   )}
-                  {reco.meta?.links?.map((link, i) => (
+                  {localMeta?.links?.map((link, i) => (
                     <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">
                       {getLinkLabel(link)}
                     </a>
@@ -614,6 +640,81 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                   </svg>
                   Forward this reco
                 </button>
+              )}
+
+              {/* Personal notes */}
+              {(localMeta as any)?.personal_notes && !editing && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-1">Your notes</div>
+                  <div className="text-[13px] text-text-secondary leading-[1.5]">{(localMeta as any).personal_notes}</div>
+                </div>
+              )}
+
+              {/* Edit button */}
+              {!editing && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); startEditing() }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-faint hover:border-accent hover:text-accent transition-colors mt-3"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Add links, notes, or details
+                </button>
+              )}
+
+              {/* Edit form */}
+              {editing && (
+                <div className="mt-3 pt-3 border-t border-border" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Your notes</div>
+                  <textarea
+                    className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px] mb-3"
+                    placeholder="Personal notes, reminders, what to order..."
+                    rows={1}
+                    value={editNotes}
+                    onChange={(e) => { setEditNotes(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+                  />
+
+                  <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Links</div>
+                  {editLinks.map((link, i) => (
+                    <div key={i} className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 flex-1 bg-bg-card border border-border rounded-input px-3.5 py-2.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" className="flex-shrink-0">
+                          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                        </svg>
+                        <input
+                          className="flex-1 bg-transparent outline-none text-[13px] text-white placeholder:text-[#444] font-sans"
+                          placeholder="Paste a URL..."
+                          value={link}
+                          onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }}
+                        />
+                      </div>
+                      {editLinks.length > 1 && (
+                        <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-bad transition-colors flex-shrink-0">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => setEditLinks([...editLinks, ''])} className="flex items-center gap-1.5 text-[12px] font-semibold text-text-faint hover:text-accent transition-colors mb-4">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add another link
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button onClick={() => setEditing(false)} className="flex-1 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-faint">
+                      Cancel
+                    </button>
+                    <button onClick={saveEdits} disabled={editSaving} className="flex-[2] py-2.5 bg-accent text-accent-fg rounded-input text-[13px] font-bold disabled:opacity-40">
+                      {editSaving ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

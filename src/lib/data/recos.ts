@@ -410,3 +410,29 @@ export async function sendReco({
 
   return { recoId, error: null }
 }
+
+// ── Update a reco's meta (add links, notes, photos etc.) ────────────────────
+export async function updateRecoMeta(
+  recoId: string,
+  updates: Record<string, unknown>,
+): Promise<{ error: string | null }> {
+  const supabase = createClient()
+
+  // Fetch current meta to merge
+  const { data: current, error: fetchErr } = await supabase
+    .from('recommendations')
+    .select('meta')
+    .eq('id', recoId)
+    .single()
+
+  if (fetchErr) return { error: fetchErr.message }
+
+  const merged = { ...(current?.meta ?? {}), ...updates }
+
+  const { error } = await supabase
+    .from('recommendations')
+    .update({ meta: merged })
+    .eq('id', recoId)
+
+  return { error: error?.message ?? null }
+}
