@@ -97,6 +97,17 @@ function Top3Inner() {
     setTitle(s.title)
     if (s.meta?.city) setCity(s.meta.city)
     if (s.meta?.address && !city) setCity(s.meta.address)
+
+    // Auto-populate links from search data
+    const autoLinks: string[] = []
+    if (s.meta?.website) autoLinks.push(s.meta.website)
+    // Generate Google Maps link for venues
+    if (isVenue && s.title) {
+      const mapsQuery = [s.title, s.meta?.address, s.meta?.city].filter(Boolean).join(', ')
+      autoLinks.push(`https://www.google.com/maps/search/?q=${encodeURIComponent(mapsQuery)}`)
+    }
+    if (autoLinks.length > 0) setLinks([...autoLinks, ''])
+
     setSuggestions([])
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
   }

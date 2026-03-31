@@ -649,13 +649,22 @@ function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEdit
           <div className="flex-1 min-w-0">
             <div className="text-[14px] font-medium text-white">{pick.title}</div>
             {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
-            {pick.links.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {pick.links.map((link, i) => (
-                  <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {pick.links.map((link, i) => (
+                <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
+              ))}
+              {/* Auto-generate Google Maps link for venue picks without links */}
+              {pick.links.length === 0 && pick.location && (
+                <a
+                  href={`https://www.google.com/maps/search/?q=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[11px] text-accent underline underline-offset-2"
+                >
+                  Google Maps
+                </a>
+              )}
+            </div>
           </div>
           <div className="flex-shrink-0">
             <button onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)} className="text-text-faint hover:text-white transition-colors p-1">
