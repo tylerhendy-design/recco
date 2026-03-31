@@ -305,12 +305,14 @@ function ManualAddInner() {
                         const file = e.target.files?.[0]
                         if (!file || !userId) return
                         setSelectedImage(URL.createObjectURL(file))
+                        const ext = file.name.split('.').pop() ?? 'jpg'
+                        const path = `${userId}/${crypto.randomUUID()}.${ext}`
                         const form = new FormData()
                         form.append('file', file)
-                        form.append('userId', userId)
+                        form.append('path', path)
                         const res = await fetch('/api/upload-image', { method: 'POST', body: form })
                         const data = await res.json()
-                        if (data.url) setSelectedImage(data.url)
+                        if (data.publicUrl) setSelectedImage(data.publicUrl)
                       }} />
                     </label>
                     <button onClick={() => setSelectedImage(null)} className="px-3 py-1.5 bg-black/50 backdrop-blur-sm rounded-full text-[11px] font-semibold text-white">
@@ -328,12 +330,14 @@ function ManualAddInner() {
                     const file = e.target.files?.[0]
                     if (!file || !userId) return
                     setSelectedImage(URL.createObjectURL(file))
+                    const ext = file.name.split('.').pop() ?? 'jpg'
+                    const path = `${userId}/${crypto.randomUUID()}.${ext}`
                     const form = new FormData()
                     form.append('file', file)
-                    form.append('userId', userId)
+                    form.append('path', path)
                     const res = await fetch('/api/upload-image', { method: 'POST', body: form })
                     const data = await res.json()
-                    if (data.url) setSelectedImage(data.url)
+                    if (data.publicUrl) setSelectedImage(data.publicUrl)
                   }} />
                 </label>
               )}

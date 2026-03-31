@@ -672,14 +672,16 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                       if (!file) return
                       const localUrl = URL.createObjectURL(file)
                       setLocalMeta(prev => ({ ...prev, artwork_url: localUrl }))
+                      const ext = file.name.split('.').pop() ?? 'jpg'
+                      const path = `${reco.sender_id}/${crypto.randomUUID()}.${ext}`
                       const form = new FormData()
                       form.append('file', file)
-                      form.append('userId', reco.sender_id)
+                      form.append('path', path)
                       const res = await fetch('/api/upload-image', { method: 'POST', body: form })
                       const data = await res.json()
-                      if (data.url) {
-                        setLocalMeta(prev => ({ ...prev, artwork_url: data.url }))
-                        await updateRecoMeta(reco.id, { artwork_url: data.url })
+                      if (data.publicUrl) {
+                        setLocalMeta(prev => ({ ...prev, artwork_url: data.publicUrl }))
+                        await updateRecoMeta(reco.id, { artwork_url: data.publicUrl })
                       }
                     }} />
                   </label>
