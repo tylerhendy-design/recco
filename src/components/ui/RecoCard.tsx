@@ -7,6 +7,11 @@ import type { Reco } from '@/types/app.types'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import { updateRecoMeta } from '@/lib/data/recos'
 
+function getRecoCategory(reco: { category: string; custom_cat?: string }): string {
+  if (reco.category === 'custom' && reco.custom_cat) return reco.custom_cat
+  return getCategoryLabel(reco.category)
+}
+
 function getLinkLabel(url: string): string {
   try {
     const u = new URL(url)
@@ -230,7 +235,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       {/* Category pill + dots — top left/right */}
       <div style={{ position: 'absolute', top: 16, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
         <span className={cn('text-[11px] font-bold uppercase tracking-[1px] px-3 py-1.5 rounded-chip border', pills.bg, pills.border, pills.text)}>
-          {getCategoryLabel(reco.category)}
+          {getRecoCategory(reco)}
         </span>
         {onForward && reco.status === 'done' && (
           <button
@@ -336,7 +341,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '0 14px 14px', zIndex: 10 }}>
         <div className="text-[20px] font-black text-white leading-[1.1] tracking-[-0.5px] truncate">{reco.title}</div>
         <div className="flex items-center gap-2 mt-1">
-          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getCategoryLabel(reco.category)}</span>
+          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-white/60">{recommenderNames}</span>}
         </div>
       </div>
@@ -356,7 +361,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       <div className="flex-1 min-w-0">
         <div className="text-[16px] font-semibold text-white tracking-[-0.3px] truncate">{reco.title}</div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getCategoryLabel(reco.category)}</span>
+          <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-text-faint">{recommenderNames}</span>}
         </div>
       </div>
@@ -385,7 +390,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getCategoryLabel(reco.category)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>

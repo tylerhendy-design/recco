@@ -290,8 +290,9 @@ function HomePageInner() {
 
   const doneByCategory = useMemo(() =>
     doneRecos.reduce<Record<string, Reco[]>>((acc, r) => {
-      if (!acc[r.category]) acc[r.category] = []
-      acc[r.category].push(r)
+      const key = r.category === 'custom' && r.custom_cat ? r.custom_cat : r.category
+      if (!acc[key]) acc[key] = []
+      acc[key].push(r)
       return acc
     }, {}),
     [doneRecos]
@@ -530,8 +531,9 @@ function HomePageInner() {
           {!loading && previewMode !== 'nofriends' && viewMode === 'list' && filtered.length > 0 && (() => {
             const byCat: Record<string, typeof filtered> = {}
             for (const r of filtered) {
-              if (!byCat[r.category]) byCat[r.category] = []
-              byCat[r.category].push(r)
+              const catKey = r.category === 'custom' && r.custom_cat ? r.custom_cat : r.category
+              if (!byCat[catKey]) byCat[catKey] = []
+              byCat[catKey].push(r)
             }
             return Object.entries(byCat).map(([cat, recos]) => (
               <div key={cat} className="border-b border-[#1a1a1e]">
