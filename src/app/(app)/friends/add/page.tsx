@@ -72,12 +72,14 @@ export default function AddFriendsPage() {
     return () => clearTimeout(t)
   }, [query, userId, search])
 
+  const [confirmPerson, setConfirmPerson] = useState<SearchResult | null>(null)
+
   async function handleAdd(person: SearchResult) {
     if (!userId) return
+    setConfirmPerson(null)
     setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'loading' } : r))
     const { error } = await sendFriendRequest(userId, person.id)
     if (error) {
-      alert(`Failed to send request: ${error}`)
       setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'none' } : r))
       return
     }
@@ -191,7 +193,7 @@ export default function AddFriendsPage() {
                     <div className="text-[12px] text-text-faint mt-0.5">@{person.username}</div>
                   </div>
                 </div>
-                <AddButton status={person.status} onAdd={() => handleAdd(person)} />
+                <AddButton status={person.status} onAdd={() => setConfirmPerson(person)} />
               </div>
             ))}
           </div>
@@ -312,6 +314,29 @@ export default function AddFriendsPage() {
           </div>
         </div>
       </div>
+
+      {/* Confirmation overlay */}
+      {confirmPerson && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm" onClick={() => setConfirmPerson(null)} />
+          <div className="fixed inset-x-0 bottom-0 z-[201] p-4 pb-8">
+            <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto px-5 py-5 text-center">
+              <div className="w-14 h-14 rounded-full bg-bg-card border border-border flex items-center justify-center text-[16px] font-bold text-text-secondary overflow-hidden mx-auto mb-3">
+                {confirmPerson.avatar_url
+                  ? <img src={confirmPerson.avatar_url} alt="" className="w-full h-full object-cover" />
+                  : initials(confirmPerson.display_name)
+                }
+              </div>
+              <div className="text-[16px] font-bold text-white mb-1">Add {confirmPerson.display_name.split(' ')[0]}?</div>
+              <div className="text-[13px] text-text-muted mb-4">They'll receive a friend request from you.</div>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmPerson(null)} className="flex-1 py-3 border border-border rounded-btn text-[14px] font-semibold text-text-faint">Cancel</button>
+                <button onClick={() => handleAdd(confirmPerson)} className="flex-[2] py-3 bg-accent text-accent-fg rounded-btn text-[14px] font-bold">Send request</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
