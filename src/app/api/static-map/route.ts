@@ -17,12 +17,24 @@ export async function GET(req: NextRequest) {
   const url = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(q)}&zoom=15&size=600x300&scale=2&maptype=roadmap&markers=color:0xD4E23A%7C${encodeURIComponent(q)}&${styles}&key=${key}`
 
   const res = await fetch(url)
-  if (!res.ok) return new NextResponse(null, { status: 502 })
+
+  // Static Maps returns 200 even for errors (sends an error image)
+  // Check content type — errors sometimes come as text/html
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!res.ok || contentType.includes('text/html')) {
+    return new NextResponse(null, { status: 502 })
+  }
 
   const buffer = await res.arrayBuffer()
+
+  // Google's error images are very small (~700 bytes) — real maps are 10KB+
+  if (buffer.byteLength < 2000) {
+    return new NextResponse(null, { status: 502 })
+  }
+
   return new NextResponse(buffer, {
     headers: {
-      'Content-Type': 'image/png',
+      'Content-Type': contentType || 'image/png',
       'Cache-Control': 'public, max-age=86400',
     },
   })

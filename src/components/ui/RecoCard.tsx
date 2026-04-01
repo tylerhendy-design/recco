@@ -146,6 +146,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   const [editSaving, setEditSaving] = useState(false)
   const [localMeta, setLocalMeta] = useState(reco.meta)
   const [showMap, setShowMap] = useState(false)
+  const [mapFailed, setMapFailed] = useState(false)
 
   function startEditing() {
     setEditLinks([...(localMeta?.links ?? []), ''])
@@ -488,6 +489,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     src={`/api/static-map?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location || reco.meta?.city].filter(Boolean).join(', '))}`}
                     alt="Map"
                     className="w-full h-full object-cover"
+                    onError={() => { setMapFailed(true); setShowMap(false) }}
                   />
                 </div>
               )}
@@ -503,7 +505,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 Back
               </button>
               {/* Image/Map toggle — bottom-center, only for venue recos with both image and location */}
-              {hasImage && hasLocation(reco) && (
+              {hasImage && hasLocation(reco) && !mapFailed && (
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 bg-black/50 backdrop-blur-sm rounded-full p-1">
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
