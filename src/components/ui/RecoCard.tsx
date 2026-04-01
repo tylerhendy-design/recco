@@ -366,10 +366,10 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-white/60">{recommenderNames}</span>}
         </div>
-        {(reco.meta?.location || reco.meta?.address) && (
+        {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
           <div className="flex items-center gap-1 mt-1">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity={0.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span className="text-[10px] text-white/50 truncate">{reco.meta?.address || reco.meta?.location}</span>
+            <span className="text-[10px] text-white/50 truncate">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</span>
           </div>
         )}
       </div>
@@ -392,10 +392,10 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-text-faint">{recommenderNames}</span>}
         </div>
-        {(reco.meta?.location || reco.meta?.address) && (
+        {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
           <div className="flex items-center gap-1 mt-0.5">
             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-text-faint flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span className="text-[10px] text-text-faint truncate">{reco.meta?.address || reco.meta?.location}</span>
+            <span className="text-[10px] text-text-faint truncate">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</span>
           </div>
         )}
       </div>
@@ -424,7 +424,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{(reco.meta?.location || reco.meta?.address) ? <span className="text-text-faint"> · {reco.meta?.location || reco.meta?.address}</span> : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{(reco.meta?.location || reco.meta?.city || reco.meta?.address) ? <span className="text-text-faint"> · {reco.meta?.location || reco.meta?.city || reco.meta?.address}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
@@ -590,12 +590,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               {/* ── Data lozenges below title: Maps, Website, Instagram, streaming ── */}
               <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 {reco.meta?.streaming_service && <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>}
-                {(reco.meta?.location || reco.meta?.address) && (
+                {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
                     target="_blank" rel="noopener noreferrer"
                   >
-                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.location || reco.meta?.address}</MetaPill>
+                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</MetaPill>
                   </a>
                 )}
                 {localMeta?.website && (
