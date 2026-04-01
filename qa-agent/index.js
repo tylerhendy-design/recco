@@ -75,7 +75,7 @@ try {
   results.push(signupResult);
 } catch (err) {
   results.push({
-    journey: 'New User Signup',
+    journey: 'Post-Login Exploration',
     status: 'error',
     steps: [],
     bugs: [{ severity: 'critical', description: `Agent crashed: ${err.message}` }],

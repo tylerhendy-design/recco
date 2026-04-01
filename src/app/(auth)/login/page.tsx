@@ -17,7 +17,9 @@ export default function LoginPage() {
 function LoginForm() {
   const [loading, setLoading] = useState<'google' | 'apple' | 'email' | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [showEmail, setShowEmail] = useState(false)
+  const [showEmail, setShowEmail] = useState(
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('method')
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const searchParams = useSearchParams()

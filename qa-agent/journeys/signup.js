@@ -142,8 +142,8 @@ export async function signupJourney(context, { baseUrl, email, password, name })
 
   console.log('🧪 Journey: New User Signup');
 
-  // Start at the root
-  await page.goto(baseUrl, { waitUntil: 'networkidle', timeout: 20000 });
+  // Start at login with email method pre-expanded
+  await page.goto(`${baseUrl}/login?method=email`, { waitUntil: 'networkidle', timeout: 20000 });
 
   while (stepCount < MAX_STEPS) {
     stepCount++;

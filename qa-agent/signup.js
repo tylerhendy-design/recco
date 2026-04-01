@@ -31,28 +31,28 @@ async function askClaude(screenshotBase64, pageUrl, stepHistory, userCredentials
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2048,
-    system: `You are a QA agent testing the Recco app — a recommendation-sharing app. You have already been logged in as a new user via session injection. You are now on the app itself.
+    system: `You are a QA agent testing the Recco app — a recommendation-sharing app. You are already logged in. You will land directly inside the app, past the login screen.
 
-Your goal is to walk through the post-login experience as a brand new user would: complete any onboarding steps, explore the home screen, check notifications, and look for anything broken, confusing, or missing.
+Your goal is to explore the post-login experience as a new user would: complete any onboarding steps, explore the home screen, check notifications, view recommendations, and flag anything broken, confusing, or missing.
 
-You will be shown a screenshot of the current page. You must decide what to do next.
+You will be shown a screenshot of the current page. Decide what to do next.
 
 Respond ONLY with a valid JSON object (no markdown, no explanation) in one of these formats:
 
 { "action": "navigate", "url": "<full url>" }
-{ "action": "click", "selector": "<css selector or aria label>", "description": "<what you're clicking and why>" }
+{ "action": "click", "selector": "<css selector>", "description": "<what you're clicking and why>" }
 { "action": "type", "selector": "<css selector>", "text": "<text to type>", "description": "<what you're filling in>" }
 { "action": "wait", "ms": 1500, "description": "<what you're waiting for>" }
-{ "action": "done", "description": "<what was accomplished — summarise the journey>" }
+{ "action": "done", "description": "<summary of the journey>" }
 { "action": "bug", "severity": "low|medium|high|critical", "description": "<bug description>", "then": { ...next action } }
 
 Rules:
-- You are already logged in — do not attempt to sign in or use Google OAuth
-- Use the name "${name}" and email "${email}" if asked to fill in profile details
-- If you land on an onboarding or profile setup screen, complete it
-- Flag anything broken, confusing, missing, or that a real user would find frustrating
-- Use "done" once you've explored the core post-login experience
-- Never loop — if you've tried something twice and it hasn't worked, emit a bug and stop`,
+- You are ALREADY LOGGED IN — never navigate to /login or attempt any sign-in flow
+- If you see a login screen, that itself is a critical bug — report it, then stop
+- Use "${name}" and "${email}" if asked to fill in profile details
+- Explore at least: home screen, notifications, any onboarding prompts
+- Flag anything broken, confusing, or that a real user would find frustrating
+- Never loop — if something fails twice, emit a bug and stop`,
 
     messages: [
       {
@@ -142,36 +142,31 @@ export async function signupJourney(context, { baseUrl, startUrl, email, passwor
   const steps = [];
   let stepCount = 0;
 
-  console.log('🧪 Journey: New User Signup / Onboarding');
+  console.log('🧪 Journey: Post-Login Onboarding & Core Flow');
 
-  // Inject the Supabase session directly into localStorage so the app
-  // treats the agent as already logged in — bypasses Google OAuth entirely.
   if (session) {
-    // Navigate to the domain first so localStorage is scoped correctly
-    await page.goto(startUrl || baseUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-    // Extract project ref from Supabase URL e.g. https://abcdef.supabase.co → abcdef
     const projectRef = process.env.SUPABASE_URL.replace('https://', '').split('.')[0];
     const storageKey = `sb-${projectRef}-auth-token`;
+    const sessionValue = JSON.stringify({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+      expires_at: session.expires_at,
+      expires_in: session.expires_in,
+      token_type: 'bearer',
+      user: session.user,
+    });
 
-    await page.evaluate(({ key, sess }) => {
-      localStorage.setItem(key, JSON.stringify({
-        access_token: sess.access_token,
-        refresh_token: sess.refresh_token,
-        expires_at: sess.expires_at,
-        expires_in: sess.expires_in,
-        token_type: 'bearer',
-        user: sess.user,
-      }));
-    }, { key: storageKey, sess: session });
+    // Must be added to the PAGE (not context) before goto, so it runs before app scripts
+    await page.addInitScript(({ key, value }) => {
+      localStorage.setItem(key, value);
+    }, { key: storageKey, value: sessionValue });
 
-    console.log('  🔑 Session injected into browser localStorage');
-
-    // Reload so the app picks up the session
-    await page.reload({ waitUntil: 'networkidle', timeout: 20000 });
-  } else {
-    await page.goto(startUrl || baseUrl, { waitUntil: 'networkidle', timeout: 20000 });
+    console.log('  🔑 Session will be injected on page load');
   }
+
+  // Go directly to /home — skip the login page entirely
+  await page.goto(`${baseUrl}/home`, { waitUntil: 'networkidle', timeout: 20000 });
+  console.log(`  📍 Landed at: ${page.url()}`);
 
   while (stepCount < MAX_STEPS) {
     stepCount++;
@@ -226,14 +221,14 @@ export async function signupJourney(context, { baseUrl, startUrl, email, passwor
   if (stepCount >= MAX_STEPS) {
     bugs.push({
       severity: 'medium',
-      description: `Journey hit the ${MAX_STEPS}-step limit without completing — signup flow may be too long or stuck in a loop.`,
+      description: `Journey hit the ${MAX_STEPS}-step limit without completing — may be stuck in a loop.`,
     });
   }
 
   await page.close();
 
   return {
-    journey: 'New User Signup',
+    journey: 'Post-Login Exploration',
     status: bugs.some((b) => b.severity === 'critical') ? 'critical' : bugs.length > 0 ? 'bugs-found' : 'pass',
     steps,
     bugs,
