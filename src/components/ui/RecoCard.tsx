@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { CategoryDot } from './CategoryDot'
-import { LocationPill, hasLocation } from './LocationPill'
+import { LocationPill, AddressPill, hasLocation } from './LocationPill'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
@@ -285,16 +285,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         {(details.filter(d => d.key !== 'location').length > 0 || hasLocation(reco)) && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {hasLocation(reco) && <LocationPill reco={reco} size="sm" />}
-            {details.filter(d => d.key !== 'location').map((d, i) => {
-              const isAddress = d.key === 'address'
-              const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-              const mapsHref = isAddress
-                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
-                : null
-              return mapsHref
-                ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
-                : <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
-            })}
+            {details.filter(d => d.key !== 'location').map((d, i) =>
+              d.key === 'address'
+                ? <AddressPill key={i} reco={reco} size="sm" />
+                : <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">{DETAIL_ICON[d.key]}{d.value}</span>
+            )}
           </div>
         )}
       </div>
@@ -315,16 +310,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           {(details.filter(d => d.key !== 'location').length > 0 || hasLocation(reco)) && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
               {hasLocation(reco) && <LocationPill reco={reco} size="sm" />}
-              {details.filter(d => d.key !== 'location').map((d, i) => {
-                const isAddress = d.key === 'address'
-                const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-                const mapsHref = isAddress
-                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
-                  : null
-                return mapsHref
-                  ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
-                  : <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
-              })}
+              {details.filter(d => d.key !== 'location').map((d, i) =>
+                d.key === 'address'
+                  ? <AddressPill key={i} reco={reco} size="sm" />
+                  : <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">{DETAIL_ICON[d.key]}{d.value}</span>
+              )}
             </div>
           )}
         </div>
@@ -616,19 +606,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">Why?</div>
               {details.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
-                  {details.filter(d => d.key !== 'location').map((d, i) => {
-                    const isAddress = d.key === 'address'
-                    const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-                    if (isAddress) {
-                      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
-                      return (
-                        <a key={i} href={mapsUrl} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className={pillClass}>
-                          {DETAIL_ICON[d.key]}{d.value}
-                        </a>
-                      )
-                    }
-                    return <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
-                  })}
+                  {details.filter(d => d.key !== 'location').map((d, i) =>
+                    d.key === 'address'
+                      ? <AddressPill key={i} reco={reco} />
+                      : <span key={i} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent">{DETAIL_ICON[d.key]}{d.value}</span>
+                  )}
                 </div>
               )}
               {currentWhy && <div className="text-[13px] text-text-secondary leading-[1.5] min-h-[36px]">{currentWhy}</div>}

@@ -27,15 +27,14 @@ function getMapsUrl(reco: Reco): string {
   )}`
 }
 
-interface LocationPillProps {
+interface MapsPillProps {
   reco: Reco
+  label: string
   size?: 'sm' | 'default'
+  icon?: React.ReactNode
 }
 
-export function LocationPill({ reco, size = 'default' }: LocationPillProps) {
-  const city = getLocationCity(reco)
-  if (!city) return null
-
+function MapsPill({ reco, label, size = 'default', icon }: MapsPillProps) {
   const mapsUrl = getMapsUrl(reco)
   const isSm = size === 'sm'
 
@@ -50,10 +49,29 @@ export function LocationPill({ reco, size = 'default' }: LocationPillProps) {
         isSm ? 'text-[9px] px-2 py-0.5' : 'text-[10px] px-2.5 py-1'
       }`}
     >
-      <svg width={isSm ? 8 : 10} height={isSm ? 8 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-      </svg>
-      {city}
+      {icon ?? (
+        <svg width={isSm ? 8 : 10} height={isSm ? 8 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+      )}
+      {label}
     </a>
   )
+}
+
+interface LocationPillProps {
+  reco: Reco
+  size?: 'sm' | 'default'
+}
+
+export function LocationPill({ reco, size = 'default' }: LocationPillProps) {
+  const city = getLocationCity(reco)
+  if (!city) return null
+  return <MapsPill reco={reco} label={city} size={size} />
+}
+
+export function AddressPill({ reco, size = 'default' }: LocationPillProps) {
+  const address = (reco.meta?.address as string | undefined)
+  if (!address) return null
+  return <MapsPill reco={reco} label={address} size={size} />
 }
