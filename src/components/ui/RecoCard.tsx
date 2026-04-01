@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { CategoryDot } from './CategoryDot'
+import { LocationPill, hasLocation } from './LocationPill'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
@@ -281,15 +282,14 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           {reco.title}
         </div>
         {/* Data lozenges below title */}
-        {details.length > 0 && (
+        {(details.filter(d => d.key !== 'location').length > 0 || hasLocation(reco)) && (
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {details.map((d, i) => {
-              const isLocation = d.key === 'address' || d.key === 'location'
-              const pillClass = isLocation
-                ? "flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.3px] px-3 py-1.5 rounded-chip border border-white/40 bg-white/15 text-white backdrop-blur-sm"
-                : "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-              const mapsHref = isLocation
-                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
+            {hasLocation(reco) && <LocationPill reco={reco} size="sm" />}
+            {details.filter(d => d.key !== 'location').map((d, i) => {
+              const isAddress = d.key === 'address'
+              const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+              const mapsHref = isAddress
+                ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
                 : null
               return mapsHref
                 ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
@@ -312,13 +312,14 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           {reco.meta?.forwarded_from && (
             <div className="text-[11px] text-text-faint mb-1">Originally from {reco.meta.forwarded_from}</div>
           )}
-          {details.length > 0 && (
+          {(details.filter(d => d.key !== 'location').length > 0 || hasLocation(reco)) && (
             <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {details.map((d, i) => {
-                const isLocation = d.key === 'address' || d.key === 'location'
+              {hasLocation(reco) && <LocationPill reco={reco} size="sm" />}
+              {details.filter(d => d.key !== 'location').map((d, i) => {
+                const isAddress = d.key === 'address'
                 const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-                const mapsHref = isLocation
-                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
+                const mapsHref = isAddress
+                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
                   : null
                 return mapsHref
                   ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
@@ -366,12 +367,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-white/60">{recommenderNames}</span>}
         </div>
-        {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
-          <div className="flex items-center gap-1 mt-1">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" opacity={0.5}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span className="text-[10px] text-white/50 truncate">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</span>
-          </div>
-        )}
+        {hasLocation(reco) && <div className="mt-1"><LocationPill reco={reco} size="sm" /></div>}
       </div>
       {onForward && reco.status === 'done' && (
         <button className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
@@ -392,12 +388,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           <span className={cn('text-[9px] font-bold uppercase tracking-[0.5px] px-2 py-0.5 rounded-chip border', pills.bg, pills.border, pills.text)}>{getRecoCategory(reco)}</span>
           {recommenderNames && <span className="text-[11px] text-text-faint">{recommenderNames}</span>}
         </div>
-        {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-text-faint flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span className="text-[10px] text-text-faint truncate">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</span>
-          </div>
-        )}
+        {hasLocation(reco) && <div className="mt-0.5"><LocationPill reco={reco} size="sm" /></div>}
       </div>
       {onForward && reco.status === 'done' && (
         <button className="w-7 h-7 rounded-full bg-bg-base border border-border flex items-center justify-center flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onForward(reco) }}>
@@ -424,7 +415,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{(reco.meta?.location || reco.meta?.city || reco.meta?.address) ? <span className="text-text-faint"> · {reco.meta?.location || reco.meta?.city || reco.meta?.address}</span> : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{hasLocation(reco) ? <span className="text-accent"> · {(reco.meta?.location || reco.meta?.city || reco.meta?.address) as string}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>
@@ -590,14 +581,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               {/* ── Data lozenges below title: Maps, Website, Instagram, streaming ── */}
               <div className="flex flex-wrap gap-1.5 mb-3" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 {reco.meta?.streaming_service && <MetaPill icon="tv">{reco.meta.streaming_service}</MetaPill>}
-                {(reco.meta?.location || reco.meta?.city || reco.meta?.address) && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
-                    target="_blank" rel="noopener noreferrer"
-                  >
-                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.location || reco.meta?.city || reco.meta?.address}</MetaPill>
-                  </a>
-                )}
+                {hasLocation(reco) && <LocationPill reco={reco} />}
                 {localMeta?.website && (
                   <a href={localMeta.website} target="_blank" rel="noopener noreferrer">
                     <MetaPill icon="map" color="#D4E23A">Website</MetaPill>
