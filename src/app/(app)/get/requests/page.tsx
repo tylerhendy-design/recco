@@ -12,6 +12,9 @@ type RecoRequest = {
   category: string | null
   context: string
   created_at: string
+  asked?: { name: string }[]
+  responses?: { name: string; title: string }[]
+  responseCount?: number
 }
 
 export default function MyRequestsPage() {
@@ -118,7 +121,17 @@ export default function MyRequestsPage() {
                   <div className="text-[14px] font-semibold text-white truncate">
                     {catLabel ?? 'Recommendation'} request
                   </div>
-                  <div className="text-[11px] text-text-faint">{timeAgo(req.created_at)}</div>
+                  <div className="text-[11px] text-text-faint">
+                    {timeAgo(req.created_at)}
+                    {req.asked && req.asked.length > 0 && (
+                      <> · Asked {req.asked.map(a => a.name.split(' ')[0]).join(', ')}</>
+                    )}
+                  </div>
+                  {(req.responseCount ?? 0) > 0 && (
+                    <div className="text-[10px] text-accent font-medium mt-0.5">
+                      {req.responseCount} {req.responseCount === 1 ? 'response' : 'responses'}
+                    </div>
+                  )}
                 </div>
                 <svg
                   width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"
@@ -143,6 +156,40 @@ export default function MyRequestsPage() {
                   )}
                   {details && (
                     <div className="text-[13px] text-text-secondary leading-[1.5] mb-3">"{details}"</div>
+                  )}
+
+                  {/* Who was asked */}
+                  {req.asked && req.asked.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-[10px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-1.5">Asked</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {req.asked.map((a, i) => {
+                          const responded = req.responses?.some(r => r.name === a.name)
+                          return (
+                            <span key={i} className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                              responded ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-border text-text-faint bg-bg-base'
+                            }`}>
+                              {a.name.split(' ')[0]}
+                              {responded ? ' ✓' : ' · pending'}
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Responses received */}
+                  {req.responses && req.responses.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-[10px] font-semibold text-accent uppercase tracking-[0.5px] mb-1.5">Responses</div>
+                      <div className="flex flex-col gap-1">
+                        {req.responses.map((r, i) => (
+                          <div key={i} className="text-[12px] text-text-secondary">
+                            <span className="font-medium text-white">{r.name.split(' ')[0]}</span> sent "{r.title}"
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
 
                   {/* Share actions */}

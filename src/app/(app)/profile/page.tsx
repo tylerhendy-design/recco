@@ -315,33 +315,42 @@ export default function ProfilePage() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2.5">
-                    <div>
+                    <Link href="/profile/recos?filter=given">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[12px] font-semibold text-accent">Given</span>
-                        <span className="text-[13px] font-bold text-white">{sent}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-bold text-white">{sent}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                       </div>
                       <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
                         <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${(sent / max) * 100}%` }} />
                       </div>
-                    </div>
-                    <div>
+                    </Link>
+                    <Link href="/profile/recos?filter=received">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[12px] font-semibold text-[#5BC4F5]">Received</span>
-                        <span className="text-[13px] font-bold text-white">{received}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-bold text-white">{received}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                       </div>
                       <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
                         <div className="h-full bg-[#5BC4F5] rounded-full transition-all" style={{ width: `${(received / max) * 100}%` }} />
                       </div>
-                    </div>
-                    <div>
+                    </Link>
+                    <Link href="/profile/recos?filter=completed">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[12px] font-semibold text-[#2DD4BF]">Completed</span>
-                        <span className="text-[13px] font-bold text-white">{completed}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[13px] font-bold text-white">{completed}</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                       </div>
                       <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
                         <div className="h-full bg-[#2DD4BF] rounded-full transition-all" style={{ width: `${(completed / max) * 100}%` }} />
                       </div>
-                    </div>
+                    </Link>
                     <button onClick={() => setShowStinkers(true)}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-[12px] font-semibold text-[#F56E6E]">💩 Stinkers</span>
@@ -369,7 +378,7 @@ export default function ProfilePage() {
               <StatBox value={`${profile.avg_completion_days}d`} label="Avg to complete" />
             </div>
             <div className="flex gap-2.5">
-              <StatBox value={String(profile.friends_count)} label="Friends" />
+              <Link href="/friends" className="flex-1"><StatBox value={String(profile.friends_count)} label="Friends" /></Link>
               {profile.top_category && (
                 <StatBox value={getCategoryLabel(profile.top_category)} label="Top category" />
               )}
