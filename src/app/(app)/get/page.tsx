@@ -228,8 +228,7 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <StatusBar />
-      <NavHeader title="Get a reco" closeHref="/home" />
+      {!embedded && <><StatusBar /><NavHeader title="Get a reco" closeHref="/home" /></>}
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <Link href="/get/requests" className="flex items-center justify-between px-4 py-3 bg-bg-card border border-border rounded-card mb-3">

@@ -170,8 +170,7 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <StatusBar />
-      <NavHeader title="Instant Add" closeHref="/home" />
+      {!embedded && <><StatusBar /><NavHeader title="Instant Add" closeHref="/home" /></>}
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
