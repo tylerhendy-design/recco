@@ -77,6 +77,12 @@ export default function ListsPage() {
   const CITY_ALIASES: Record<string, string> = {
     'greater london': 'London', 'city of london': 'London', 'central london': 'London',
     'inner london': 'London', 'outer london': 'London', 'city of westminster': 'London',
+    'borough market': 'London', 'soho': 'London', 'shoreditch': 'London', 'hackney': 'London',
+    'peckham': 'London', 'brixton': 'London', 'camden': 'London', 'notting hill': 'London',
+    'covent garden': 'London', 'mayfair': 'London', 'fitzrovia': 'London', 'dalston': 'London',
+    'islington': 'London', 'bermondsey': 'London', 'south bank': 'London', 'kings cross': 'London',
+    'marylebone': 'London', 'chelsea': 'London', 'kensington': 'London', 'battersea': 'London',
+    'clapham': 'London', 'fulham': 'London', 'stratford': 'London', 'greenwich': 'London',
     'greater manchester': 'Manchester', 'city of manchester': 'Manchester',
     'city of edinburgh': 'Edinburgh', 'city of bristol': 'Bristol',
     'ile-de-france': 'Paris', 'arrondissement de paris': 'Paris',

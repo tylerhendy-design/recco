@@ -17,10 +17,15 @@ const HEADLINES: Record<string, string> = {
   good: 'You loved it.',
 }
 
-const SUBS: Record<string, string> = {
-  bad: 'And now they know.',
-  meh: 'And they know that too.',
-  good: 'And now they know you did.',
+function getSub(sentiment: string, name?: string): string {
+  if (name) {
+    if (sentiment === 'bad') return `And now ${name} knows.`
+    if (sentiment === 'meh') return `And ${name} knows that too.`
+    return `And now ${name} knows you did.`
+  }
+  if (sentiment === 'bad') return 'And now they know.'
+  if (sentiment === 'meh') return 'And they know that too.'
+  return 'And now they know you did.'
 }
 
 export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderName, sinBinWarning }: SuccessOverlayProps) {
@@ -41,7 +46,7 @@ export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderNam
         {HEADLINES[sentiment]}
       </div>
       <div className="text-[15px] text-text-dim leading-[1.6] mb-[22px]">
-        {firstName ? SUBS[sentiment].replace('they', firstName) : SUBS[sentiment]}
+        {getSub(sentiment, firstName)}
       </div>
 
       <div className="text-[14px] font-semibold text-text-secondary bg-bg-card border border-border rounded-input px-[22px] py-3">

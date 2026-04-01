@@ -78,12 +78,16 @@ export default function AddFriendsPage() {
     if (!userId) return
     setConfirmPerson(null)
     setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'loading' } : r))
-    const { error } = await sendFriendRequest(userId, person.id)
-    if (error) {
+    try {
+      const { error } = await sendFriendRequest(userId, person.id)
+      if (error) {
+        setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'none' } : r))
+        return
+      }
+      setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'pending_sent' } : r))
+    } catch {
       setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'none' } : r))
-      return
     }
-    setResults((prev) => prev.map((r) => r.id === person.id ? { ...r, status: 'pending_sent' } : r))
   }
 
   async function copyInvite() {
