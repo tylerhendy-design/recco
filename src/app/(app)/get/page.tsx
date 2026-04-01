@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useMemo, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
-import { CATEGORIES, getCategoryLabel } from '@/constants/categories'
+import { type CategoryId, getCategoryLabel } from '@/constants/categories'
+import { CategoryChips } from '@/components/ui/CategoryChips'
+import { FriendPicker, type PickableFriend } from '@/components/ui/FriendPicker'
 import { fetchFriends } from '@/lib/data/friends'
 import { createClient } from '@/lib/supabase/client'
-import { initials } from '@/lib/utils'
 import Link from 'next/link'
 import QRCode from 'qrcode'
 
-type Friend = { id: string; display_name: string; username: string; avatar_url: string | null }
 
 type ConstraintDef = {
   key: string
@@ -75,11 +75,10 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
   const searchParams = useSearchParams()
   const preselectedFrom = searchParams.get('from')
 
-  const [selectedCat, setSelectedCat] = useState<string | null>(null)
+  const [selectedCat, setSelectedCat] = useState<CategoryId | null>(null)
   const [customCat, setCustomCat] = useState('')
-  const [friends, setFriends] = useState<Friend[]>([])
+  const [friends, setFriends] = useState<PickableFriend[]>([])
   const [selectedIds, setSelectedIds] = useState<string[]>(preselectedFrom ? [preselectedFrom] : [])
-  const [friendSearch, setFriendSearch] = useState('')
   const [constraints, setConstraints] = useState<Record<string, string>>({})
   const [openConstraint, setOpenConstraint] = useState<string | null>(null)
   const [details, setDetails] = useState('')
@@ -108,14 +107,6 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
     ? (CATEGORY_CONSTRAINTS[selectedCat] ?? CATEGORY_CONSTRAINTS.default)
     : CATEGORY_CONSTRAINTS.default
 
-  const filteredFriends = useMemo(() => {
-    const q = friendSearch.trim().toLowerCase()
-    if (!q) return friends
-    return friends.filter((f) =>
-      f.display_name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q)
-    )
-  }, [friends, friendSearch])
-
   const allSelected = friends.length > 0 && selectedIds.length === friends.length
 
   function togglePerson(id: string) {
@@ -128,7 +119,6 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
     setSelectedIds(allSelected ? [] : friends.map((f) => f.id))
   }
 
-  const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const canSend = selectedIds.length > 0
   const hasRequest = selectedCat !== null
 
@@ -262,52 +252,12 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
           </div>
 
           {/* Category chips */}
-          <div className="mb-4">
-            <div className="flex gap-1.5 flex-wrap">
-              {displayedCats.map((cat) => {
-                const active = selectedCat === cat.id
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCat(active ? null : cat.id)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip border transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
-                    style={active
-                      ? { color: cat.color, borderColor: cat.color, background: cat.bgColor }
-                      : { color: '#444', borderColor: '#222226' }
-                    }
-                  >
-                    <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: active ? cat.color : '#444' }} />
-                    {cat.label}
-                  </button>
-                )
-              })}
-              {/* Custom — dotted border, custom icon */}
-              <button
-                onClick={() => setSelectedCat(selectedCat === 'custom' ? null : 'custom')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-chip transition-all text-[11px] font-semibold tracking-[0.4px] uppercase"
-                style={selectedCat === 'custom'
-                  ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
-                  : { color: '#555', border: '1px dashed #333' }
-                }
-              >
-                {/* Pencil/custom icon */}
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Custom
-              </button>
-            </div>
-            {selectedCat === 'custom' && (
-              <input
-                autoFocus
-                className="mt-2.5 w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
-                placeholder="e.g. Architecture, Coffee, Barbers…"
-                value={customCat}
-                onChange={(e) => setCustomCat(e.target.value)}
-              />
-            )}
-          </div>
+          <CategoryChips
+            category={selectedCat}
+            customCat={customCat}
+            onCategoryChange={setSelectedCat}
+            onCustomCatChange={setCustomCat}
+          />
 
           {/* How many */}
           <div className="border-t border-[#0e0e10] pt-4 mb-4">
@@ -392,77 +342,14 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
           {/* Ask section — hidden when pre-selected from friend profile */}
           {!preselectedFrom && <>
           <div className="border-t border-[#0e0e10] mb-3" />
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase">Ask</div>
-            {friends.length > 0 && (
-              <button
-                onClick={toggleAll}
-                className={`text-[11px] font-semibold transition-colors ${allSelected ? 'text-accent' : 'text-text-faint hover:text-text-muted'}`}
-              >
-                {allSelected ? '− Deselect all' : '+ Ask everyone'}
-              </button>
-            )}
-          </div>
-
-          <div className="relative mb-2.5">
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              className="w-full bg-bg-card border border-border rounded-input pl-7 pr-3 py-3 text-[14px] text-white outline-none placeholder:text-[#444] focus:border-accent font-sans"
-              placeholder="Search friends…"
-              value={friendSearch}
-              onChange={(e) => setFriendSearch(e.target.value)}
-            />
-          </div>
-
-          {/* Search results — show when typing */}
-          {friendSearch.trim().length > 0 && (
-            <div className="flex flex-col gap-0.5 mb-2">
-              {filteredFriends.filter((f) => !selectedIds.includes(f.id)).length === 0 ? (
-                <div className="text-[12px] text-text-faint px-2 py-1">No friends found.</div>
-              ) : (
-                filteredFriends.filter((f) => !selectedIds.includes(f.id)).map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => { togglePerson(f.id); setFriendSearch('') }}
-                    className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-bg-base transition-colors text-left w-full"
-                  >
-                    <div className="w-6 h-6 rounded-full bg-bg-base border border-border flex items-center justify-center text-[9px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
-                      {f.avatar_url
-                        ? <img src={f.avatar_url} alt={f.display_name} className="w-full h-full object-cover" />
-                        : initials(f.display_name)
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[12px] font-medium text-text-secondary">{f.display_name}</span>
-                      {f.username && <span className="text-[11px] text-text-faint ml-1.5">@{f.username}</span>}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-
-          {selectedIds.length > 0 && (
-            <div className="flex flex-wrap gap-[5px] mb-2">
-              {selectedIds.map((id) => {
-                const f = friends.find((fr) => fr.id === id)
-                if (!f) return null
-                return (
-                  <button
-                    key={id}
-                    onClick={() => togglePerson(id)}
-                    className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-chip border transition-all"
-                    style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
-                  >
-                    {f.display_name.split(' ')[0]}
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          <FriendPicker
+            friends={friends}
+            selectedIds={selectedIds}
+            onToggle={togglePerson}
+            onToggleAll={toggleAll}
+            allSelected={allSelected}
+            label="Ask"
+          />
           </>}
         </div>
 

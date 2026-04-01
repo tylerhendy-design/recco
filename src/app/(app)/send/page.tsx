@@ -7,6 +7,8 @@ import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { VoiceButton, type VoiceResult } from '@/components/ui/VoiceButton'
 import { CATEGORIES, type CategoryId, getCategoryLabel, getCategoryColor, getCategoryBg } from '@/constants/categories'
+import { CategoryChips } from '@/components/ui/CategoryChips'
+import { AutocompleteInput, type Suggestion } from '@/components/ui/AutocompleteInput'
 import { createClient } from '@/lib/supabase/client'
 import { fetchFriends } from '@/lib/data/friends'
 import { sendReco, checkDuplicateReco } from '@/lib/data/recos'
@@ -174,12 +176,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   const [dupeConfirmed, setDupeConfirmed] = useState(false)
   const whyRef = useRef<HTMLTextAreaElement>(null)
 
-  // Title autocomplete
-  type SuggestionMeta = { genre?: string; year?: string; artist?: string; author?: string; address?: string; city?: string; place_id?: string; website?: string }
-  type Suggestion = { title: string; subtitle: string | null; imageUrl: string | null; meta?: SuggestionMeta }
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false)
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Title autocomplete (managed by AutocompleteInput, these are post-selection state)
   const [manualArtist, setManualArtist] = useState('')
   const [suggestionSelected, setSuggestionSelected] = useState(false)
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
@@ -241,7 +238,6 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
     setImageError(null)
     setTitle('')
     setShowLinkInput(false)
-    setSuggestions([])
     setManualArtist('')
     setCustomConstraintDefs([])
     setAddingCustomConstraint(false)
@@ -252,27 +248,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
   function handleTitleChange(val: string) {
     setTitle(val)
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    if (!val.trim() || val.trim().length < 2 || !category) {
-      setSuggestions([])
-      return
-    }
-    searchTimeout.current = setTimeout(async () => {
-      setSuggestionsLoading(true)
-      try {
-        let url = `/api/search?q=${encodeURIComponent(val.trim())}&category=${category}`
-        if (isRestaurant && userLocation.current) {
-          url += `&lat=${userLocation.current.lat}&lng=${userLocation.current.lng}`
-        }
-        const res = await fetch(url)
-        const data = await res.json()
-        setSuggestions(data)
-      } catch {
-        setSuggestions([])
-      } finally {
-        setSuggestionsLoading(false)
-      }
-    }, 300)
+    setSuggestionSelected(false)
   }
 
   async function selectSuggestion(s: Suggestion) {
@@ -284,8 +260,6 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
     if (s.meta?.address) setConstraints(p => ({ ...p, address: s.meta!.address! }))
     if (s.meta?.city)    setConstraints(p => ({ ...p, location: s.meta!.city! }))
     if (s.meta?.website) setConstraints(p => ({ ...p, website: s.meta!.website! }))
-    setSuggestions([])
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
     // Fetch restaurant photo lazily after selection
     if (s.meta?.place_id) {
       try {
@@ -515,7 +489,6 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   }
   const singular = category ? (SINGULAR[category] ?? getCategoryLabel(category).toLowerCase()) : ''
 
-  const displayedCats = CATEGORIES.filter((c) => c.id !== 'custom')
   const catColor = category ? CATEGORIES.find((c) => c.id === category)?.color ?? '#D4E23A' : '#D4E23A'
 
 
@@ -765,48 +738,12 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
           <div className="text-[26px] font-semibold text-white tracking-[-0.7px] leading-[1.1] mb-4">
             {category ? `What ${singular}?` : "What's the reco?"}
           </div>
-          <div className="flex gap-2 flex-wrap mb-4">
-            {displayedCats.map((cat) => {
-              const active = category === cat.id
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategory(active ? null : cat.id as CategoryId)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip border transition-all text-[12px] font-semibold tracking-[0.3px] uppercase"
-                  style={active
-                    ? { color: cat.color, borderColor: cat.color, background: cat.bgColor }
-                    : { color: '#777', borderColor: '#2a2a30' }
-                  }
-                >
-                  <span className="w-[6px] h-[6px] rounded-full flex-shrink-0" style={{ background: active ? cat.color : '#555' }} />
-                  {cat.label}
-                </button>
-              )
-            })}
-            <button
-              onClick={() => setCategory(category === 'custom' ? null : 'custom')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-chip transition-all text-[12px] font-semibold tracking-[0.3px] uppercase"
-              style={category === 'custom'
-                ? { color: '#D4E23A', border: '1px solid #D4E23A', background: 'rgba(212,226,58,0.08)' }
-                : { color: '#777', border: '1px dashed #3a3a40' }
-              }
-            >
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-              Custom
-            </button>
-          </div>
-          {category === 'custom' && (
-            <input
-              autoFocus
-              className="mb-4 w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
-              placeholder="e.g. Architecture, Coffee, Barbers…"
-              value={customCat}
-              onChange={(e) => setCustomCat(e.target.value)}
-            />
-          )}
+          <CategoryChips
+            category={category}
+            customCat={customCat}
+            onCategoryChange={setCategory}
+            onCustomCatChange={setCustomCat}
+          />
 
           {/* ── Everything below only renders once a category is picked ── */}
           {category && (
@@ -814,58 +751,16 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
               <div className="border-t border-[#0e0e10] mb-4" />
 
               {/* ── Primary: title input + autocomplete ── */}
-              <div className="mb-4">
-                <input
-                  autoFocus={category !== 'custom' || customCat.trim().length > 0}
-                  className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#444] font-sans"
-                  placeholder={`Name of ${singular}…`}
-                  value={title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
-                />
-
-                  {/* Suggestions dropdown */}
-                  {(suggestions.length > 0 || suggestionsLoading) && (
-                    <div className="mt-2 rounded-xl border border-border bg-bg-base overflow-hidden max-h-[320px] overflow-y-auto">
-                      {suggestionsLoading && suggestions.length === 0 ? (
-                        <div className="flex items-center justify-center py-3">
-                          <div className="w-3.5 h-3.5 border-2 border-border border-t-white/50 rounded-full animate-spin" />
-                        </div>
-                      ) : (
-                        <>
-                          {suggestions.map((s, i) => (
-                            <button
-                              key={i}
-                              onClick={() => selectSuggestion(s)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-border last:border-b-0 active:bg-white/5 transition-colors"
-                            >
-                              {s.imageUrl ? (
-                                <img src={s.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
-                              ) : (
-                                <div className="w-9 h-9 rounded-lg bg-bg-card flex-shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[13px] font-semibold text-white truncate">{s.title}</div>
-                                {s.subtitle && <div className="text-[11px] text-text-faint truncate">{s.subtitle}</div>}
-                              </div>
-                            </button>
-                          ))}
-                          <button
-                            onClick={() => { setSuggestions([]); if (searchTimeout.current) clearTimeout(searchTimeout.current) }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 border-t border-border active:bg-white/5 transition-colors"
-                          >
-                            <div className="w-9 h-9 rounded-lg bg-bg-card border border-border flex items-center justify-center flex-shrink-0">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[13px] font-semibold text-white truncate">Use "{title}"</div>
-                              <div className="text-[11px] text-text-faint">Add it manually</div>
-                            </div>
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
+              <AutocompleteInput
+                category={category}
+                value={title}
+                onChange={handleTitleChange}
+                onSelect={selectSuggestion}
+                placeholder={`Name of ${singular}…`}
+                isVenue={isRestaurant}
+                userLat={userLocation.current?.lat}
+                userLng={userLocation.current?.lng}
+              />
 
               {/* ── Auto-filled details from search ── */}
               {suggestionSelected && (
