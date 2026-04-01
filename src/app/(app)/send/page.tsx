@@ -803,35 +803,36 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
                 </div>
               )}
 
-              {/* ── Secondary: autofill with a link ── */}
+              {/* ── Link paste (secondary option) ── */}
               {!linkMeta && !showLinkInput && !suggestionSelected && (
                 <button
                   onClick={() => setShowLinkInput(true)}
-                  className="mb-4 text-[14px] text-text-muted hover:text-white transition-colors"
+                  className="mb-4 flex items-center gap-1.5 text-[12px] text-text-faint hover:text-text-muted transition-colors"
                 >
-                  Autofill with a link →
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                  </svg>
+                  Got a link? Paste it here instead
                 </button>
               )}
 
               {showLinkInput && !linkMeta && (
                 <div className="mb-4">
-                  <div
-                    className="flex items-center gap-2.5 rounded-input px-3 py-3 border"
-                    style={{ background: `${catColor}0d`, borderColor: `${catColor}44` }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                  <div className="flex items-center gap-2.5 rounded-input px-3 py-3 border border-border bg-bg-base">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                       <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
                       <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                     </svg>
                     <input
                       autoFocus
-                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-white placeholder:opacity-100 font-sans"
-                      placeholder="Paste a link to auto-fill…"
+                      className="flex-1 bg-transparent outline-none text-[14px] text-white placeholder:text-[#444] font-sans"
+                      placeholder="Paste a Spotify, Maps, or Apple link…"
                       value={linkInput}
                       onChange={(e) => handleLinkChange(e.target.value)}
                     />
                     {linkLoading ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white rounded-full animate-spin flex-shrink-0" />
+                      <div className="w-3.5 h-3.5 border-2 border-border border-t-text-faint rounded-full animate-spin flex-shrink-0" />
                     ) : (
                       <button
                         onClick={() => { setShowLinkInput(false); setLinkInput('') }}
