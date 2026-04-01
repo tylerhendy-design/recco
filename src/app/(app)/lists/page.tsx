@@ -324,9 +324,9 @@ export default function ListsPage() {
             if (!group) return null
             return (
               <>
-                {/* Header */}
-                <div className="sticky top-0 z-10 bg-bg-base border-b border-[#1a1a1e]">
-                  <div className="flex items-center justify-between px-4 py-3">
+                {/* Header — compact sticky bar */}
+                <div className="sticky top-0 z-10 bg-bg-base border-b border-[#1a1a1e] px-4 py-2.5">
+                  <div className="flex items-center justify-between">
                     <button
                       onClick={() => { setSelectedCity(null); setSlideDir('out') }}
                       className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary"
@@ -334,49 +334,49 @@ export default function ListsPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 12H5M12 5l-7 7 7 7" />
                       </svg>
-                      Back
+                      {group.city}
                     </button>
-                    <button
-                      onClick={async () => {
-                        const url = `${window.location.origin}/lists?city=${encodeURIComponent(group.city)}`
-                        const text = `${group.recos.length} recos in ${group.city} on RECO`
-                        if (navigator.share) {
-                          try { await navigator.share({ title: `RECO — ${group.city}`, text, url }); return } catch {}
-                        }
-                        await navigator.clipboard.writeText(url)
-                        setCopied(true)
-                        setTimeout(() => setCopied(false), 2000)
-                      }}
-                      className="flex items-center gap-1.5 text-[12px] font-semibold text-accent"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-                      </svg>
-                      {copied ? 'Copied' : 'Share'}
-                    </button>
-                  </div>
-                  <div className="px-6 pb-3">
-                    <div className="text-[26px] font-bold text-white tracking-[-0.6px]">{group.city}</div>
-                    <div className="text-[13px] text-text-faint mt-0.5">{group.recos.length} {group.recos.length === 1 ? 'reco' : 'recos'}</div>
-                  </div>
-                  {/* Sub-category pills */}
-                  {group.categories.length > 1 && (
-                    <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-6 pb-3">
-                      {group.categories.map((cat) => {
-                        const count = group.recos.filter(r => effectiveCat(r) === cat).length
-                        return (
-                          <span
-                            key={cat}
-                            className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full flex-shrink-0"
-                            style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
-                          >
-                            {effectiveCatLabel(cat)} {count}
-                          </span>
-                        )
-                      })}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] text-text-faint">{group.recos.length} recos</span>
+                      <button
+                        onClick={async () => {
+                          const url = `${window.location.origin}/lists?city=${encodeURIComponent(group.city)}`
+                          const text = `${group.recos.length} recos in ${group.city} on RECO`
+                          if (navigator.share) {
+                            try { await navigator.share({ title: `RECO — ${group.city}`, text, url }); return } catch {}
+                          }
+                          await navigator.clipboard.writeText(url)
+                          setCopied(true)
+                          setTimeout(() => setCopied(false), 2000)
+                        }}
+                        className="flex items-center gap-1 text-[12px] font-semibold text-accent"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                        {copied ? 'Copied' : 'Share'}
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* Category pills — scrolls with content */}
+                {group.categories.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-4 py-2.5">
+                    {group.categories.map((cat) => {
+                      const count = group.recos.filter(r => effectiveCat(r) === cat).length
+                      return (
+                        <span
+                          key={cat}
+                          className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full flex-shrink-0"
+                          style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
+                        >
+                          {effectiveCatLabel(cat)} {count}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* Reco cards */}
                 <div className="px-4 pt-3 flex flex-col gap-3">

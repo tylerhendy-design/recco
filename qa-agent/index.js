@@ -69,19 +69,19 @@ try {
     email: TEST_EMAIL,
     password: TEST_PASSWORD,
     name: TEST_NAME,
-    friendId: seed.friendId,
+    seedData: seed,
   });
   results.push(...journeyResults);
 } catch (err) {
   results.push({
-    journey: 'Post-Login Exploration',
+    journey: 'Agent',
     status: 'error',
     steps: [],
     bugs: [{ severity: 'critical', description: `Agent crashed: ${err.message}` }],
   });
 } finally {
   await browser.close();
-  await cleanupSeedAccounts(seed.userAId, seed.userBId);
+  await cleanupSeedAccounts(seed.userAId, seed.userBId, seed.userCId, seed.userDId);
 }
 
 const reportPath = await generateReport(BASE_URL, results);

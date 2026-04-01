@@ -433,21 +433,31 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       {/* Three-dot menu — drops from top-right of card */}
       {menuOpen && (
         <>
-          <div className="fixed inset-0 z-[180] bg-black/20 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-          <div className="absolute top-2 right-2 z-[181] bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[220px]">
+          <div className="fixed inset-0 z-[180] bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[181] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto">
+            {/* Drag handle */}
+            <div className="flex justify-center py-3">
+              <div className="w-10 h-1 rounded-full bg-border" />
+            </div>
             <button
-              className="w-full text-left px-4 py-3.5 text-[14px] text-text-secondary hover:bg-bg-card transition-colors border-b border-border"
+              className="w-full text-left px-6 py-4 text-[14px] active:bg-bg-card transition-colors border-b border-border"
               onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}
             >
               <div className="font-semibold text-white">🔄 Been there, done that</div>
               <div className="text-[12px] text-text-faint mt-0.5">Already done this — rate it or request something new</div>
             </button>
             <button
-              className="w-full text-left px-4 py-3.5 text-[14px] hover:bg-bg-card transition-colors"
+              className="w-full text-left px-6 py-4 text-[14px] active:bg-bg-card transition-colors"
               onClick={() => { setMenuOpen(false); onNoGo?.(reco) }}
             >
               <div className="font-semibold text-bad">🚫 No go</div>
               <div className="text-[12px] text-text-faint mt-0.5">Can't or won't do this — give them a reason</div>
+            </button>
+            <button
+              className="w-full py-4 text-center text-[14px] font-semibold text-text-secondary border-t border-border mt-1 active:bg-bg-card transition-colors"
+              onClick={() => setMenuOpen(false)}
+            >
+              Cancel
             </button>
           </div>
         </>

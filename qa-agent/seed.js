@@ -1,15 +1,15 @@
 /**
- * Recco QA Seed Script
- * Creates a fully loaded test environment matching QA_JOURNEYS.md data setup spec.
+ * Recco QA Seed Script — Comprehensive
  *
- * User A — test agent account (logs in, runs all journeys)
- * User B — accepted friend (has sent recos to A)
+ * Creates 4 users and a fully loaded test environment covering every journey.
  *
- * Seeded for User A:
- * - Friend connection with B (accepted)
- * - Recos from B: restaurant (with location), TV show, podcast, custom category
- * - A reco request from A
- * - Notifications: reco_received x4, friend_request x1, feedback_received x1
+ * User A (agent)    — logs in and runs all journeys
+ * User B (friend)   — accepted friend, has sent A recos, has sent A a message
+ * User C (requester)— has sent A a pending friend request (for J_FRIEND_ACCEPT)
+ * User D (stranger) — exists so A can search and send them a friend request (J_FRIEND_SEND)
+ *
+ * After certain journeys, the runner can query Supabase to verify
+ * cross-account side effects (e.g. did C get a friend_accepted notification?)
  */
 
 import 'dotenv/config';
@@ -46,59 +46,70 @@ async function createUser(email, fullName, username) {
 export async function seedTestAccounts() {
   console.log('🌱 Seeding test accounts...');
 
-  const emailA = `qa-a+${TAG}@recco-test.dev`;
-  const emailB = `qa-b+${TAG}@recco-test.dev`;
+  const emailA   = `qa-a+${TAG}@recco-test.dev`;
+  const emailB   = `qa-b+${TAG}@recco-test.dev`;
+  const emailC   = `qa-c+${TAG}@recco-test.dev`;
+  const emailD   = `qa-d+${TAG}@recco-test.dev`;
 
-  const userA = await createUser(emailA, 'QA Agent', `qa_agent_${TAG}`);
+  const userA = await createUser(emailA, 'QA Agent',    `qa_agent_${TAG}`);
   const userB = await createUser(emailB, 'Alex Friend', `alex_${TAG}`);
-  console.log('  ✓ Users A and B created');
+  const userC = await createUser(emailC, 'Sam Sender',  `sam_${TAG}`);
+  const userD = await createUser(emailD, 'Dana Discover', `dana_${TAG}`);
 
-  // ── Accepted friend connection B → A ────────────────────────
+  console.log('  ✓ Users A, B, C, D created');
+
+  // ── Friend connections ───────────────────────────────────────
+  // B ↔ A: accepted (so A has a friend to send recos to)
   await supabase.from('friend_connections').insert({
-    requester_id: userB.id,
-    addressee_id: userA.id,
-    status: 'accepted',
-    tier: 'close',
+    requester_id: userB.id, addressee_id: userA.id,
+    status: 'accepted', tier: 'close',
   });
-  console.log('  ✓ Friend connection (accepted)');
+
+  // C → A: pending (for J_FRIEND_ACCEPT — A will accept this)
+  await supabase.from('friend_connections').insert({
+    requester_id: userC.id, addressee_id: userA.id,
+    status: 'pending', tier: 'tribe',
+  });
+
+  // D: no connection yet (for J_FRIEND_SEND — A will search and add them)
+
+  console.log('  ✓ Friend connections: B↔A accepted, C→A pending, D unconnected');
 
   // ── Recos from B to A ────────────────────────────────────────
   const { data: recos, error: recoErr } = await supabase
     .from('recommendations')
     .insert([
       {
-        // Restaurant with location — for Journey 14 (expanded card) and Journey 6 (review)
-        sender_id: userB.id,
-        category: 'restaurant',
+        // Restaurant with full location data — J14, J6, J1 reference
+        sender_id: userB.id, category: 'restaurant',
         title: 'Padella',
         why_text: 'Best pasta in London. The pici cacio e pepe is unreal — go for lunch to skip the queue.',
-        meta: {
-          location: 'Borough Market, London',
-          address: '6 Southwark St, London SE1 1TQ',
-          price: '££',
-        },
+        meta: { location: 'Borough Market, London', address: '6 Southwark St, London SE1 1TQ', price: '££' },
       },
       {
-        // TV show — for Journey 2 (media reco)
-        sender_id: userB.id,
-        category: 'tv',
+        // TV show — J2 / J_AUTOFILL reference
+        sender_id: userB.id, category: 'tv',
         title: 'The Bear',
         why_text: 'Season 2 episode 6 is one of the best hours of television ever made.',
         meta: { platform: 'Disney+', genre: 'Drama' },
       },
       {
-        // Podcast — for Journey 2 (media reco)
-        sender_id: userB.id,
-        category: 'podcast',
+        // Podcast — already done, no review yet — for J6 review flow
+        sender_id: userB.id, category: 'podcast',
         title: "Conan O'Brien Needs a Friend",
-        why_text: 'Start with any Sona episode. Genuinely the funniest podcast out there.',
+        why_text: 'Start with any Sona episode.',
         meta: { platform: 'Spotify' },
       },
       {
-        // Custom category — for Journey 3
-        sender_id: userB.id,
-        category: 'custom',
-        custom_cat: 'Coffee',
+        // Culture — for testing Done tab and score colours
+        sender_id: userB.id, category: 'culture',
+        title: 'Tate Modern: Yayoi Kusama Exhibition',
+        why_text: 'The infinity rooms are worth it alone. Book ahead.',
+        meta: { location: 'London' },
+      },
+      {
+        // Custom category — for J3
+        sender_id: userB.id, category: 'custom', custom_cat: 'Coffee',
         title: 'Monmouth Coffee',
         why_text: 'The Borough Market branch. Queue is worth it.',
         meta: { location: 'Borough Market, London' },
@@ -107,92 +118,100 @@ export async function seedTestAccounts() {
     .select();
 
   if (recoErr) throw new Error(`Reco insert failed: ${recoErr.message}`);
-  console.log('  ✓ 4 recos created (restaurant, TV, podcast, custom)');
+  console.log('  ✓ 5 recos created (restaurant, TV, podcast, culture, custom)');
 
-  // ── Recipients — varied statuses ────────────────────────────
+  // ── Recipient statuses — varied for different journey needs ──
   await supabase.from('reco_recipients').insert([
-    { reco_id: recos[0].id, recipient_id: userA.id, status: 'unseen' },   // Padella — needs opening + review
-    { reco_id: recos[1].id, recipient_id: userA.id, status: 'seen' },     // The Bear — seen, needs marking done
+    { reco_id: recos[0].id, recipient_id: userA.id, status: 'unseen' },        // Padella — unseen
+    { reco_id: recos[1].id, recipient_id: userA.id, status: 'seen' },          // The Bear — seen, needs action
     { reco_id: recos[2].id, recipient_id: userA.id, status: 'done', score: null }, // Podcast — done, needs review
-    { reco_id: recos[3].id, recipient_id: userA.id, status: 'unseen' },   // Coffee — unseen
+    { reco_id: recos[3].id, recipient_id: userA.id, status: 'done', score: 8, feedback_text: 'Incredible, highly recommend' }, // Culture — done with review (Done tab)
+    { reco_id: recos[4].id, recipient_id: userA.id, status: 'unseen' },        // Coffee — unseen
   ]);
-  console.log('  ✓ Recipients seeded (unseen / seen / done-no-review / unseen)');
+  console.log('  ✓ Recipient statuses: unseen/seen/done-no-review/done-reviewed/unseen');
 
   // ── Message thread on Padella reco ───────────────────────────
-  await supabase.from('messages').insert({
-    reco_id: recos[0].id,
-    sender_id: userB.id,
-    recipient_id: userA.id,
-    body: 'Let me know what you think of the pici! 🍝',
-  });
+  await supabase.from('messages').insert([
+    {
+      reco_id: recos[0].id, sender_id: userB.id, recipient_id: userA.id,
+      body: 'Let me know what you think of the pici! 🍝',
+    },
+  ]);
   console.log('  ✓ Message thread on Padella reco');
 
-  // ── Reco request from A (Journey 5 test data) ────────────────
+  // ── Reco request from A to B ─────────────────────────────────
   await supabase.from('reco_requests').insert({
-    requester_id: userA.id,
-    target_id: userB.id,
-    category: 'restaurant',
-    context: 'Looking for somewhere good in Shoreditch',
-    fulfilled: false,
-    declined: false,
+    requester_id: userA.id, target_id: userB.id,
+    category: 'restaurant', context: 'Looking for somewhere good in Shoreditch',
+    fulfilled: false, declined: false,
   });
   console.log('  ✓ Reco request from A to B');
 
-  // ── Notifications ─────────────────────────────────────────────
+  // ── Notifications for A ──────────────────────────────────────
   await supabase.from('notifications').insert([
-    {
-      user_id: userA.id, type: 'reco_received',
-      actor_id: userB.id, reco_id: recos[0].id,
-      payload: { title: 'Padella' }, read: false,
-    },
-    {
-      user_id: userA.id, type: 'reco_received',
-      actor_id: userB.id, reco_id: recos[1].id,
-      payload: { title: 'The Bear' }, read: false,
-    },
-    {
-      user_id: userA.id, type: 'reco_received',
-      actor_id: userB.id, reco_id: recos[2].id,
-      payload: { title: "Conan O'Brien Needs a Friend" }, read: false,
-    },
-    {
-      user_id: userA.id, type: 'reco_received',
-      actor_id: userB.id, reco_id: recos[3].id,
-      payload: { title: 'Monmouth Coffee' }, read: false,
-    },
-    {
-      // Feedback received notification so agent can see review flow
-      user_id: userA.id, type: 'feedback_received',
-      actor_id: userB.id, reco_id: recos[0].id,
-      payload: { score: 8, title: 'Padella' }, read: false,
-    },
+    // Reco received notifications
+    { user_id: userA.id, type: 'reco_received', actor_id: userB.id, reco_id: recos[0].id, payload: { title: 'Padella' }, read: false },
+    { user_id: userA.id, type: 'reco_received', actor_id: userB.id, reco_id: recos[1].id, payload: { title: 'The Bear' }, read: false },
+    { user_id: userA.id, type: 'reco_received', actor_id: userB.id, reco_id: recos[2].id, payload: { title: "Conan O'Brien Needs a Friend" }, read: false },
+    { user_id: userA.id, type: 'reco_received', actor_id: userB.id, reco_id: recos[4].id, payload: { title: 'Monmouth Coffee' }, read: false },
+    // Feedback received — with score 8 (green badge)
+    { user_id: userA.id, type: 'feedback_received', actor_id: userB.id, reco_id: recos[3].id, payload: { score: 8, title: 'Tate Modern' }, read: false },
+    // Friend request from C (pending)
+    { user_id: userA.id, type: 'friend_request', actor_id: userC.id, payload: { username: `sam_${TAG}`, display_name: 'Sam Sender' }, read: false },
   ]);
-  console.log('  ✓ Notifications seeded (4x reco_received, 1x feedback_received)');
+  console.log('  ✓ Notifications: 4x reco_received, 1x feedback_received (score 8), 1x friend_request');
 
   console.log('\n✅ Seed complete.\n');
 
   // Sign in as User A
   const { data: sessionData, error: signInErr } = await supabaseAnon.auth.signInWithPassword({
-    email: emailA,
-    password: 'QaAgent_2024!',
+    email: emailA, password: 'QaAgent_2024!',
   });
   if (signInErr) throw new Error(`Sign-in failed: ${signInErr.message}`);
 
   return {
     userAId: userA.id,
     userBId: userB.id,
+    userCId: userC.id,
+    userDId: userD.id,
     email: emailA,
     password: 'QaAgent_2024!',
-    friendUsername: `alex_${TAG}`,
-    friendId: userB.id,
+    friendUsername:   `alex_${TAG}`,
+    requesterUsername: `sam_${TAG}`,
+    strangerUsername:  `dana_${TAG}`,
     session: sessionData.session,
   };
 }
 
-export async function cleanupSeedAccounts(userAId, userBId) {
-  for (const id of [userAId, userBId].filter(Boolean)) {
+/**
+ * Cross-account verification: check that a specific notification
+ * was created for another user after an action by User A.
+ * Used to verify bidirectional notification logic.
+ */
+export async function verifyCrossAccountNotification(userId, type, label) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, type, created_at')
+    .eq('user_id', userId)
+    .eq('type', type)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.log(`  ⚠️  Cross-account check failed: ${error.message}`);
+    return false;
+  }
+
+  const found = data && data.length > 0;
+  const icon = found ? '✅' : '❌';
+  console.log(`  ${icon} Cross-account check [${label}]: ${found ? 'notification found' : 'NOT found — bug'}`);
+  return found;
+}
+
+export async function cleanupSeedAccounts(...ids) {
+  for (const id of ids.filter(Boolean)) {
     const { error } = await supabase.auth.admin.deleteUser(id);
     if (error) console.warn(`  ⚠️  Could not delete ${id}: ${error.message}`);
   }
-  console.log('  🧹 Seed accounts deleted.');
+  console.log('  🧹 All seed accounts deleted.');
 }
