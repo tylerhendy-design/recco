@@ -2,13 +2,13 @@
 
 /**
  * Recco QA Agent
- * Simulates a real consumer walking through the signup journey on a Vercel preview URL.
- * Usage: node index.js --url https://recco-abc123.vercel.app
+ * Seeds a test user, logs in, and explores the app as a real consumer.
+ * Usage: node index.js --url https://givemeareco.com
  */
 
 import 'dotenv/config';
 import { chromium } from 'playwright';
-import { signupJourney } from './journeys/signup.js';
+import { exploreJourney } from './journeys/explore.js';
 import { generateReport } from './report.js';
 import { seedTestAccounts, cleanupSeedAccounts } from './seed.js';
 
@@ -64,13 +64,12 @@ if (bypassToken) console.log('🔓 Vercel bypass token will be applied on first 
 const results = [];
 
 try {
-  const signupResult = await signupJourney(context, {
+  const signupResult = await exploreJourney(context, {
     baseUrl: BASE_URL,
-    startUrl: START_URL,
     email: TEST_EMAIL,
     password: TEST_PASSWORD,
     name: TEST_NAME,
-    session: seed.session,
+    strangerUsername: seed.strangerUsername,
   });
   results.push(signupResult);
 } catch (err) {
@@ -82,7 +81,7 @@ try {
   });
 } finally {
   await browser.close();
-  await cleanupSeedAccounts(seed.userAId, seed.userBId);
+  await cleanupSeedAccounts(seed.userAId, seed.userBId, seed.userCId);
 }
 
 const reportPath = await generateReport(BASE_URL, results);

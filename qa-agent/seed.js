@@ -1,159 +1,198 @@
 /**
  * Recco QA Seed Script
- * Creates two fully set-up test users in Supabase so the agent has
- * a realistic account to test with — not a blank slate.
+ * Creates a realistic, fully-loaded test environment:
  *
- * User A (agent)  — the account the browser agent will log in as
- * User B (friend) — a seeded friend who has sent User A recommendations
+ * User A (agent)   — the account Claude will log in and explore as
+ * User B (friend)  — has sent User A several recos needing action
+ * User C (stranger)— exists so User A can search for and add as a friend
  *
- * Returns credentials for User A so the agent can log in.
+ * Seeded state for User A:
+ * - 4 unread notifications (reco received x3, friend request x1)
+ * - 3 recos from User B: one unseen, one seen (needs marking done + review), one done
+ * - 1 pending friend request from User C
+ * - 1 existing message thread with User B
  */
 
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-// Service role client for admin operations
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Anon client for signing in as a real user (generates a proper session)
 const supabaseAnon = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
 
-const SEED_TAG = `qa-seed-${Date.now()}`;
+const TAG = `qa-${Date.now()}`;
+
+async function createUser(email, fullName, username) {
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password: 'QaAgent_2024!',
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (error) throw new Error(`Could not create ${fullName}: ${error.message}`);
+
+  // Wait briefly for the trigger to create the profile row
+  await new Promise(r => setTimeout(r, 500));
+
+  await supabase
+    .from('profiles')
+    .update({ username, display_name: fullName })
+    .eq('id', data.user.id);
+
+  return data.user;
+}
 
 export async function seedTestAccounts() {
   console.log('🌱 Seeding test accounts...');
 
-  // ── Create auth users ───────────────────────────────────────
-  const emailA = `qa-agent-a+${SEED_TAG}@recco-test.dev`;
-  const emailB = `qa-agent-b+${SEED_TAG}@recco-test.dev`;
-  const password = 'QaAgent_2024!';
+  const emailA = `qa-a+${TAG}@recco-test.dev`;
+  const emailB = `qa-b+${TAG}@recco-test.dev`;
+  const emailC = `qa-c+${TAG}@recco-test.dev`;
 
-  const { data: userAData, error: errA } = await supabase.auth.admin.createUser({
-    email: emailA,
-    password,
-    email_confirm: true, // skip email verification
-    user_metadata: { full_name: 'QA Agent' },
-  });
-  if (errA) throw new Error(`Could not create User A: ${errA.message}`);
-  const userA = userAData.user;
+  const userA = await createUser(emailA, 'QA Agent', `qa_agent_${TAG}`);
+  const userB = await createUser(emailB, 'Alex Friend', `alex_friend_${TAG}`);
+  const userC = await createUser(emailC, 'Sam Stranger', `sam_stranger_${TAG}`);
 
-  const { data: userBData, error: errB } = await supabase.auth.admin.createUser({
-    email: emailB,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: 'QA Friend' },
-  });
-  if (errB) throw new Error(`Could not create User B: ${errB.message}`);
-  const userB = userBData.user;
+  console.log(`  ✓ Users created: Agent (A), Friend (B), Stranger (C)`);
 
-  console.log(`  ✓ Created User A (agent):  ${emailA}`);
-  console.log(`  ✓ Created User B (friend): ${emailB}`);
-
-  // ── Update profiles (trigger creates them, we fill in username) ─
-  await supabase
-    .from('profiles')
-    .update({ username: `qa_agent_${Date.now()}`, display_name: 'QA Agent' })
-    .eq('id', userA.id);
-
-  await supabase
-    .from('profiles')
-    .update({ username: `qa_friend_${Date.now()}`, display_name: 'QA Friend' })
-    .eq('id', userB.id);
-
-  // ── Create an accepted friend connection ───────────────────
-  const { error: friendErr } = await supabase.from('friend_connections').insert({
+  // ── Friend connection: B → A (accepted) ─────────────────────
+  await supabase.from('friend_connections').insert({
     requester_id: userB.id,
     addressee_id: userA.id,
     status: 'accepted',
     tier: 'close',
   });
-  if (friendErr) throw new Error(`Could not create friend connection: ${friendErr.message}`);
-  console.log('  ✓ Friend connection created (accepted)');
 
-  // ── User B sends User A two recommendations ────────────────
-  const recos = [
-    {
-      sender_id: userB.id,
-      category: 'restaurant',
-      title: 'Seed Restaurant',
-      why_text: 'Amazing pasta, you have to try it.',
-      meta: { location: 'London' },
-    },
-    {
-      sender_id: userB.id,
-      category: 'film',
-      title: 'Seed Film',
-      why_text: 'Best film I have seen this year.',
-      meta: {},
-    },
-  ];
+  // ── Friend request: C → A (pending) — Agent can accept or ignore ─
+  await supabase.from('friend_connections').insert({
+    requester_id: userC.id,
+    addressee_id: userA.id,
+    status: 'pending',
+    tier: 'tribe',
+  });
 
-  const { data: insertedRecos, error: recoErr } = await supabase
+  console.log(`  ✓ Friend connections seeded`);
+
+  // ── Recommendations from B to A ─────────────────────────────
+  const { data: recos, error: recoErr } = await supabase
     .from('recommendations')
-    .insert(recos)
+    .insert([
+      {
+        // Reco 1: London restaurant — unseen, needs opening + marking done + review
+        sender_id: userB.id,
+        category: 'restaurant',
+        title: 'Padella',
+        why_text: 'Best pasta in London, the pici cacio e pepe is unreal. Go for lunch to avoid the queue.',
+        meta: { location: 'Borough Market, London', google_place_id: 'ChIJ...' },
+      },
+      {
+        // Reco 2: Podcast — seen but not actioned
+        sender_id: userB.id,
+        category: 'podcast',
+        title: 'Conan O\'Brien Needs a Friend',
+        why_text: 'Genuinely the funniest podcast out there, start with the Sona episodes.',
+        meta: { platform: 'Spotify' },
+      },
+      {
+        // Reco 3: Culture / experience — already done, so Agent can write a review
+        sender_id: userB.id,
+        category: 'culture',
+        title: 'Tate Modern: Yayoi Kusama Exhibition',
+        why_text: 'The infinity rooms are worth it alone. Book ahead.',
+        meta: { location: 'London', url: 'https://www.tate.org.uk' },
+      },
+    ])
     .select();
-  if (recoErr) throw new Error(`Could not insert recommendations: ${recoErr.message}`);
-  console.log(`  ✓ ${insertedRecos.length} recommendations created`);
 
-  // ── Add User A as recipient of both recos ──────────────────
-  const recipients = insertedRecos.map((r) => ({
-    reco_id: r.id,
+  if (recoErr) throw new Error(`Reco insert failed: ${recoErr.message}`);
+  console.log(`  ✓ 3 recommendations created (restaurant, podcast, culture)`);
+
+  // ── Reco recipients ──────────────────────────────────────────
+  await supabase.from('reco_recipients').insert([
+    { reco_id: recos[0].id, recipient_id: userA.id, status: 'unseen' },
+    { reco_id: recos[1].id, recipient_id: userA.id, status: 'seen' },
+    { reco_id: recos[2].id, recipient_id: userA.id, status: 'done', score: null }, // done but no review yet
+  ]);
+
+  console.log(`  ✓ User A added as recipient (unseen / seen / done-no-review)`);
+
+  // ── Existing message from B on the Padella reco ──────────────
+  await supabase.from('messages').insert({
+    reco_id: recos[0].id,
+    sender_id: userB.id,
     recipient_id: userA.id,
-    status: 'unseen',
-  }));
+    body: 'Let me know what you think of the pici! 🍝',
+  });
 
-  const { error: recipErr } = await supabase.from('reco_recipients').insert(recipients);
-  if (recipErr) throw new Error(`Could not insert reco recipients: ${recipErr.message}`);
-  console.log('  ✓ User A added as recipient');
+  console.log(`  ✓ Message thread seeded on Padella reco`);
 
-  // ── Create notifications for User A ───────────────────────
-  const notifications = insertedRecos.map((r) => ({
-    user_id: userA.id,
-    type: 'reco_received',
-    actor_id: userB.id,
-    reco_id: r.id,
-    payload: { title: r.title },
-    read: false,
-  }));
+  // ── Notifications ────────────────────────────────────────────
+  await supabase.from('notifications').insert([
+    {
+      user_id: userA.id,
+      type: 'reco_received',
+      actor_id: userB.id,
+      reco_id: recos[0].id,
+      payload: { title: 'Padella' },
+      read: false,
+    },
+    {
+      user_id: userA.id,
+      type: 'reco_received',
+      actor_id: userB.id,
+      reco_id: recos[1].id,
+      payload: { title: 'Conan O\'Brien Needs a Friend' },
+      read: false,
+    },
+    {
+      user_id: userA.id,
+      type: 'reco_received',
+      actor_id: userB.id,
+      reco_id: recos[2].id,
+      payload: { title: 'Tate Modern: Yayoi Kusama Exhibition' },
+      read: true,
+    },
+    {
+      user_id: userA.id,
+      type: 'friend_request',
+      actor_id: userC.id,
+      payload: { username: `sam_stranger_${TAG}` },
+      read: false,
+    },
+  ]);
 
-  const { error: notifErr } = await supabase.from('notifications').insert(notifications);
-  if (notifErr) throw new Error(`Could not insert notifications: ${notifErr.message}`);
-  console.log('  ✓ Notifications created for User A');
-
+  console.log(`  ✓ Notifications seeded (3 reco, 1 friend request)`);
   console.log('\n✅ Seed complete.\n');
 
-  // Sign in as User A to get a real session token we can inject into the browser
+  // ── Sign in as User A to get a session ───────────────────────
   const { data: sessionData, error: signInErr } = await supabaseAnon.auth.signInWithPassword({
     email: emailA,
-    password,
+    password: 'QaAgent_2024!',
   });
-  if (signInErr) throw new Error(`Could not sign in as User A: ${signInErr.message}`);
-  console.log('  ✓ Session token obtained for User A');
+  if (signInErr) throw new Error(`Sign-in failed: ${signInErr.message}`);
 
   return {
     userAId: userA.id,
     userBId: userB.id,
+    userCId: userC.id,
     email: emailA,
-    password,
-    friendEmail: emailB,
-    session: sessionData.session, // access_token, refresh_token, user etc.
+    password: 'QaAgent_2024!',
+    friendUsername: `alex_friend_${TAG}`,
+    strangerUsername: `sam_stranger_${TAG}`,
+    session: sessionData.session,
   };
 }
 
-/**
- * Clean up both seed users (and all cascade-deleted data).
- */
-export async function cleanupSeedAccounts(userAId, userBId) {
-  const ids = [userAId, userBId].filter(Boolean);
-  for (const id of ids) {
+export async function cleanupSeedAccounts(userAId, userBId, userCId) {
+  for (const id of [userAId, userBId, userCId].filter(Boolean)) {
     const { error } = await supabase.auth.admin.deleteUser(id);
     if (error) console.warn(`  ⚠️  Could not delete user ${id}: ${error.message}`);
   }
-  console.log('  🧹 Seed accounts deleted.');
+  console.log('  🧹 All seed accounts deleted.');
 }

@@ -142,32 +142,30 @@ export async function signupJourney(context, { baseUrl, startUrl, email, passwor
   const steps = [];
   let stepCount = 0;
 
-  console.log('🧪 Journey: Post-Login Onboarding & Core Flow');
+  console.log('🧪 Journey: Post-Login Exploration');
 
-  if (session) {
-    const projectRef = process.env.SUPABASE_URL.replace('https://', '').split('.')[0];
-    const storageKey = `sb-${projectRef}-auth-token`;
-    const sessionValue = JSON.stringify({
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-      expires_at: session.expires_at,
-      expires_in: session.expires_in,
-      token_type: 'bearer',
-      user: session.user,
-    });
-
-    // Must be added to the PAGE (not context) before goto, so it runs before app scripts
-    await page.addInitScript(({ key, value }) => {
-      localStorage.setItem(key, value);
-    }, { key: storageKey, value: sessionValue });
-
-    console.log('  🔑 Session will be injected on page load');
+  // ── Deterministic login — hardcoded, no Claude vision needed ──
+  try {
+    console.log('  🔐 Logging in...');
+    await page.goto(`${baseUrl}/login?method=email`, { waitUntil: 'networkidle', timeout: 15000 });
+    await page.fill('[data-testid="email-input"]', email);
+    await page.fill('[data-testid="password-input"]', password);
+    await page.click('[data-testid="email-submit"]');
+    await page.waitForURL('**/home**', { timeout: 15000 });
+    console.log('  ✓ Logged in, landed on /home');
+  } catch (err) {
+    bugs.push({ severity: 'critical', description: `Login failed: ${err.message}` });
+    await page.close();
+    return {
+      journey: 'Post-Login Exploration',
+      status: 'critical',
+      steps: ['Login attempted'],
+      bugs,
+      screenshotDir: SCREENSHOT_DIR,
+    };
   }
 
-  // Go directly to /home — skip the login page entirely
-  await page.goto(`${baseUrl}/home`, { waitUntil: 'networkidle', timeout: 20000 });
-  console.log(`  📍 Landed at: ${page.url()}`);
-
+  // ── Claude-driven exploration starts here ─────────────────────
   while (stepCount < MAX_STEPS) {
     stepCount++;
 
