@@ -465,86 +465,95 @@ function HomePageInner() {
 
       {/* Filter pills — horizontal scrollable, compact */}
       {tab === 'todo' && (
-      <div className="flex-shrink-0 relative" style={{ zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 112 : 30 }}>
-        {/* Backdrop for open dropdowns */}
-        {(catDDOpen || timeDDOpen || senderDDOpen) && (
-          <div className="fixed inset-0 z-[110]" onClick={closeAllDD} />
-        )}
+      <div className="flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-5 py-2.5">
           {/* Category pill */}
-          <div className="relative flex-shrink-0" style={{ zIndex: catDDOpen ? 111 : 'auto' }}>
-            <button
-              onClick={() => { setCatDDOpen(o => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all ${
-                catFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
-              }`}
-            >
-              {catLabel}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform ${catDDOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            {catDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[180px] z-[111]">
-                {CATEGORY_FILTERS.map((f) => (
-                  <button key={f.value} onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }} className={`w-full text-left px-4 py-3 text-[14px] border-b border-[#1a1a1e] transition-colors ${catFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => { setCatDDOpen(o => !o); setTimeDDOpen(false); setSenderDDOpen(false) }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all flex-shrink-0 ${
+              catFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+            }`}
+          >
+            {catLabel}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
 
           {/* Time pill */}
-          <div className="relative flex-shrink-0" style={{ zIndex: timeDDOpen ? 111 : 'auto' }}>
-            <button
-              onClick={() => { setTimeDDOpen(o => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all ${
-                timeFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
-              }`}
-            >
-              {timeLabel}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform ${timeDDOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            {timeDDOpen && (
-              <div className="absolute top-full left-0 mt-1.5 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[160px] z-[111]">
-                {TIME_FILTERS.map((f) => (
-                  <button key={f.value} onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }} className={`w-full text-left px-4 py-3 text-[14px] border-b border-[#1a1a1e] transition-colors ${timeFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => { setTimeDDOpen(o => !o); setCatDDOpen(false); setSenderDDOpen(false) }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all flex-shrink-0 ${
+              timeFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+            }`}
+          >
+            {timeLabel}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
 
           {/* Sender pill */}
-          <div className="relative flex-shrink-0" style={{ zIndex: senderDDOpen ? 111 : 'auto' }}>
-            <button
-              onClick={() => { setSenderDDOpen(o => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all ${
-                senderFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
-              }`}
-            >
-              {senderLabel}
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform ${senderDDOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            {senderDDOpen && (
-              <div className="absolute top-full right-0 mt-1.5 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[200px] max-h-[50vh] overflow-y-auto z-[111]">
-                {senderOptions.map((f) => (
-                  <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-4 py-3 border-b border-[#1a1a1e] transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
-                    <div className="text-[14px]">{f.label}</div>
-                    {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => { setSenderDDOpen(o => !o); setCatDDOpen(false); setTimeDDOpen(false) }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all flex-shrink-0 ${
+              senderFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+            }`}
+          >
+            {senderLabel}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
 
-          {/* Clear all — only when filters active */}
+          {/* Clear all */}
           {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
             <button
               onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all') }}
-              className="flex-shrink-0 px-3 py-2 rounded-full text-[12px] font-semibold text-text-faint border border-dashed border-border hover:text-white transition-colors"
+              className="flex-shrink-0 px-3 py-2 rounded-full text-[12px] font-semibold text-text-faint border border-dashed border-border"
             >
               Clear all ✕
             </button>
           )}
         </div>
       </div>
+      )}
+
+      {/* Filter bottom sheets — fixed position, above everything */}
+      {catDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setCatDDOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[201] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto">
+            <div className="flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
+            <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] px-6 mb-2">Category</div>
+            {CATEGORY_FILTERS.map((f) => (
+              <button key={f.value} onClick={() => { setCatFilter(f.value); setCatDDOpen(false) }} className={`w-full text-left px-6 py-3.5 text-[15px] active:bg-bg-card transition-colors ${catFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+      {timeDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setTimeDDOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[201] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto">
+            <div className="flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
+            <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] px-6 mb-2">Time</div>
+            {TIME_FILTERS.map((f) => (
+              <button key={f.value} onClick={() => { setTimeFilter(f.value); setTimeDDOpen(false) }} className={`w-full text-left px-6 py-3.5 text-[15px] active:bg-bg-card transition-colors ${timeFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>{f.label}</button>
+            ))}
+          </div>
+        </>
+      )}
+      {senderDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setSenderDDOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[201] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto max-h-[60vh] overflow-y-auto">
+            <div className="sticky top-0 bg-bg-elevated">
+              <div className="flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
+              <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] px-6 mb-2">Sent by</div>
+            </div>
+            {senderOptions.map((f) => (
+              <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
+                <div className="text-[15px]">{f.label}</div>
+                {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
 
