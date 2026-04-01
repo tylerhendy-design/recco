@@ -359,8 +359,10 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
 
+  const sendingRef = useRef(false)
   async function handleSend(force = false) {
-    if (!canSend || !userId || !category) return
+    if (!canSend || !userId || !category || sendingRef.current) return
+    sendingRef.current = true
     setSending(true)
     setSendError(null)
 
@@ -375,7 +377,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
       })
       if (duplicateNames.length > 0) {
         setDupeWarning(`You've already sent this to ${duplicateNames.join(', ')}`)
-        setSending(false)
+        setSending(false); sendingRef.current = false
         return
       }
     }
@@ -474,12 +476,12 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
       recipientIds: selectedFriends.map((f) => f.id),
     })
 
-    if (error) { setSendError(error); setSending(false); return }
-    setSending(false)
+    if (error) { setSendError(error); setSending(false); sendingRef.current = false; return }
+    setSending(false); sendingRef.current = false
     setSent(true)
     } catch (e: any) {
       setSendError(e?.message ?? 'Something went wrong')
-      setSending(false)
+      setSending(false); sendingRef.current = false
     }
   }
 
@@ -562,7 +564,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
           meta,
           recipientIds: selectedFriends.map((f) => f.id),
         })
-        if (error) { setSendError(error); setSending(false); return }
+        if (error) { setSendError(error); setSending(false); sendingRef.current = false; return }
 
         // Notify the original sender that their reco was forwarded
         if (originalSenderId && originalSenderId !== userId) {
@@ -583,11 +585,11 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
           })
         }
 
-        setSending(false)
+        setSending(false); sendingRef.current = false
         setSent(true)
       } catch (e: any) {
         setSendError(e?.message ?? 'Something went wrong')
-        setSending(false)
+        setSending(false); sendingRef.current = false
       }
     }
 

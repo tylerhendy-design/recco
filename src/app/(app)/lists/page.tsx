@@ -146,14 +146,19 @@ export default function ListsPage() {
     return null
   }
 
-  // Group recos by city
+  // Group recos by city — deduplicate by title+category (same reco from multiple senders = one entry)
   const cityGroups = useMemo(() => {
     const groups = new Map<string, Reco[]>()
+    const seen = new Set<string>()
 
     for (const reco of allRecos) {
       const city = extractCity(reco)
       if (!city) continue
       if (catFilter && effectiveCat(reco) !== catFilter) continue
+      // Deduplicate: same title + category = same reco
+      const dedupeKey = `${reco.category}::${reco.title.toLowerCase().trim()}`
+      if (seen.has(dedupeKey)) continue
+      seen.add(dedupeKey)
       const key = city.toLowerCase()
       if (!groups.has(key)) groups.set(key, [])
       groups.get(key)!.push(reco)
