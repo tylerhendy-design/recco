@@ -15,8 +15,11 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
-  const [loading, setLoading] = useState<'google' | 'apple' | null>(null)
+  const [loading, setLoading] = useState<'google' | 'apple' | 'email' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showEmail, setShowEmail] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const searchParams = useSearchParams()
   const supabase = createClient()
 
@@ -26,6 +29,28 @@ function LoginForm() {
     else if (err === 'no_code') setError('No auth code received. Please try again.')
     else if (err) setError(`Error: ${err}`)
   }, [searchParams])
+
+  async function signInWithEmail() {
+    if (!email.trim() || !password.trim()) return
+    setLoading('email')
+    setError(null)
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    if (error) {
+      // If sign in fails, try sign up
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback` },
+      })
+      if (signUpError) {
+        setError(signUpError.message)
+        setLoading(null)
+        return
+      }
+    }
+    // Redirect on success
+    window.location.href = '/home'
+  }
 
   async function signIn(provider: 'google' | 'apple') {
     setLoading(provider)
@@ -86,6 +111,53 @@ function LoginForm() {
                 Continue with Apple
               </button>
             </div>
+          </div>
+
+          {/* Email/password — for testing and QA */}
+          <div className="w-full mt-4">
+            {!showEmail ? (
+              <button
+                onClick={() => setShowEmail(true)}
+                className="w-full text-center text-[12px] text-text-faint hover:text-text-muted transition-colors py-2"
+                data-testid="show-email-login"
+              >
+                Sign in with email instead
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2.5">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#1e1e22] border border-border rounded-btn px-4 py-3.5 text-[14px] text-white outline-none placeholder:text-[#555] focus:border-accent font-sans"
+                  data-testid="email-input"
+                  autoComplete="email"
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') signInWithEmail() }}
+                  className="w-full bg-[#1e1e22] border border-border rounded-btn px-4 py-3.5 text-[14px] text-white outline-none placeholder:text-[#555] focus:border-accent font-sans"
+                  data-testid="password-input"
+                  autoComplete="current-password"
+                />
+                <button
+                  onClick={signInWithEmail}
+                  disabled={loading === 'email' || !email.trim() || !password.trim()}
+                  className="w-full bg-accent text-accent-fg py-3.5 rounded-btn text-[15px] font-semibold disabled:opacity-40 transition-opacity"
+                  data-testid="email-submit"
+                >
+                  {loading === 'email' ? (
+                    <span className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin inline-block" />
+                  ) : (
+                    'Continue'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {error && (
