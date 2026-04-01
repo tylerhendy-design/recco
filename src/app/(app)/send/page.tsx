@@ -413,6 +413,24 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
     const links: string[] = []
     if (linkInput.trim()) links.push(linkInput.trim())
 
+    // Extract location from any Google Maps links if we don't have it yet
+    const allLinks = [...links]
+    if (!meta.location && !meta.address) {
+      const mapsLink = allLinks.find(l => l.includes('google.com/maps') || l.includes('goo.gl') || l.includes('maps.app.goo.gl'))
+      if (mapsLink) {
+        try {
+          const res = await fetch(`/api/link-meta?url=${encodeURIComponent(mapsLink)}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.city) meta.location = data.city + (data.country ? `, ${data.country}` : '')
+            if (data.address) meta.address = data.address
+            if (data.title && !title.trim()) setTitle(data.title)
+            if (data.artworkUrl && !meta.artwork_url) meta.artwork_url = data.artworkUrl
+          }
+        } catch {}
+      }
+    }
+
     // Upload voice note if present
     let whyAudioUrl: string | undefined
     if (voiceResult?.blob) {
