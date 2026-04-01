@@ -117,7 +117,29 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      return NextResponse.json({ type: 'place', title: placeName, city, country, address })
+      // Try to fetch a photo via Google Places API
+      let artworkUrl: string | null = null
+      const placesKey = process.env.GOOGLE_PLACES_API_KEY
+      if (placeName && placesKey) {
+        try {
+          // Search for the place to get a place_id
+          const searchQuery = [placeName, city, country].filter(Boolean).join(', ')
+          const searchRes = await fetch(
+            `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(searchQuery)}&inputtype=textquery&fields=place_id,photos&key=${placesKey}`
+          )
+          const searchData = await searchRes.json()
+          const photoRef = searchData.candidates?.[0]?.photos?.[0]?.photo_reference
+          if (photoRef) {
+            const photoRes = await fetch(
+              `https://maps.googleapis.com/maps/api/place/photo?maxwidth=1200&photo_reference=${photoRef}&key=${placesKey}`,
+              { redirect: 'follow' }
+            )
+            artworkUrl = photoRes.url
+          }
+        } catch {}
+      }
+
+      return NextResponse.json({ type: 'place', title: placeName, city, country, address, artworkUrl })
     }
 
     return NextResponse.json({ error: 'Unsupported URL' }, { status: 400 })

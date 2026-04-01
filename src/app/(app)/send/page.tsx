@@ -434,6 +434,16 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
     if (voiceResult?.waveform) meta.why_audio_waveform = voiceResult.waveform
     if (voiceResult?.durationSec) meta.why_audio_duration = Math.round(voiceResult.durationSec)
 
+    // Last-resort image fetch for venues with no image
+    if (!meta.artwork_url && isRestaurant && title.trim()) {
+      try {
+        const q = [title.trim(), meta.location, meta.address].filter(Boolean).join(', ')
+        const res = await fetch(`/api/place-photo?q=${encodeURIComponent(q as string)}`)
+        const data = await res.json()
+        if (data.photoUrl) meta.artwork_url = data.photoUrl
+      } catch {}
+    }
+
     const { error } = await sendReco({
       senderId: userId,
       category: finalCat,
