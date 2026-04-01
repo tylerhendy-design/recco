@@ -93,10 +93,14 @@ export default function ListsPage() {
     // Strip postcodes from start/end of a string (e.g. "1016 HD Amsterdam" → "Amsterdam", "London SW1A 2AA" → "London")
     function stripPostcodes(s: string): string {
       return s
-        // Leading: "1016 HD Amsterdam" or "EC2R 8AH London"
-        .replace(/^[\dA-Z]{1,4}\s*[A-Z]{0,2}\s*/i, '')
-        // Trailing: "London SW1A 2AA" or "Amsterdam 1016"
-        .replace(/\s+[\dA-Z]{1,4}\s*[A-Z]{0,3}\s*\d*$/i, '')
+        // Leading: EU numeric postcodes "1016 HD Amsterdam", "75001 Paris"
+        .replace(/^\d{3,5}\s*[A-Z]{0,2}\s+/i, '')
+        // Leading: UK postcodes "EC2R 8AH London"
+        .replace(/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\s+/i, '')
+        // Trailing: EU numeric postcodes "Amsterdam 1016"
+        .replace(/\s+\d{3,5}\s*[A-Z]{0,2}$/i, '')
+        // Trailing: UK postcodes "London SW1A 2AA"
+        .replace(/\s+[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i, '')
         .trim()
     }
 
