@@ -166,19 +166,24 @@ export async function submitFeedback({
 
   if (updateError) return { error: updateError.message }
 
-  // 2. Create a feedback notification for the sender
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: senderId,
-      type: 'feedback_received',
-      actor_id: recipientId,
-      reco_id: recoId,
-      payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
-    })
+  // Self-recos (quick-add): skip notification and sin bin — user is reviewing their own addition
+  const isSelfReco = senderId === recipientId
 
-  // 3. Check if this bad score just triggered a sin bin — count via reco_recipients join only
-  if (score <= SCORE.BAD_MAX && recoCategory) {
+  // 2. Create a feedback notification for the sender (not for self-recos)
+  if (!isSelfReco) {
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: senderId,
+        type: 'feedback_received',
+        actor_id: recipientId,
+        reco_id: recoId,
+        payload: { score, feedback_text: feedbackText, reco_title: recoTitle, reco_category: recoCategory },
+      })
+  }
+
+  // 3. Check if this bad score just triggered a sin bin (not for self-recos)
+  if (!isSelfReco && score <= SCORE.BAD_MAX && recoCategory) {
     // Join through recommendations — only reads reco_recipients rows Vanessa (recipientId) owns
     const { data: badRows } = await supabase
       .from('reco_recipients')
@@ -248,13 +253,15 @@ export async function markBeenThere(recoId: string, recipientId: string, senderI
     .eq('reco_id', recoId)
     .eq('recipient_id', recipientId)
   if (error) return { error: error.message }
-  await (supabase.from('notifications') as any).insert({
-    user_id: senderId,
-    type: 'feedback_received',
-    actor_id: recipientId,
-    reco_id: recoId,
-    payload: { subtype: 'been_there', reco_title: recoTitle },
-  })
+  if (senderId !== recipientId) {
+    await (supabase.from('notifications') as any).insert({
+      user_id: senderId,
+      type: 'feedback_received',
+      actor_id: recipientId,
+      reco_id: recoId,
+      payload: { subtype: 'been_there', reco_title: recoTitle },
+    })
+  }
   return { error: null }
 }
 
@@ -266,13 +273,15 @@ export async function markNoGo(recoId: string, recipientId: string, senderId: st
     .eq('reco_id', recoId)
     .eq('recipient_id', recipientId)
   if (error) return { error: error.message }
-  await (supabase.from('notifications') as any).insert({
-    user_id: senderId,
-    type: 'feedback_received',
-    actor_id: recipientId,
-    reco_id: recoId,
-    payload: { subtype: 'no_go', feedback_text: reason, reco_title: recoTitle },
-  })
+  if (senderId !== recipientId) {
+    await (supabase.from('notifications') as any).insert({
+      user_id: senderId,
+      type: 'feedback_received',
+      actor_id: recipientId,
+      reco_id: recoId,
+      payload: { subtype: 'no_go', feedback_text: reason, reco_title: recoTitle },
+    })
+  }
   return { error: null }
 }
 

@@ -145,6 +145,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
   const [editNotes, setEditNotes] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const [localMeta, setLocalMeta] = useState(reco.meta)
+  const [showMap, setShowMap] = useState(false)
 
   function startEditing() {
     setEditLinks([...(localMeta?.links ?? []), ''])
@@ -476,9 +477,19 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
           >
             {/* Image with back button + three-dot overlaid */}
             <div className="relative">
-              {hasImage && (
+              {hasImage && !showMap && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={localMeta?.artwork_url ?? reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
+              )}
+              {showMap && hasLocation(reco) && (
+                <div className="w-full h-[220px] bg-[#1a1a1e] rounded-t-[24px] flex items-center justify-center overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`/api/static-map?q=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location || reco.meta?.city].filter(Boolean).join(', '))}`}
+                    alt="Map"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               )}
               {/* Back button — top-left */}
               <button
@@ -491,6 +502,25 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </svg>
                 Back
               </button>
+              {/* Image/Map toggle — bottom-center, only for venue recos with both image and location */}
+              {hasImage && hasLocation(reco) && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 bg-black/50 backdrop-blur-sm rounded-full p-1">
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setShowMap(false) }}
+                    className={`px-3 py-1 rounded-full text-[10px] font-semibold transition-colors ${!showMap ? 'bg-white text-black' : 'text-white/70'}`}
+                  >
+                    Photo
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); setShowMap(true) }}
+                    className={`px-3 py-1 rounded-full text-[10px] font-semibold transition-colors ${showMap ? 'bg-white text-black' : 'text-white/70'}`}
+                  >
+                    Map
+                  </button>
+                </div>
+              )}
               {/* Three-dot menu — top-right */}
               {hasActions && (
                 <button
@@ -537,9 +567,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                   · from {manualSender ? (
                     <span className="text-text-secondary font-medium">{manualSender}</span>
                   ) : reco.recommenders && reco.recommenders.length > 0 ? (
-                    <span className="text-text-secondary font-medium">{reco.recommenders.map((r) => r.profile.display_name.split(' ')[0]).slice(0, 2).join(' & ')}</span>
+                    <span className="text-text-secondary font-medium">{reco.recommenders.map((r, i) => (
+                      <a key={r.profile.id} href={`/friends/${r.profile.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent hover:underline">{r.profile.display_name.split(' ')[0]}{i < Math.min(reco.recommenders!.length, 2) - 1 ? ' & ' : ''}</a>
+                    ))}</span>
                   ) : reco.sender?.display_name ? (
-                    <span className="text-text-secondary font-medium">{reco.sender.display_name.split(' ')[0]}</span>
+                    <a href={`/friends/${reco.sender.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent font-medium hover:underline">{reco.sender.display_name.split(' ')[0]}</a>
                   ) : null}
                 </span>
                 {reco.created_at && (

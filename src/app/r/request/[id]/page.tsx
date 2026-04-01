@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createAuthClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -39,7 +41,25 @@ export default async function PublicRequestPage({ params }: { params: Promise<{ 
     )
   }
 
-  // Fetch the requester's profile
+  // If logged in, redirect to Give page pre-filled with request context
+  try {
+    const authClient = await createAuthClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (user) {
+      const payload = typeof request.context === 'string' ? JSON.parse(request.context) : request.context
+      const params = new URLSearchParams()
+      params.set('mode', 'give')
+      params.set('to', request.requester_id)
+      if (request.category) params.set('category', request.category)
+      if (payload?.details) params.set('context', `Request: ${payload.details}`)
+      redirect(`/reco?${params.toString()}`)
+    }
+  } catch (e) {
+    // redirect() throws a special Next.js error — rethrow it
+    if (e && typeof e === 'object' && 'digest' in e) throw e
+  }
+
+  // Fetch the requester's profile (for non-logged-in users)
   const { data: profile } = await supabase
     .from('profiles')
     .select('display_name, username, avatar_url')
