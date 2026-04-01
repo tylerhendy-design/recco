@@ -303,6 +303,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         <div className="flex-1 min-w-0">
           <div className="mb-1.5"><CategoryDot category={reco.category} customLabel={reco.custom_cat} /></div>
           <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
+          {(reco.meta?.location || reco.meta?.address) && (
+            <div className="flex items-center gap-1 mb-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="text-text-faint flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span className="text-[12px] text-text-faint">{reco.meta?.location || reco.meta?.address}</span>
+            </div>
+          )}
           {(recommenderNames || when) && (
             <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
@@ -476,13 +482,13 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               if (moved < 8) close()
             }}
           >
-            {/* Image with back button overlaid */}
+            {/* Image with back button + three-dot overlaid */}
             <div className="relative">
               {hasImage && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={localMeta?.artwork_url ?? reco.meta.artwork_url!} alt={reco.title} className="w-full h-[220px] object-cover rounded-t-[24px]" />
               )}
-              {/* Back button — top-left over image */}
+              {/* Back button — top-left */}
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => { e.stopPropagation(); close() }}
@@ -493,22 +499,43 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </svg>
                 Back
               </button>
+              {/* Three-dot menu — top-right */}
+              {hasActions && (
+                <button
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex gap-[4px] items-center justify-center"
+                >
+                  {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-white opacity-80" />)}
+                </button>
+              )}
             </div>
 
             {/* Content — no stopPropagation so tapping anywhere closes the sheet */}
             <div className="px-4 pt-4 pb-8">
-              {/* Back button when no image — match the visual weight of the image header */}
+              {/* Back button + three-dot when no image */}
               {!hasImage && (
-                <button
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); close() }}
-                  className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary mb-5 mt-1"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 5l-7 7 7 7" />
-                  </svg>
-                  Back
-                </button>
+                <div className="flex items-center justify-between mb-5 mt-1">
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); close() }}
+                    className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 12H5M12 5l-7 7 7 7" />
+                    </svg>
+                    Back
+                  </button>
+                  {hasActions && (
+                    <button
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o) }}
+                      className="flex gap-[4px] items-center p-1.5"
+                    >
+                      {[0, 1, 2].map((i) => <div key={i} className="w-[5px] h-[5px] rounded-full bg-text-faint" />)}
+                    </button>
+                  )}
+                </div>
               )}
 
               {/* ── Header: category · sender · date ── */}
