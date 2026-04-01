@@ -20,7 +20,9 @@ export default function ListsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [catFilter, setCatFilter] = useState<string | null>(null)
-  const [expandedCity, setExpandedCity] = useState<string | null>(null)
+  const [selectedCity, setSelectedCity] = useState<string | null>(null)
+  const [slideDir, setSlideDir] = useState<'in' | 'out' | null>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -235,35 +237,39 @@ export default function ListsPage() {
         </div>
       )}
 
-      {/* City list */}
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-8 text-center gap-3">
-            <div className="text-[36px] mb-1">🗺️</div>
-            <div className="text-[17px] font-semibold text-white">
-              {search.trim() ? `No recos in "${search.trim()}"` : 'No location-based recos yet'}
+      {/* Content — slides between city list and city detail */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* City list view */}
+        <div
+          className={`absolute inset-0 overflow-y-auto scrollbar-none pb-6 transition-transform duration-300 ease-out ${
+            selectedCity ? '-translate-x-full' : 'translate-x-0'
+          }`}
+        >
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-5 h-5 border-2 border-border border-t-accent rounded-full animate-spin" />
             </div>
-            <div className="text-[14px] text-text-muted leading-[1.6]">
-              {search.trim()
-                ? 'Try a different city or clear the search.'
-                : 'When friends give you recos with locations, they will be grouped by city here. Perfect for planning trips.'
-              }
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-8 text-center gap-3">
+              <div className="text-[36px] mb-1">🗺️</div>
+              <div className="text-[17px] font-semibold text-white">
+                {search.trim() ? `No recos in "${search.trim()}"` : 'No location-based recos yet'}
+              </div>
+              <div className="text-[14px] text-text-muted leading-[1.6]">
+                {search.trim()
+                  ? 'Try a different city or clear the search.'
+                  : 'When friends give you recos with locations, they will be grouped by city here. Perfect for planning trips.'
+                }
+              </div>
+              {!search.trim() && (
+                <Link href="/reco?mode=get" className="mt-2 text-accent text-[14px] font-semibold">Ask friends for recos →</Link>
+              )}
             </div>
-            {!search.trim() && (
-              <Link href="/reco?mode=get" className="mt-2 text-accent text-[14px] font-semibold">Ask friends for recos →</Link>
-            )}
-          </div>
-        ) : (
-          filtered.map((group) => {
-            const isOpen = expandedCity === group.city.toLowerCase()
-            return (
+          ) : (
+            filtered.map((group) => (
               <div key={group.city.toLowerCase()} className="border-b border-[#1a1a1e]">
                 <button
-                  onClick={() => setExpandedCity(isOpen ? null : group.city.toLowerCase())}
+                  onClick={() => { setSelectedCity(group.city.toLowerCase()); setSlideDir('in') }}
                   className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-card/30 transition-colors"
                 >
                   <div>
@@ -281,42 +287,90 @@ export default function ListsPage() {
                       </div>
                     </div>
                   </div>
-                  <svg
-                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="2.5" strokeLinecap="round"
-                    className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-                  >
-                    <path d="M6 9l6 6 6-6"/>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="2" strokeLinecap="round">
+                    <path d="M9 18l6-6-6-6"/>
                   </svg>
                 </button>
-
-                {isOpen && (
-                  <div className="px-4 pb-4 flex flex-col gap-3">
-                    {/* Sub-category pills */}
-                    {group.categories.length > 1 && (
-                      <div className="flex gap-1.5 flex-wrap">
-                        {group.categories.map((cat) => {
-                          const count = group.recos.filter(r => r.category === cat).length
-                          return (
-                            <span
-                              key={cat}
-                              className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full"
-                              style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
-                            >
-                              {getCategoryLabel(cat)} {count}
-                            </span>
-                          )
-                        })}
-                      </div>
-                    )}
-                    {group.recos.map((reco) => (
-                      <RecoCard key={reco.id} reco={reco} />
-                    ))}
-                  </div>
-                )}
               </div>
+            ))
+          )}
+        </div>
+
+        {/* City detail view — slides in from right */}
+        <div
+          className={`absolute inset-0 overflow-y-auto scrollbar-none pb-6 transition-transform duration-300 ease-out ${
+            selectedCity ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {selectedCity && (() => {
+            const group = cityGroups.find(g => g.city.toLowerCase() === selectedCity)
+            if (!group) return null
+            return (
+              <>
+                {/* Header */}
+                <div className="sticky top-0 z-10 bg-bg-base border-b border-[#1a1a1e]">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <button
+                      onClick={() => { setSelectedCity(null); setSlideDir('out') }}
+                      className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5M12 5l-7 7 7 7" />
+                      </svg>
+                      Back
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const url = `${window.location.origin}/lists?city=${encodeURIComponent(group.city)}`
+                        const text = `${group.recos.length} recos in ${group.city} on RECO`
+                        if (navigator.share) {
+                          try { await navigator.share({ title: `RECO — ${group.city}`, text, url }); return } catch {}
+                        }
+                        await navigator.clipboard.writeText(url)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2000)
+                      }}
+                      className="flex items-center gap-1.5 text-[12px] font-semibold text-accent"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                      </svg>
+                      {copied ? 'Copied' : 'Share'}
+                    </button>
+                  </div>
+                  <div className="px-6 pb-3">
+                    <div className="text-[26px] font-bold text-white tracking-[-0.6px]">{group.city}</div>
+                    <div className="text-[13px] text-text-faint mt-0.5">{group.recos.length} {group.recos.length === 1 ? 'reco' : 'recos'}</div>
+                  </div>
+                  {/* Sub-category pills */}
+                  {group.categories.length > 1 && (
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-6 pb-3">
+                      {group.categories.map((cat) => {
+                        const count = group.recos.filter(r => r.category === cat).length
+                        return (
+                          <span
+                            key={cat}
+                            className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full flex-shrink-0"
+                            style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
+                          >
+                            {getCategoryLabel(cat)} {count}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Reco cards */}
+                <div className="px-4 pt-3 flex flex-col gap-3">
+                  {group.recos.map((reco) => (
+                    <RecoCard key={reco.id} reco={reco} />
+                  ))}
+                </div>
+              </>
             )
-          })
-        )}
+          })()}
+        </div>
       </div>
     </div>
   )
