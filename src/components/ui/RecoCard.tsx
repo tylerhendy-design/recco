@@ -73,21 +73,10 @@ const DETAIL_ICON: Record<string, React.ReactNode> = {
 
 function getDetailPills(reco: Reco): DetailPill[] {
   const m = reco.meta ?? {}
-  // If no location but has a Maps link, try to extract place name from link
-  let inferredLocation = m.location as string | undefined
-  if (!inferredLocation && !m.address && m.links) {
-    const mapsLink = (m.links as string[])?.find(l => l.includes('google.com/maps') || l.includes('goo.gl'))
-    if (mapsLink) {
-      const placeMatch = mapsLink.match(/\/maps\/place\/([^/@?]+)/)
-      if (placeMatch) {
-        const decoded = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
-        // Don't use it if it's just the reco title repeated
-        if (decoded.toLowerCase() !== reco.title.toLowerCase()) inferredLocation = decoded
-      }
-    }
-  }
+  // Location must be a city — never a place name, never an address
+  const location = m.location as string | undefined
   const candidates: [string, string | undefined | null][] = [
-    ['location', inferredLocation],
+    ['location', location],
     ['artist', m.artist],
     ['streaming_service', m.streaming_service],
     ['occasion', m.occasion],
