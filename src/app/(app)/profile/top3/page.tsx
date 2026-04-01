@@ -37,7 +37,7 @@ function Top3Inner() {
 
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
 
-  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars'])
+  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars', 'culture'])
   const isVenue = category !== null && VENUE_CATEGORIES.has(category)
 
   useEffect(() => {

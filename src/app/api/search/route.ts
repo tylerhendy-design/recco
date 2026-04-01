@@ -278,7 +278,8 @@ export async function GET(req: NextRequest) {
       case 'clubs':
       case 'cocktails':
       case 'pubs':
-      case 'wine_bars': {
+      case 'wine_bars':
+      case 'culture': {
         const google = await searchRestaurantsGoogle(q, lat, lng)
         if (google.length) return NextResponse.json(google)
         return NextResponse.json(await searchRestaurantsNominatim(q))
@@ -337,8 +338,12 @@ export async function GET(req: NextRequest) {
       case 'book':
         return NextResponse.json(await searchBooks(q))
 
-      default:
+      default: {
+        // Try Google Places for any unknown/custom category — covers coffee shops, hotels, gyms, etc.
+        const google = await searchRestaurantsGoogle(q, lat, lng)
+        if (google.length) return NextResponse.json(google)
         return NextResponse.json([])
+      }
     }
   } catch {
     return NextResponse.json([])

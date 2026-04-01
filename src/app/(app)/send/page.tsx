@@ -350,7 +350,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   }
 
   const selectedFriends = friends.filter((f) => f.selected)
-  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars'])
+  const VENUE_CATEGORIES = new Set(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars', 'culture'])
   const isRestaurant = category !== null && VENUE_CATEGORIES.has(category)
   const activeDefs: ConstraintDef[] = category && category !== 'custom'
     ? (CONSTRAINTS[category] ?? CONSTRAINTS.default)

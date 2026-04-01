@@ -187,3 +187,6 @@ export function getCategoryBg(id: string): string {
 export function getCategoryLabel(id: string): string {
   return CATEGORY_MAP[id as CategoryId]?.label ?? id
 }
+
+/** Categories that represent physical venues — used for Google Places search, location fields, and image fallbacks */
+export const VENUE_CATEGORIES = new Set<string>(['restaurant', 'bars', 'clubs', 'cocktails', 'pubs', 'wine_bars', 'culture'])
