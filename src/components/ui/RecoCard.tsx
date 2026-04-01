@@ -497,12 +497,12 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
 
             {/* Content — no stopPropagation so tapping anywhere closes the sheet */}
             <div className="px-4 pt-4 pb-8">
-              {/* Back button when no image */}
+              {/* Back button when no image — match the visual weight of the image header */}
               {!hasImage && (
                 <button
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); close() }}
-                  className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary mb-3"
+                  className="flex items-center gap-1.5 text-[13px] font-semibold text-text-secondary mb-5 mt-1"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -511,17 +511,9 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                 </button>
               )}
 
-              {/* ── Header: category · date · sender ── */}
+              {/* ── Header: category · sender · date ── */}
               <div className="flex items-center gap-1.5 flex-wrap mb-2">
                 <CategoryDot category={reco.category} customLabel={reco.custom_cat} />
-                {reco.created_at && (
-                  <span className="text-[11px] text-text-faint">
-                    · {(() => {
-                      const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
-                      return days === 0 ? 'Today' : days === 1 ? '1 day ago' : days < 7 ? `${days} days ago` : days < 30 ? `${Math.floor(days / 7)}w ago` : `${Math.floor(days / 30)}mo ago`
-                    })()}
-                  </span>
-                )}
                 <span className="text-[11px] text-text-faint">
                   · from {manualSender ? (
                     <span className="text-text-secondary font-medium">{manualSender}</span>
@@ -531,6 +523,14 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     <span className="text-text-secondary font-medium">{reco.sender.display_name.split(' ')[0]}</span>
                   ) : null}
                 </span>
+                {reco.created_at && (
+                  <span className="text-[11px] text-text-faint">
+                    · {(() => {
+                      const days = Math.floor((Date.now() - new Date(reco.created_at).getTime()) / 86400000)
+                      return days === 0 ? 'Today' : days === 1 ? '1 day ago' : days < 7 ? `${days} days ago` : days < 30 ? `${Math.floor(days / 7)}w ago` : `${Math.floor(days / 30)}mo ago`
+                    })()}
+                  </span>
+                )}
               </div>
 
               {/* ── Title ── */}
@@ -557,7 +557,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, reco.meta?.address, reco.meta?.location].filter(Boolean).join(', '))}`}
                     target="_blank" rel="noopener noreferrer"
                   >
-                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.address || reco.meta?.location}</MetaPill>
+                    <MetaPill icon="pin" color="#D4E23A">{reco.meta?.location || reco.meta?.address}</MetaPill>
                   </a>
                 )}
                 {localMeta?.website && (
@@ -594,11 +594,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
               <div className="text-[17px] font-semibold text-white tracking-[-0.3px] mb-2">Why?</div>
               {details.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2.5">
-                  {details.map((d, i) => {
-                    const isLocation = d.key === 'address' || d.key === 'location'
+                  {details.filter(d => d.key !== 'location').map((d, i) => {
+                    const isAddress = d.key === 'address'
                     const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
-                    if (isLocation) {
-                      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, d.key === 'address' ? reco.meta?.location : ''].filter(Boolean).join(', '))}`
+                    if (isAddress) {
+                      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.value, reco.meta?.location].filter(Boolean).join(', '))}`
                       return (
                         <a key={i} href={mapsUrl} target="_blank" rel="noopener noreferrer" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()} className={pillClass}>
                           {DETAIL_ICON[d.key]}{d.value}
@@ -654,7 +654,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
-                  Add links, notes, or details
+                  Add links, notes, or images
                 </button>
               )}
 
@@ -725,7 +725,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                   </button>
 
                   <div className="flex gap-2">
-                    <button onClick={() => setEditing(false)} className="flex-1 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-faint">
+                    <button onClick={() => setEditing(false)} className="flex-1 py-2.5 border border-border rounded-input text-[13px] font-semibold text-text-secondary hover:border-text-faint transition-colors">
                       Cancel
                     </button>
                     <button onClick={saveEdits} disabled={editSaving} className="flex-[2] py-2.5 bg-accent text-accent-fg rounded-input text-[13px] font-bold disabled:opacity-40">
