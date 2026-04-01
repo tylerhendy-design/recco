@@ -523,25 +523,9 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
 
 
-  // ─── TOP 03 gate ──────────────────────────────────────────────────────────
-  // Allow first 3 recos without TOP 03 gate — then require it
-  if (picksCount !== null && !hasCompleteCategory && !isForward && totalRecosSent >= 3) {
-    return (
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
-          <div className="text-[40px] mb-1">🏆</div>
-          <div className="text-[22px] font-bold text-white tracking-[-0.5px]">Set your TOP 03 first</div>
-          <div className="text-[14px] text-text-muted leading-[1.6]">
-            Pick a category and add your top 3. Complete at least one category to unlock sending.
-          </div>
-          <Link href="/profile" className="mt-3 w-full py-3.5 bg-accent text-accent-fg rounded-btn text-[15px] font-bold text-center">
-            Add your TOP 03
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  // ─── TOP 03 nudge (recommendation, not a blocker) ──────────────────────
+  const [top03Dismissed, setTop03Dismissed] = useState(false)
+  const showTop03Nudge = picksCount !== null && !hasCompleteCategory && !isForward && totalRecosSent >= 3 && !top03Dismissed
 
   // ─── Forward mode ─────────────────────────────────────────────────────────
   if (isForward && forwardTitle) {
@@ -735,6 +719,21 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
       {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
+        {/* TOP 03 nudge — dismissible recommendation */}
+        {showTop03Nudge && (
+          <div className="mb-3 px-4 py-3 bg-accent/8 border border-accent/20 rounded-card flex items-start gap-3">
+            <span className="text-[20px] flex-shrink-0 mt-0.5">🏆</span>
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-semibold text-white mb-0.5">Set your TOP 03</div>
+              <div className="text-[12px] text-text-faint leading-[1.5]">People trust recos more when they can see your taste.</div>
+              <Link href="/profile/top3" className="text-[12px] font-semibold text-accent mt-1 inline-block">Add your picks →</Link>
+            </div>
+            <button onClick={() => setTop03Dismissed(true)} className="text-text-faint hover:text-white transition-colors flex-shrink-0 p-1">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        )}
+
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">
 
           {/* ── Pre-selected friend banner ── */}

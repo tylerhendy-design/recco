@@ -64,14 +64,14 @@ if (bypassToken) console.log('🔓 Vercel bypass token will be applied on first 
 const results = [];
 
 try {
-  const signupResult = await exploreJourney(context, {
+  const journeyResults = await exploreJourney(context, {
     baseUrl: BASE_URL,
     email: TEST_EMAIL,
     password: TEST_PASSWORD,
     name: TEST_NAME,
-    strangerUsername: seed.strangerUsername,
+    friendId: seed.friendId,
   });
-  results.push(signupResult);
+  results.push(...journeyResults);
 } catch (err) {
   results.push({
     journey: 'Post-Login Exploration',
@@ -81,7 +81,7 @@ try {
   });
 } finally {
   await browser.close();
-  await cleanupSeedAccounts(seed.userAId, seed.userBId, seed.userCId);
+  await cleanupSeedAccounts(seed.userAId, seed.userBId);
 }
 
 const reportPath = await generateReport(BASE_URL, results);

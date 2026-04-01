@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { CategoryChip } from '@/components/ui/CategoryChip'
+import { AutocompleteInput, type Suggestion } from '@/components/ui/AutocompleteInput'
 import { VoiceButton } from '@/components/ui/VoiceButton'
-import { CATEGORIES, CATEGORY_MAP, type CategoryId, getCategoryLabel } from '@/constants/categories'
+import { CATEGORIES, CATEGORY_MAP, VENUE_CATEGORIES, type CategoryId, getCategoryLabel } from '@/constants/categories'
 import { sendReco } from '@/lib/data/recos'
 
 function getLinkLabel(url: string): string {
@@ -71,6 +72,18 @@ export function GiveRecoSheet({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [allDone, setAllDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedMeta, setSelectedMeta] = useState<Record<string, string> | null>(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const userLocation = useRef<{ lat: number; lng: number } | null>(null)
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { userLocation.current = { lat: pos.coords.latitude, lng: pos.coords.longitude } },
+        () => { userLocation.current = { lat: 51.5074, lng: -0.1278 } }
+      )
+    }
+  }, [])
 
   // Sync when sheet opens
   useEffect(() => {
@@ -82,6 +95,26 @@ export function GiveRecoSheet({
     }
   }, [open, initialCategory])
 
+  function handleSelectSuggestion(s: Suggestion) {
+    setTitle(s.title)
+    setSelectedMeta(s.meta ?? null)
+    if (s.imageUrl) setSelectedImage(s.imageUrl)
+    // Auto-populate links from suggestion meta
+    const autoLinks: string[] = []
+    if (s.meta?.website) autoLinks.push(s.meta.website)
+    if (isVenue && s.title) {
+      const mapsQuery = [s.title, s.meta?.address, s.meta?.city].filter(Boolean).join(', ')
+      autoLinks.push(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`)
+    }
+    if (autoLinks.length > 0) setLinks([...autoLinks, ''])
+  }
+
+  function handleTitleChange(val: string) {
+    setTitle(val)
+    setSelectedMeta(null)
+    setSelectedImage(null)
+  }
+
   function resetForm() {
     setCustomCat('')
     setTitle('')
@@ -90,6 +123,8 @@ export function GiveRecoSheet({
     setLinksOpen(initialCategory === 'restaurant')
     setSending(false)
     setError(null)
+    setSelectedMeta(null)
+    setSelectedImage(null)
     if (!initialCategory) setCategory(null)
   }
 
@@ -100,6 +135,7 @@ export function GiveRecoSheet({
     onClose()
   }
 
+  const isVenue = category !== null && VENUE_CATEGORIES.has(category)
   const isRestaurant = category === 'restaurant'
   const hasGoogleMapsLink = links.some((l) => {
     try { const h = new URL(l).hostname; return h.includes('google.com') || h.includes('goo.gl') || h.includes('maps.apple.com') } catch { return false }
@@ -115,6 +151,10 @@ export function GiveRecoSheet({
     const finalCat = category === 'custom' ? 'custom' : category!
     const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
 
+    // Build meta from suggestion data
+    const meta: Record<string, unknown> = { ...(selectedMeta ?? {}) }
+    if (selectedImage) meta.artwork_url = selectedImage
+
     const { error: err } = await sendReco({
       senderId,
       category: finalCat,
@@ -122,6 +162,7 @@ export function GiveRecoSheet({
       title: title.trim(),
       whyText: why.trim() || undefined,
       links: links.filter((l) => l.trim()),
+      meta,
       recipientIds: [recipientId],
     })
 
@@ -247,16 +288,38 @@ export function GiveRecoSheet({
             )}
           </div>
 
-          {/* Name */}
-          <div>
-            <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Name</div>
-            <input
-              className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
-              placeholder={category ? `Name of ${getCategoryLabel(category)}…` : 'Name it…'}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
+          {/* Name with autocomplete */}
+          {category && (
+            <div>
+              <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Name</div>
+              <AutocompleteInput
+                category={category}
+                value={title}
+                onChange={handleTitleChange}
+                onSelect={handleSelectSuggestion}
+                placeholder={`Name of ${getCategoryLabel(category)}…`}
+                isVenue={isVenue}
+                userLat={userLocation.current?.lat}
+                userLng={userLocation.current?.lng}
+              />
+              {selectedImage && (
+                <div className="rounded-xl overflow-hidden mb-2" style={{ height: 120 }}>
+                  <img src={selectedImage} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+            </div>
+          )}
+          {!category && (
+            <div>
+              <div className="text-[11px] font-semibold text-text-muted tracking-[0.4px] uppercase mb-2">Name</div>
+              <input
+                className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
+                placeholder="Name it…"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+          )}
 
           {/* Why */}
           <div>
