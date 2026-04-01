@@ -18,6 +18,7 @@ interface AutocompleteInputProps {
   isVenue?: boolean
   userLat?: number | null
   userLng?: number | null
+  compact?: boolean
 }
 
 export function AutocompleteInput({
@@ -29,6 +30,7 @@ export function AutocompleteInput({
   isVenue = false,
   userLat,
   userLng,
+  compact = false,
 }: AutocompleteInputProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(false)
@@ -71,14 +73,17 @@ export function AutocompleteInput({
   }
 
   return (
-    <div className="mb-4">
+    <div className={compact ? 'mb-2' : 'mb-4'}>
       <input
-        className="text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#666] font-sans"
+        className={compact
+          ? "w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
+          : "text-[26px] font-bold text-white tracking-[-0.6px] leading-[1.1] w-full bg-transparent outline-none placeholder:text-[#666] font-sans"
+        }
         placeholder={placeholder}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
       />
-      {!value && !loading && suggestions.length === 0 && (
+      {!compact && !value && !loading && suggestions.length === 0 && (
         <div className="text-[12px] text-text-faint mt-1.5">Start typing to auto-fill details, images, and more</div>
       )}
       {(suggestions.length > 0 || loading) && (

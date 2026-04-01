@@ -301,6 +301,7 @@ export function GiveRecoSheet({
                 isVenue={isVenue}
                 userLat={userLocation.current?.lat}
                 userLng={userLocation.current?.lng}
+                compact
               />
               {selectedImage && (
                 <div className="rounded-xl overflow-hidden mb-2" style={{ height: 120 }}>
