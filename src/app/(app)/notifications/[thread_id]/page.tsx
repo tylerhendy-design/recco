@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { createClient } from '@/lib/supabase/client'
 import { fetchMessages, sendMessage, type MessageRow } from '@/lib/data/messages'
-import { initials, getScoreColor } from '@/lib/utils'
+import { initials, getScoreColor, getScoreTextColor } from '@/lib/utils'
 
 export default function ThreadPage() {
   return <Suspense><ThreadPageInner /></Suspense>

@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchNotifications, markAllRead, markNotificationHandled, type NotificationRow } from '@/lib/data/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
 import { releaseSinBin } from '@/lib/data/sinbin'
-import { initials, formatRelativeTime, getScoreColor } from '@/lib/utils'
+import { initials, formatRelativeTime, getScoreColor, getScoreTextColor } from '@/lib/utils'
 import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
 
 export default function NotificationsPage() {
@@ -472,11 +472,12 @@ function NotifRow({
             }
           </div>
           {scoreLozenge != null && scoreLozenge.score >= 0 && (() => {
-            const c = getScoreColor(scoreLozenge.score)
+            const bg = getScoreColor(scoreLozenge.score)
+            const fg = getScoreTextColor(scoreLozenge.score)
             return (
               <div
                 className="absolute -top-1 -right-1 w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-black border-2 border-[#0c0c0e]"
-                style={{ background: c, color: '#000' }}
+                style={{ background: bg, color: fg }}
               >
                 {scoreLozenge.score}
               </div>

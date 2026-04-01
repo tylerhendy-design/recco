@@ -30,13 +30,20 @@ export function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-// Gradient: vibrant red-brown (#B83A1A) → brand yellow (#D4E23A)
+// Score colours — psychology-driven: red (bad) → amber (mid) → green (good)
+// 1-4: red spectrum, 5-6: amber, 7-10: green spectrum
 export function getScoreColor(score: number): string {
-  const t = Math.max(0, Math.min(10, score)) / 10
-  const r = Math.round(184 + (212 - 184) * t)
-  const g = Math.round(58  + (226 - 58)  * t)
-  const b = Math.round(26  + (58  - 26)  * t)
-  return `rgb(${r},${g},${b})`
+  const s = Math.max(1, Math.min(10, score))
+  if (s <= 2) return '#EF4444'  // red-500 — terrible
+  if (s <= 4) return '#F87171'  // red-400 — bad
+  if (s <= 6) return '#FBBF24'  // amber-400 — meh
+  if (s <= 8) return '#4ADE80'  // green-400 — good
+  return '#22C55E'              // green-500 — great
+}
+
+// Text colour for score badges — white on red for contrast, black on everything else
+export function getScoreTextColor(score: number): string {
+  return Math.max(1, Math.min(10, score)) <= 4 ? '#fff' : '#000'
 }
 
 export function getSentimentColor(score: number): string {
