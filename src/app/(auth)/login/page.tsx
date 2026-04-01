@@ -126,7 +126,7 @@ function LoginForm() {
                 Sign in with email instead
               </button>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <form className="flex flex-col gap-2.5" onSubmit={(e) => { e.preventDefault(); signInWithEmail() }}>
                 <input
                   type="email"
                   placeholder="Email"
@@ -134,6 +134,7 @@ function LoginForm() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-[#1e1e22] border border-border rounded-btn px-4 py-3.5 text-[14px] text-white outline-none placeholder:text-[#555] focus:border-accent font-sans"
                   data-testid="email-input"
+                  name="email"
                   autoComplete="email"
                 />
                 <input
@@ -141,13 +142,13 @@ function LoginForm() {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') signInWithEmail() }}
                   className="w-full bg-[#1e1e22] border border-border rounded-btn px-4 py-3.5 text-[14px] text-white outline-none placeholder:text-[#555] focus:border-accent font-sans"
                   data-testid="password-input"
+                  name="password"
                   autoComplete="current-password"
                 />
                 <button
-                  onClick={signInWithEmail}
+                  type="submit"
                   disabled={loading === 'email' || !email.trim() || !password.trim()}
                   className="w-full bg-accent text-accent-fg py-3.5 rounded-btn text-[15px] font-semibold disabled:opacity-40 transition-opacity"
                   data-testid="email-submit"
@@ -158,7 +159,7 @@ function LoginForm() {
                     'Continue'
                   )}
                 </button>
-              </div>
+              </form>
             )}
           </div>
 
