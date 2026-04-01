@@ -463,21 +463,17 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* Greeting + filters — only on To Do tab, collapses on scroll */}
+      {/* Greeting + filters — only on To Do tab */}
+      {tab === 'todo' && (
       <div
         style={{
-          height: tab !== 'todo' ? 0 : headerVisible ? collapseHeight || 'auto' : 0,
-          opacity: tab !== 'todo' ? 0 : headerVisible ? 1 : 0,
-          overflow: (catDDOpen || timeDDOpen || senderDDOpen) ? 'visible' : 'hidden',
-          transition: 'height 200ms ease, opacity 150ms ease',
-          pointerEvents: tab === 'todo' && headerVisible ? 'auto' : 'none',
           flexShrink: 0,
           position: 'relative',
           zIndex: (catDDOpen || timeDDOpen || senderDDOpen) ? 112 : 30,
         }}
         onClick={closeAllDD}
       >
-        <div ref={collapseRef} className="px-6 pt-3 pb-4">
+        <div className="px-6 pt-3 pb-4">
           {/* Three-filter line — tappable words with inline dropdowns */}
           <div className="text-[22px] font-semibold text-text-muted leading-[1.3] tracking-[-0.5px]" onClick={(e) => e.stopPropagation()}>
             Here are{' '}
@@ -530,6 +526,7 @@ function HomePageInner() {
           )}
         </div>
       </div>
+      )}
 
 
       {/* ── TO DO TAB ── */}
