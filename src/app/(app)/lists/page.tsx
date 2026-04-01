@@ -153,7 +153,7 @@ export default function ListsPage() {
     for (const reco of allRecos) {
       const city = extractCity(reco)
       if (!city) continue
-      if (catFilter && reco.category !== catFilter) continue
+      if (catFilter && effectiveCat(reco) !== catFilter) continue
       const key = city.toLowerCase()
       if (!groups.has(key)) groups.set(key, [])
       groups.get(key)!.push(reco)
@@ -163,7 +163,7 @@ export default function ListsPage() {
     const result: CityGroup[] = []
     for (const [, recos] of groups) {
       const city = extractCity(recos[0])!
-      const categories = [...new Set(recos.map(r => r.category))]
+      const categories = [...new Set(recos.map(r => effectiveCat(r)))]
       result.push({ city, recos, categories })
     }
     result.sort((a, b) => b.recos.length - a.recos.length)
@@ -177,11 +177,23 @@ export default function ListsPage() {
     return cityGroups.filter(g => g.city.toLowerCase().includes(q))
   }, [cityGroups, search])
 
+  // Effective category: use custom_cat for custom recos so "Shopping" shows instead of "Custom"
+  function effectiveCat(reco: Reco): string {
+    return reco.category === 'custom' && reco.custom_cat ? reco.custom_cat.toLowerCase().trim() : reco.category
+  }
+
+  function effectiveCatLabel(cat: string): string {
+    // If it's a known category, use the label. Otherwise it's a custom cat — capitalise it.
+    const label = getCategoryLabel(cat)
+    if (label !== 'Custom') return label
+    return cat.charAt(0).toUpperCase() + cat.slice(1)
+  }
+
   // All unique categories that have location data
   const availableCategories = useMemo(() => {
     const cats = new Set<string>()
     for (const reco of allRecos) {
-      if (extractCity(reco)) cats.add(reco.category)
+      if (extractCity(reco)) cats.add(effectiveCat(reco))
     }
     return [...cats].sort()
   }, [allRecos])
@@ -230,7 +242,7 @@ export default function ListsPage() {
                   : { background: '#1a1a1e', color: '#888' }
                 }
               >
-                {getCategoryLabel(cat)}
+                {effectiveCatLabel(cat)}
               </button>
             )
           })}
@@ -346,14 +358,14 @@ export default function ListsPage() {
                   {group.categories.length > 1 && (
                     <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-6 pb-3">
                       {group.categories.map((cat) => {
-                        const count = group.recos.filter(r => r.category === cat).length
+                        const count = group.recos.filter(r => effectiveCat(r) === cat).length
                         return (
                           <span
                             key={cat}
                             className="text-[10px] font-bold uppercase tracking-[0.5px] px-2.5 py-1 rounded-full flex-shrink-0"
                             style={{ background: `${getCategoryColor(cat)}22`, color: getCategoryColor(cat) }}
                           >
-                            {getCategoryLabel(cat)} {count}
+                            {effectiveCatLabel(cat)} {count}
                           </span>
                         )
                       })}
