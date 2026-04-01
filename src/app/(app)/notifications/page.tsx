@@ -454,7 +454,7 @@ function NotifRow({
   else if (notif.type === 'feedback_received' && notif.reco_id) href = `/notifications/${notif.reco_id}?with=${notif.actor_id}`
   else if (notif.type === 'friend_accepted') href = `/friends/${notif.actor_id}`
   else if (notif.type === 'sin_bin' && !isPlea && !isReleased) href = '/sinbin'
-  else if (isReleased) href = `/send?to=${notif.actor_id}&context=prove`
+  else if (isReleased) href = `/reco?mode=give&to=${notif.actor_id}&context=prove`
 
   const Wrapper = href
     ? ({ children, className }: { children: React.ReactNode; className: string }) => <Link href={href!} className={className}>{children}</Link>
@@ -588,7 +588,7 @@ function NotifRow({
           {isReleased && (
             <div className="mt-2">
               <Link
-                href={`/send?to=${notif.actor_id}`}
+                href={`/reco?mode=give&to=${notif.actor_id}`}
                 className="inline-flex px-3 py-1.5 rounded-chip border border-accent text-[12px] font-semibold text-accent hover:bg-accent/10 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >

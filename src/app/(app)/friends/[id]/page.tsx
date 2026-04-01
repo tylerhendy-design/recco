@@ -167,7 +167,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Give / Get buttons */}
           <div className="px-6 py-4 border-b border-bg-card flex gap-3">
             <Link
-              href={`/send?to=${id}`}
+              href={`/reco?mode=give&to=${id}`}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
@@ -176,7 +176,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
               <span className="text-[14px] font-semibold text-text-secondary">Give reco</span>
             </Link>
             <Link
-              href={`/get?from=${id}`}
+              href={`/reco?mode=get&from=${id}`}
               className="flex-1 flex items-center justify-center gap-2 py-3 rounded-btn bg-bg-card border border-border hover:border-accent/50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke="#6e6e78">
