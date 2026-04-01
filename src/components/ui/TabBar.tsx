@@ -16,20 +16,12 @@ const TABS = [
     ),
   },
   {
-    href: '/send',
-    label: 'Give',
+    href: '/reco',
+    label: 'Reco',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke={active ? '#D4E23A' : '#6e6e78'}>
         <path d="M12 19V5M5 12l7-7 7 7" />
-      </svg>
-    ),
-  },
-  {
-    href: '/get',
-    label: 'Get',
-    icon: (active: boolean) => (
-      <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" stroke={active ? '#D4E23A' : '#6e6e78'}>
-        <path d="M12 5v14M5 12l7 7 7-7" />
+        <path d="M5 19h14" />
       </svg>
     ),
   },

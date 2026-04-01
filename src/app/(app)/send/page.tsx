@@ -129,7 +129,7 @@ export default function GivePage() {
   return <Suspense><GivePageInner /></Suspense>
 }
 
-function GivePageInner() {
+export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   const searchParams = useSearchParams()
   const preselectedId = searchParams.get('to')
   const sendContext = searchParams.get('context')
@@ -486,8 +486,7 @@ function GivePageInner() {
     const names = selectedFriends.map((f) => f.name.split(' ')[0])
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <StatusBar />
-        <NavHeader title="Give a Reco" closeHref="/home" />
+        {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
           <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -526,8 +525,7 @@ function GivePageInner() {
   if (picksCount !== null && !hasCompleteCategory && !isForward && totalRecosSent >= 3) {
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <StatusBar />
-        <NavHeader title="Give a Reco" closeHref="/home" />
+        {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
           <div className="text-[40px] mb-1">🏆</div>
           <div className="text-[22px] font-bold text-white tracking-[-0.5px]">Set your TOP 03 first</div>
@@ -594,8 +592,7 @@ function GivePageInner() {
 
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <StatusBar />
-        <NavHeader title="Forward Reco" closeHref="/home" />
+        {!embedded && <><StatusBar /><NavHeader title="Forward Reco" closeHref="/home" /></>}
 
         <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
           {/* Reco being forwarded */}
@@ -732,8 +729,7 @@ function GivePageInner() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <StatusBar />
-      <NavHeader title="Give a Reco" closeHref="/home" />
+      {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-6">
         <div className="bg-bg-card border border-border rounded-card px-4 py-4">

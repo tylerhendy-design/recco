@@ -323,7 +323,7 @@ function HomePageInner() {
     if (reco.why_text) params.set('why', reco.why_text)
     if (reco.sender?.display_name) params.set('from', reco.sender.display_name.split(' ')[0])
     if (reco.sender?.id) params.set('originalSenderId', reco.sender.id)
-    router.push(`/send?${params.toString()}`)
+    router.push(`/reco?mode=give&${params.toString()}`)
   }
 
   function closeAllDD() {
@@ -449,7 +449,7 @@ function HomePageInner() {
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
-          <Link href="/send/manual" aria-label="Instant add" className="flex items-center justify-center w-9 h-9">
+          <Link href="/reco?mode=quick" aria-label="Instant add" className="flex items-center justify-center w-9 h-9">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6e6e78" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
             </svg>
@@ -618,7 +618,7 @@ function HomePageInner() {
               <div className="text-[14px] text-text-muted leading-[1.6]">
                 When friends give you recos they'll appear here.
               </div>
-              <Link href="/get" className="mt-2 text-accent text-sm font-semibold">
+              <Link href="/reco?mode=get" className="mt-2 text-accent text-sm font-semibold">
                 Ask for a reco →
               </Link>
             </div>

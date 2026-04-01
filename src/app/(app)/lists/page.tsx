@@ -254,7 +254,7 @@ export default function ListsPage() {
               }
             </div>
             {!search.trim() && (
-              <Link href="/get" className="mt-2 text-accent text-[14px] font-semibold">Ask friends for recos →</Link>
+              <Link href="/reco?mode=get" className="mt-2 text-accent text-[14px] font-semibold">Ask friends for recos →</Link>
             )}
           </div>
         ) : (

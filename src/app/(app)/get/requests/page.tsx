@@ -82,7 +82,7 @@ export default function MyRequestsPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="Your requests" closeHref="/get" />
+      <NavHeader title="Your requests" closeHref="/reco?mode=get" />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-4 pb-24">
         {loading && (

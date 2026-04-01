@@ -22,7 +22,7 @@ export default function QRPage() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title="QR reco" closeHref="/send" />
+      <NavHeader title="QR reco" closeHref="/reco" />
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="text-[15px] text-text-dim text-center mb-7 leading-[1.6]">
           Share this QR code and anyone can open your reco directly in Reco

@@ -71,7 +71,7 @@ export default function GetPage() {
   return <Suspense><GetPageInner /></Suspense>
 }
 
-function GetPageInner() {
+export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
   const searchParams = useSearchParams()
   const preselectedFrom = searchParams.get('from')
 
@@ -194,8 +194,7 @@ function GetPageInner() {
     const shareUrl = requestId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/r/request/${requestId}` : null
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
-        <StatusBar />
-        <NavHeader title="Get a reco" closeHref="/home" />
+        {!embedded && <><StatusBar /><NavHeader title="Get a reco" closeHref="/home" /></>}
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
           <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
