@@ -74,7 +74,8 @@ const DETAIL_ICON: Record<string, React.ReactNode> = {
 function getDetailPills(reco: Reco): DetailPill[] {
   const m = reco.meta ?? {}
   // Location must be a city — never a place name, never an address
-  const location = m.location as string | undefined
+  // Check both meta.location and meta.city (Google Places stores city separately)
+  const location = (m.location as string | undefined) || (m.city as string | undefined)
   const candidates: [string, string | undefined | null][] = [
     ['location', location],
     ['artist', m.artist],
