@@ -73,8 +73,21 @@ const DETAIL_ICON: Record<string, React.ReactNode> = {
 
 function getDetailPills(reco: Reco): DetailPill[] {
   const m = reco.meta ?? {}
+  // If no location but has a Maps link, try to extract place name from link
+  let inferredLocation = m.location as string | undefined
+  if (!inferredLocation && !m.address && m.links) {
+    const mapsLink = (m.links as string[])?.find(l => l.includes('google.com/maps') || l.includes('goo.gl'))
+    if (mapsLink) {
+      const placeMatch = mapsLink.match(/\/maps\/place\/([^/@?]+)/)
+      if (placeMatch) {
+        const decoded = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '))
+        // Don't use it if it's just the reco title repeated
+        if (decoded.toLowerCase() !== reco.title.toLowerCase()) inferredLocation = decoded
+      }
+    }
+  }
   const candidates: [string, string | undefined | null][] = [
-    ['location', m.location],
+    ['location', inferredLocation],
     ['artist', m.artist],
     ['streaming_service', m.streaming_service],
     ['occasion', m.occasion],
@@ -303,17 +316,25 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
         <div className="flex-1 min-w-0">
           <div className="mb-1.5"><CategoryDot category={reco.category} customLabel={reco.custom_cat} /></div>
           <div className="text-[22px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-1">{reco.title}</div>
-          {(reco.meta?.location || reco.meta?.address) && (
-            <div className="flex items-center gap-1 mb-1">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="text-text-faint flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span className="text-[12px] text-text-faint">{reco.meta?.location || reco.meta?.address}</span>
-            </div>
-          )}
           {(recommenderNames || when) && (
-            <div className="text-[12px] text-text-faint">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
+            <div className="text-[12px] text-text-faint mb-1">Reco'd by {recommenderNames}{when ? ` · ${when}` : ''}</div>
           )}
           {reco.meta?.forwarded_from && (
-            <div className="text-[11px] text-text-faint mt-0.5">Originally from {reco.meta.forwarded_from}</div>
+            <div className="text-[11px] text-text-faint mb-1">Originally from {reco.meta.forwarded_from}</div>
+          )}
+          {details.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-1.5">
+              {details.map((d, i) => {
+                const isLocation = d.key === 'address' || d.key === 'location'
+                const pillClass = "flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.5px] px-[9px] py-1 rounded-chip border border-accent/50 bg-accent/10 text-accent"
+                const mapsHref = isLocation
+                  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([reco.title, d.key === 'address' ? d.value : reco.meta?.address, d.key === 'location' ? d.value : reco.meta?.location].filter(Boolean).join(', '))}`
+                  : null
+                return mapsHref
+                  ? <a key={i} href={mapsHref} target="_blank" rel="noopener noreferrer" className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</a>
+                  : <span key={i} className={pillClass}>{DETAIL_ICON[d.key]}{d.value}</span>
+              })}
+            </div>
           )}
         </div>
         {onForward && reco.status === 'done' && (
