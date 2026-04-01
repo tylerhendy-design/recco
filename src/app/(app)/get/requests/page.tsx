@@ -119,7 +119,7 @@ export default function MyRequestsPage() {
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: catColor }} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[14px] font-semibold text-white truncate">
-                    {catLabel ?? 'Recommendation'} request
+                    {catLabel ?? 'Recommendation'}{constraints && Object.values(constraints).filter(Boolean).length > 0 ? ` · ${Object.values(constraints).filter(Boolean).join(', ')}` : ''}
                   </div>
                   <div className="text-[11px] text-text-faint">
                     {timeAgo(req.created_at)}
