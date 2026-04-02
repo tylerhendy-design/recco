@@ -11,6 +11,7 @@ import { fetchUserPicks, type Pick } from '@/lib/data/picks'
 import { fetchBlockedCategories, fetchSinBinnedByFriend, fetchSinBinOffences, fetchFriendInMySinBin, releaseSinBin, type SinBinEntry } from '@/lib/data/sinbin'
 import { initials } from '@/lib/utils'
 import { getCategoryColor, getCategoryLabel } from '@/constants/categories'
+import { ProfileStats } from '@/components/ui/ProfileStats'
 
 function getLinkLabel(url: string): string {
   try {
@@ -189,58 +190,15 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Stats */}
           {stats && (
             <div className="px-6 py-4 border-b border-bg-card">
-              {/* Reco flow bar */}
-              {(() => {
-                const sent = stats.recos_sent ?? 0
-                const received = stats.recos_received ?? 0
-                const completed = stats.recos_completed ?? 0
-                const stinkers = stats.stinkers_sent ?? 0
-                const total = sent + received + completed + stinkers || 1
-                return (
-                  <div className="mb-3">
-                    <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
-                      {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
-                      {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
-                      {completed > 0 && <div className="bg-[#16A34A] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
-                      {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center gap-2 py-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
-                        <span className="text-[16px] text-white">Given {sent}</span>
-                      </div>
-                      <div className="flex items-center gap-2 py-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#5BC4F5] flex-shrink-0" />
-                        <span className="text-[16px] text-white">Received {received}</span>
-                      </div>
-                      <Link href={`/profile/recos?filter=completed&userId=${id}`} className="flex items-center gap-2 py-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
-                        <span className="text-[16px] text-white">Completed {completed}</span>
-                      </Link>
-                      <div className="flex items-center gap-2 py-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
-                        <span className="text-[16px] text-white">Stinkers {stinkers}</span>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Stats grid */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-bg-card rounded-input p-2.5 text-center">
-                  <div className="text-[20px] font-bold text-white">{stats.avg_score}</div>
-                  <div className="text-[10px] text-text-faint mt-0.5">Avg score</div>
-                </div>
-                <div className="bg-bg-card rounded-input p-2.5 text-center">
-                  <div className="text-[20px] font-bold text-white">{stats.friends_count}</div>
-                  <div className="text-[10px] text-text-faint mt-0.5">Friends</div>
-                </div>
-                <div className="bg-bg-card rounded-input p-2.5 text-center">
-                  <div className="text-[20px] font-bold text-white">{stats.recos_completed}</div>
-                  <div className="text-[10px] text-text-faint mt-0.5">Completed</div>
-                </div>
-              </div>
+              <ProfileStats
+                recosSent={stats.recos_sent ?? 0}
+                recosReceived={stats.recos_received ?? 0}
+                recosCompleted={stats.recos_completed ?? 0}
+                stinkersSent={stats.stinkers_sent ?? 0}
+                avgScore={stats.avg_score ?? '—'}
+                friendsCount={stats.friends_count ?? 0}
+                completedHref={`/profile/recos?filter=completed&userId=${id}`}
+              />
             </div>
           )}
 

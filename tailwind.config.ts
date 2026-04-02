@@ -72,6 +72,19 @@ const config: Config = {
       fontFamily: {
         sans: ['Space Grotesk', 'sans-serif'],
       },
+      // Design tokens — profile spacing and typography
+      fontSize: {
+        'heading-lg': ['20px', { lineHeight: '1.2', fontWeight: '700', letterSpacing: '-0.4px' }],
+        'heading-md': ['17px', { lineHeight: '1.2', fontWeight: '600', letterSpacing: '-0.3px' }],
+        'stat-value': ['20px', { lineHeight: '1.2', fontWeight: '700' }],
+        'stat-label': ['10px', { lineHeight: '1.4' }],
+        'legend': ['15px', { lineHeight: '1.4' }],
+      },
+      spacing: {
+        'section': '20px',   // between major profile sections
+        'section-sm': '12px', // between elements within a section
+        'card-pad': '16px',  // padding inside stat cards
+      },
       borderRadius: {
         phone: '48px',
         sheet: '24px',

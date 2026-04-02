@@ -9,6 +9,7 @@ import { initials } from '@/lib/utils'
 import { fetchUserPicks, addPick, updatePick, removePick, type Pick } from '@/lib/data/picks'
 import { fetchAllSinBinnedBy } from '@/lib/data/sinbin'
 import { CATEGORIES, type CategoryId, getCategoryColor, getCategoryLabel } from '@/constants/categories'
+import { ProfileStats } from '@/components/ui/ProfileStats'
 
 type ProfileStats = {
   id: string
@@ -320,57 +321,19 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Stats */}
-            {(() => {
-              const sent = profile.recos_sent
-              const received = profile.recos_received
-              const completed = profile.recos_completed
-              const stinkers = profile.stinkers_sent
-              const total = sent + received + completed + stinkers || 1
-              return (
-                <div className="mb-3 mt-2 pt-4 border-t border-border">
-                  <div className="text-[20px] font-bold text-white tracking-[-0.4px] mb-3">Stats</div>
-                  {/* Ratio bar */}
-                  <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
-                    {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
-                    {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
-                    {completed > 0 && <div className="bg-[#16A34A] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
-                    {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
-                  </div>
-                  {/* Legend: 2x2 grid, word then number, 16px regular */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <Link href="/profile/recos?filter=given" className="flex items-center gap-2 py-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
-                      <span className="text-[16px] text-white">Given {sent}</span>
-                    </Link>
-                    <Link href="/profile/recos?filter=received" className="flex items-center gap-2 py-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#5BC4F5] flex-shrink-0" />
-                      <span className="text-[16px] text-white">Received {received}</span>
-                    </Link>
-                    <Link href="/profile/recos?filter=completed" className="flex items-center gap-2 py-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
-                      <span className="text-[16px] text-white">Completed {completed}</span>
-                    </Link>
-                    <button onClick={() => setShowStinkers(true)} className="flex items-center gap-2 py-1.5 text-left">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
-                      <span className="text-[16px] text-white">Stinkers {stinkers}</span>
-                    </button>
-                  </div>
-                </div>
-              )
-            })()}
-
-            {/* Stats — 3 columns, 2 rows */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              <StatBox value={`${profile.hit_rate}%`} label="Hit rate" />
-              <StatBox value={profile.avg_score} label="Avg score" />
-              <Link href="/friends"><StatBox value={String(profile.friends_count)} label="Friends" /></Link>
-              <StatBox value={String(profile.times_forwarded)} label="Forwarded" />
-              <StatBox value={`${profile.avg_completion_days}d`} label="Avg complete" />
-              {profile.top_category ? (
-                <StatBox value={getCategoryLabel(profile.top_category)} label="Top category" />
-              ) : <div />}
-            </div>
+            <ProfileStats
+              recosSent={profile.recos_sent}
+              recosReceived={profile.recos_received}
+              recosCompleted={profile.recos_completed}
+              stinkersSent={profile.stinkers_sent}
+              avgScore={profile.avg_score}
+              friendsCount={profile.friends_count}
+              hitRate={profile.hit_rate}
+              timesForwarded={profile.times_forwarded}
+              avgCompletionDays={profile.avg_completion_days}
+              topCategory={profile.top_category ?? undefined}
+              onStinkersClick={() => setShowStinkers(true)}
+            />
           </div>
 
 
