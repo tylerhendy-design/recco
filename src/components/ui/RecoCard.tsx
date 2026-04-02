@@ -433,8 +433,8 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       {/* Three-dot menu — drops from top-right of card */}
       {menuOpen && (
         <>
-          <div className="fixed inset-0 z-[180] bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 z-[181] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto">
+          <div className="fixed inset-0 z-[210] bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[211] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto">
             {/* Drag handle */}
             <div className="flex justify-center py-3">
               <div className="w-10 h-1 rounded-full bg-border" />
