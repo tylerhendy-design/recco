@@ -305,18 +305,18 @@ export default function ProfilePage() {
                     </svg>
                   </button>
                 </div>
-                <div className="text-[13px] text-text-faint mt-0.5">
-                  @{profile.username}{memberNumber ? ` · #${memberNumber}` : ''}{joinYear ? ` · joined ${joinYear}` : ''}
-                </div>
                 <button
                   onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/r/u/${profile.username}`); setProfileCopied(true); setTimeout(() => setProfileCopied(false), 2000) }}
-                  className="flex items-center gap-1 text-[11px] text-accent mt-1"
+                  className="flex items-center gap-1 text-[13px] text-accent mt-0.5"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
                   </svg>
                   {profileCopied ? 'Link copied' : `givemeareco.com/r/u/${profile.username}`}
                 </button>
+                <div className="text-[13px] text-text-faint mt-0.5">
+                  @{profile.username}{memberNumber ? ` · #${memberNumber}` : ''}{joinYear ? ` · joined ${joinYear}` : ''}
+                </div>
               </div>
             </div>
 
@@ -333,7 +333,7 @@ export default function ProfilePage() {
                   <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
                     {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
                     {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
-                    {completed > 0 && <div className="bg-[#2DD4BF] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
+                    {completed > 0 && <div className="bg-[#4ADE80] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
                     {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                   </div>
                   {/* Legend: dot · number · label (label matches dot colour) */}
@@ -349,9 +349,9 @@ export default function ProfilePage() {
                       <span className="text-[11px] font-semibold text-[#5BC4F5]">Received</span>
                     </Link>
                     <Link href="/profile/recos?filter=completed" className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#2DD4BF]" />
+                      <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
                       <span className="text-[11px] font-bold text-white">{completed}</span>
-                      <span className="text-[11px] font-semibold text-[#2DD4BF]">Completed</span>
+                      <span className="text-[11px] font-semibold text-[#4ADE80]">Completed</span>
                     </Link>
                     <button onClick={() => setShowStinkers(true)} className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#F56E6E]" />
@@ -590,13 +590,14 @@ export default function ProfilePage() {
 }
 
 function StatBox({ value, label, danger, onPress }: { value: string; label: string; danger?: boolean; onPress?: () => void }) {
+  const isLong = value.length > 5
   return (
     <div
-      className={`flex-1 bg-bg-card rounded-input p-2.5 text-center ${onPress ? 'cursor-pointer active:opacity-70' : ''}`}
+      className={`flex-1 bg-bg-card rounded-input p-2.5 text-center overflow-hidden ${onPress ? 'cursor-pointer active:opacity-70' : ''}`}
       onClick={onPress}
     >
-      <div className={`text-[20px] font-bold ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
-      <div className="text-[10px] text-text-faint mt-0.5">{label}</div>
+      <div className={`${isLong ? 'text-[13px]' : 'text-[20px]'} font-bold truncate ${danger ? 'text-bad' : 'text-white'}`}>{value}</div>
+      <div className="text-[10px] text-text-faint mt-0.5 truncate">{label}</div>
     </div>
   )
 }
