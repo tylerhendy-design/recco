@@ -255,7 +255,11 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   async function selectSuggestion(s: Suggestion) {
     setTitle(s.title)
     setSuggestionSelected(true)
-    if (s.imageUrl) setImageUrl(s.imageUrl)
+    // Upgrade TMDB thumbnail (w185) to full-size (w780) for the card image
+    if (s.imageUrl) {
+      const upgraded = s.imageUrl.replace('/w185', '/w780')
+      setImageUrl(upgraded)
+    }
     if (s.meta?.genre)   setConstraints(p => ({ ...p, genre: s.meta!.genre! }))
     if (s.meta?.artist)  setManualArtist(s.meta.artist)
     if (s.meta?.address) setConstraints(p => ({ ...p, address: s.meta!.address! }))

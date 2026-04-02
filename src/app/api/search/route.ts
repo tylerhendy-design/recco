@@ -55,7 +55,7 @@ async function searchTMDB(q: string, type: 'movie' | 'tv'): Promise<SearchResult
       return {
         title: title ?? null,
         subtitle: [genre, year].filter(Boolean).join(' · ') || null,
-        imageUrl: r.poster_path ? `https://image.tmdb.org/t/p/w780${r.poster_path}` : null,
+        imageUrl: r.poster_path ? `https://image.tmdb.org/t/p/w185${r.poster_path}` : null,
         meta: { genre, year: year ?? undefined },
       }
     })

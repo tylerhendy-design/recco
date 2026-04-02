@@ -61,12 +61,15 @@ export async function acceptFriendRequest(connectionId: string, requesterId: str
   if (error) return { error: error.message }
 
   // Notify the original requester that their request was accepted
-  await supabase.from('notifications').insert({
+  const { error: notifError } = await supabase.from('notifications').insert({
     user_id: requesterId,
     type: 'friend_accepted',
     actor_id: addresseeId,
     payload: {},
   })
+
+  // Log notification failure but don't block the accept
+  if (notifError) console.error('friend_accepted notification failed:', notifError.message)
 
   return { error: null }
 }

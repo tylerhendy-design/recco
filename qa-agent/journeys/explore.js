@@ -24,6 +24,19 @@
  *   J9           Places page — city groups, filters, search
  *   J10          Profile — stats, TOP 03, profile link
  *   J13          Sin Bin — both tabs
+ *   J_POPUP_OBSTRUCTION  Every modal/sheet checked for nav bar obstruction
+ *   J_ICON_CONSISTENCY   Back arrows and chevrons checked for style consistency
+ *   J_EMPTY_STATES       Every empty state checked for illustration, text, CTA
+ *   J_LOADING_STATES     Skeletons and spinners checked for consistency
+ *   J_PERFORMANCE        Page load speed rated on every main screen
+ *   J_VISUAL_CONSISTENCY Typography and colour checked across all screens
+ *   J_TOUCH_TARGETS      Touch target sizes and tap accuracy
+ *   J_FORM_VALIDATION    Empty submission, long text, special characters
+ *   J_OUTBOX             Sent recos and feedback received
+ *   J_STRANGER_PROFILE   Non-friend profile — what is visible vs hidden
+ *   J_DEEP_LINKS         Direct URL navigation and 404 handling
+ *   J_STATE_PERSISTENCE  Tab state, scroll position, form state across nav
+ *   J_REQUEST_RECEIVED   Fulfilling a received reco request
  *
  * Loop detection: fires when the last 3 actions were identical
  * (same action + same x/y) — NOT URL-based.
@@ -506,6 +519,426 @@ Note: this requires at least 2 friends. Currently only Alex Friend is available 
         'If the page fails to load, that is critical',
         'If only one tab exists, report as medium bug',
         'If tabs exist but content area crashes, report as critical',
+      ],
+    },
+
+    // ── Popup Obstruction ──────────────────────────────────────
+    {
+      id: 'J_POPUP_OBSTRUCTION',
+      name: 'Popup/Sheet Obstruction — Nav & Header Coverage',
+      startUrl: `${baseUrl}/home`,
+      goal: `Test every popup, sheet, and overlay in the app for obstruction by nav bars.
+For each popup you trigger, take note of:
+  A) Is the CLOSE BUTTON (X or Cancel) fully visible and tappable?
+  B) Is the TOP EDGE of the sheet visible or hidden behind the header?
+  C) Is the BOTTOM EDGE of the sheet visible or hidden behind the bottom nav bar?
+  D) Can you actually close the sheet by tapping the close button?
+
+Trigger these popups in order:
+1. HOME: Expand a reco card → feedback sheet ("Done? Give them your review")
+   - Check: is the sheet's close/cancel visible? Does the bottom of the sheet sit above the nav?
+2. HOME: Tap three-dot menu on a card → dropdown menu
+   - Check: is the dropdown fully visible? Not clipped by bottom nav?
+3. RECO FLOW (/reco?mode=give): Open the friend picker
+   - Check: can you see all friends? Is the bottom of the picker above the nav?
+4. RECO FLOW: After typing in the name field, open the autocomplete dropdown
+   - Check: is the dropdown clipped by any element?
+5. PROFILE (/profile): If any modal opens (e.g. share profile link), check the same
+6. NOTIFICATIONS: If any action sheet appears, check it
+
+For each one, report:
+- PASS: fully visible, close button accessible
+- BUG [high]: close button hidden behind nav or header
+- BUG [high]: sheet content clipped — cannot see top/bottom of overlay
+- BUG [medium]: sheet partially overlapping nav but still usable`,
+      successCriteria: 'You tested every popup you could find and reported obstruction status for each. Call done with a summary.',
+      antiPatterns: [
+        'Do not submit reviews or send recos in this journey — just open the sheets and check visibility',
+        'Close each sheet before moving to the next one',
+        'If a sheet has no visible close button at all, that is always HIGH severity',
+        'The bottom nav is approximately 60-80px tall at the bottom of the screen',
+        'The header/status bar is approximately 50-60px tall at the top',
+      ],
+    },
+
+    // ── Back Arrow & Chevron Icon Consistency ──────────────────
+    {
+      id: 'J_ICON_CONSISTENCY',
+      name: 'Back Arrow & Chevron Icon Consistency',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check every screen in the app for back arrows and chevron icons.
+The correct back arrow should be SQUARE/GEOMETRIC — clean right angles, not curved or rounded.
+
+Visit each of these screens and note the back arrow / chevron style:
+1. /home → tap a reco card → note the back arrow inside the expanded card
+2. /notifications → note any back arrow at top left
+3. /reco?mode=give → go through the flow → note any back/chevron icons
+4. /friends → tap a friend profile → note the back arrow
+5. /profile → note any chevrons on settings or picks sections
+6. /lists → tap a city → note the back arrow
+7. /sinbin → note any back arrows
+
+For each screen, describe:
+- Shape of the back arrow: IS IT geometric/square? Or is it rounded/curved/thin?
+- Size: does it look the same size as on other screens?
+- Position: is it in the same position (top left) on every screen?
+- Style: is it filled, outlined, or a thin line?
+
+If ANY screen has a different style back arrow/chevron from the others, report it as:
+BUG [medium]: Icon inconsistency — describe exactly what looks different
+
+The correct style is: square, geometric, consistent stroke weight, same size everywhere.`,
+      successCriteria: 'You visited every screen, checked all back arrows and chevrons, and reported any inconsistencies. Call done with a full summary.',
+      antiPatterns: [
+        'Do not just check one screen — visit ALL screens listed above',
+        'Even a slightly different size or weight is worth noting',
+        'Rounded vs square corners on the arrow tip is the key thing to spot',
+        'If a screen has NO back arrow when it should (e.g. a detail page), that is a medium bug',
+      ],
+    },
+
+    // ── Empty States ───────────────────────────────────────────
+    {
+      id: 'J_EMPTY_STATES',
+      name: 'Empty State Visual Consistency',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check that every screen has a well-designed, consistent empty state when there is no data.
+Visit each tab/screen and look for empty state treatment:
+1. /home → No Gos tab — should be empty for a new user. Is there an illustration, helpful text, and a CTA?
+2. /lists — if no place-based recos exist, what does the screen show?
+3. /sinbin → "Your sin bin" tab — should be empty. Is the empty state well-designed?
+4. /sinbin → "Bins you're in" tab — same check
+5. /friends — after clearing interactions, check the empty friends state (if accessible)
+6. /notifications — if all notifications are read/cleared, what shows?
+
+For each empty state, check:
+- Is there an illustration or icon? (should be present)
+- Is there helpful explanatory text? (should explain what this section is for)
+- Is there a CTA button pointing the user to an action? (preferred)
+- Does the empty state look visually consistent with other empty states in the app?
+- Is the text centred and the spacing reasonable?
+
+Report BUG [medium] for any empty state that is: completely blank, shows raw "null" or "undefined", has no text at all, or looks visually broken.
+Report BUG [low] for empty states that are functional but lack an illustration or CTA.`,
+      successCriteria: 'You checked all empty states and noted their quality. Call done with a summary.',
+      antiPatterns: [
+        'If a screen has data, skip to the next — only check screens with no content',
+        'A plain "No items" text alone is a low severity bug — note it but do not stop',
+      ],
+    },
+
+    // ── Loading States ─────────────────────────────────────────
+    {
+      id: 'J_LOADING_STATES',
+      name: 'Loading State & Skeleton Consistency',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check that loading states and skeletons are shown consistently across the app.
+Navigate to each page quickly (before content loads) and note what appears:
+1. Navigate to /home — does a skeleton or spinner appear before cards load?
+2. Navigate to /notifications — is there a loading indicator?
+3. Navigate to /friends — loading state before friends list appears?
+4. Navigate to /lists — loading state before city groups appear?
+5. Navigate to /profile — loading state before stats appear?
+6. Navigate to /reco?mode=give and select a category, then type in the name field — is there a loading indicator while autocomplete fetches?
+
+For each:
+- Is there a skeleton UI (preferred) or a spinner?
+- Does the page flash/jump when content loads (layout shift)?
+- Is the loading indicator consistent in style across screens?
+- Does anything appear broken or blank before the data arrives?
+
+Report BUG [medium] for: no loading state at all (content appears from nothing), major layout shift when data loads, or inconsistent spinner styles.
+Report BUG [high] for: page shows error state during normal loading.`,
+      successCriteria: 'You checked loading states on all main screens. Call done with summary.',
+      antiPatterns: [
+        'Load each page fresh — use navigate action to each URL',
+        'Take a screenshot immediately after navigation, before waiting',
+        'If the page loads instantly with no loading state (from cache), note it but do not report as a bug',
+      ],
+    },
+
+    // ── Page Load Timing ───────────────────────────────────────
+    {
+      id: 'J_PERFORMANCE',
+      name: 'Page Load Performance — Slow Screens',
+      startUrl: `${baseUrl}/home`,
+      goal: `Identify which screens feel slow or take a long time to show content.
+Navigate to each key screen and note how long it takes for content to appear (approximate):
+1. /home — how long before reco cards appear?
+2. /notifications — how long before notifications list appears?
+3. /reco?mode=give — how long before the category chips appear?
+4. /lists — how long before city groups appear?
+5. /profile — how long before stats and picks appear?
+6. /friends — how long before the friends list appears?
+
+For each screen estimate:
+- FAST: content appears almost immediately (under 1 second)
+- MEDIUM: content appears after a noticeable wait (1-3 seconds)
+- SLOW: content takes a long time or shows a spinner for more than 3 seconds
+
+Also note:
+- Does any screen show a blank white flash before content?
+- Does any image take noticeably longer to load than the surrounding content?
+- Are there any screens where you can see individual elements pop in one by one?
+
+Report BUG [high] for any screen that takes more than 3 seconds to show content.
+Report BUG [medium] for noticeable layout shift or blank flash.`,
+      successCriteria: 'You rated the performance of every main screen. Call done with a full performance summary.',
+      antiPatterns: [
+        'Use navigate action to each URL to do a fresh load',
+        'Wait 3 seconds after navigation before reporting slow — do not report immediately',
+        'Do not report fast screens as bugs',
+      ],
+    },
+
+    // ── Typography & Colour Consistency ────────────────────────
+    {
+      id: 'J_VISUAL_CONSISTENCY',
+      name: 'Typography & Colour Consistency',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check that typography and colours are visually consistent across screens.
+Visit each screen and look for visual inconsistencies:
+
+TYPOGRAPHY — check on each screen:
+1. Are heading sizes consistent? (page titles should all be the same size)
+2. Are body text sizes consistent?
+3. Is the font the same everywhere? (no screen should use a noticeably different typeface)
+4. Are button labels the same font size and weight across screens?
+
+COLOUR — check on each screen:
+5. Is the primary/accent colour (yellow) used consistently for CTAs?
+6. Are there any buttons that use a different colour from the rest?
+7. Is the background colour consistent (dark theme or light theme throughout)?
+8. Are error messages always red? Are success states always green?
+
+Screens to check:
+- /home (cards, tabs, header)
+- /reco?mode=give (chips, buttons, form fields)
+- /notifications (notification items)
+- /profile (stats, section headers)
+- /friends (friend cards)
+- /sinbin (tabs, content)
+
+Report BUG [medium] for any screen where typography or colour deviates noticeably from the rest.
+Report BUG [low] for minor spacing inconsistencies.`,
+      successCriteria: 'You checked typography and colour on all main screens. Call done with a summary of any inconsistencies.',
+      antiPatterns: [
+        'Be specific when reporting — say which screen and what element looks different',
+        'Minor pixel differences are not bugs — only report clearly noticeable deviations',
+      ],
+    },
+
+    // ── Touch Target Size ──────────────────────────────────────
+    {
+      id: 'J_TOUCH_TARGETS',
+      name: 'Touch Target Size & Tap Accuracy',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check that interactive elements have large enough touch targets.
+Minimum touch target size on mobile should be 44x44px (Apple HIG standard).
+Small targets cause missed taps and are a common mobile UX problem.
+
+Check these specific elements for tap accuracy and target size:
+1. Bottom nav bar icons — are they easy to tap, or do you sometimes miss?
+2. Three-dot menu (⋯) on reco cards — is it large enough to tap accurately?
+3. Back arrows on detail screens — is the tap area large enough?
+4. Notification action buttons (Accept/Decline) — are they large enough?
+5. Score slider on the feedback sheet — can you accurately set a specific score?
+6. Category chips on the reco form — are they easy to tap?
+7. Close (X) buttons on any modals or sheets
+
+For each element:
+- Try tapping it and note if it responds correctly first time
+- If you miss it or have to tap multiple times, report BUG [medium]: small touch target
+
+Also check:
+- Are any two interactive elements so close together that tapping one risks tapping the other?
+Report BUG [medium] for any element that is clearly too small or too close to its neighbours.`,
+      successCriteria: 'You tested all small interactive elements for tap accuracy. Call done with summary.',
+      antiPatterns: [
+        'Do not report standard-sized buttons as too small',
+        'Focus on small icons, close buttons, and narrow elements',
+      ],
+    },
+
+    // ── Form Validation & Edge Cases ───────────────────────────
+    {
+      id: 'J_FORM_VALIDATION',
+      name: 'Form Validation & Edge Cases',
+      startUrl: `${baseUrl}/reco?mode=give`,
+      goal: `Test form validation and edge cases across key forms.
+
+TEST 1 — Empty form submission on /reco?mode=give:
+1. Select a category chip (restaurant)
+2. Do NOT fill in the title field
+3. Try to tap Send — verify it is disabled or shows an error
+4. Note whether any helpful error message appears
+
+TEST 2 — Long text input:
+5. Fill in the title field with a very long string: "This is a very long restaurant name that goes on and on and should test the character limit handling"
+6. Note: does the field truncate? Does it overflow the UI? Does a character counter appear?
+7. Fill in the Why field with a very long review (150+ characters)
+8. Note the same things
+
+TEST 3 — Special characters:
+9. Type special characters in the Why field: "Great! 🍝 £20/head — worth every penny & more"
+10. Verify the text appears correctly with no encoding errors
+
+TEST 4 — Review form (/home):
+11. Navigate to /home, expand a card, open the feedback sheet
+12. Try to tap Send feedback with an EMPTY text field — verify button is disabled
+13. Type a single character and verify the button enables
+
+Report BUG [high] for: form submits with empty required fields, or crashes on special characters.
+Report BUG [medium] for: no character limits shown, text overflows the UI, or no error messages on invalid submission.`,
+      successCriteria: 'You tested empty submission, long text, and special characters. Call done with findings.',
+      antiPatterns: [
+        'Do not send these recos — just test the validation, then cancel or navigate away',
+        'If a field has no character limit and accepts 200+ characters without warning, report as low',
+      ],
+    },
+
+    // ── Outbox — Sent Recos ────────────────────────────────────
+    {
+      id: 'J_OUTBOX',
+      name: 'Sent Recos — Outbox & Feedback Received',
+      startUrl: `${baseUrl}/profile`,
+      goal: `Check that recos you have sent are visible and feedback on them is shown.
+1. Navigate to /profile
+2. Look for a "Sent" or "Given" section, or a way to view recos you have sent
+3. If it exists: verify reco cards show the recipient name, title, and send date
+4. Tap one sent reco — verify a detail view opens
+5. Check: is any feedback the recipient left shown on the sent reco?
+6. Navigate to /notifications — look for feedback_received notifications
+7. Tap one — verify it shows the score and review text from the recipient
+8. Check that the score badge colour is correct (green for 7-10, amber for 5-6, red for 1-4)
+
+Report BUG [high] for: no way to view sent recos, feedback not shown on sent recos, wrong badge colour.
+Report BUG [medium] for: sent recos visible but no feedback shown even when feedback exists.`,
+      successCriteria: 'You found and reviewed the sent recos section and feedback notifications. Call done.',
+      antiPatterns: [
+        'The sent recos section may be on the profile page or accessed via a separate tab',
+        'If you cannot find sent recos anywhere, report as HIGH bug',
+      ],
+    },
+
+    // ── Stranger Profile ───────────────────────────────────────
+    {
+      id: 'J_STRANGER_PROFILE',
+      name: 'Non-Friend Profile View',
+      startUrl: `${baseUrl}/friends`,
+      goal: `Test what a profile looks like for someone you are NOT friends with.
+1. Find Dana Discover in the friends section (may need to search)
+   OR navigate to their profile via search
+2. Open Dana's profile
+3. Note what is visible to a non-friend:
+   - Can you see their recos? Or are they hidden?
+   - Can you see their TOP 03 picks?
+   - Is there an "Add friend" button?
+   - Is there a "Give reco" button? (Should there be — you're not friends yet)
+4. Check: is it clear from the UI that this person is not yet a friend?
+5. Verify the "Add friend" button is visible and prominent
+
+Report BUG [high] for: private content visible to non-friends, no Add Friend button, page crashes.
+Report BUG [medium] for: unclear relationship status, no visual indicator that you're not friends.`,
+      successCriteria: 'You viewed a non-friend profile and noted what is visible. Call done.',
+      antiPatterns: [
+        'Do not tap Add Friend here — that was done in J_FRIEND_SEND',
+        'Focus on what content is shown vs hidden for a non-friend viewer',
+      ],
+    },
+
+    // ── Deep Link & Direct Navigation ─────────────────────────
+    {
+      id: 'J_DEEP_LINKS',
+      name: 'Direct URL Navigation & Deep Links',
+      startUrl: `${baseUrl}/home`,
+      goal: `Verify that direct URL navigation works correctly for all main routes.
+Navigate directly to each URL and check the page loads correctly:
+1. Navigate to /home — verify home feed loads
+2. Navigate to /notifications — verify notifications load
+3. Navigate to /friends — verify friends list loads
+4. Navigate to /lists — verify places/cities load
+5. Navigate to /profile — verify profile loads
+6. Navigate to /sinbin — verify sin bin loads
+7. Navigate to /reco?mode=give — verify reco form loads
+8. Navigate to /reco?mode=quick — verify quick add loads
+9. Navigate to /reco?mode=get — verify request form loads
+10. Navigate to a non-existent route: /this-does-not-exist — verify a proper 404 page appears
+
+For each:
+- Does the page load without error?
+- Is the correct content shown?
+- Is the bottom nav still visible and correct tab highlighted?
+
+Report BUG [high] for: any valid route that returns a 404 or blank page.
+Report BUG [medium] for: correct page loads but wrong nav tab is highlighted.
+Report BUG [low] for: valid routes that redirect unnecessarily.`,
+      successCriteria: 'You tested all direct routes and noted any failures. Call done.',
+      antiPatterns: [
+        'Use the navigate action for each URL',
+        'Wait for networkidle before assessing each page',
+      ],
+    },
+
+    // ── Tab State Persistence ──────────────────────────────────
+    {
+      id: 'J_STATE_PERSISTENCE',
+      name: 'Tab State & Navigation Persistence',
+      startUrl: `${baseUrl}/home`,
+      goal: `Check that state persists correctly when switching between tabs and navigating back.
+
+TEST 1 — Tab state persistence:
+1. On /home, switch to the "Done" tab
+2. Navigate to /notifications via the bottom nav
+3. Navigate back to /home via the bottom nav
+4. Check: is the "Done" tab still selected? (it should be — state should persist)
+5. If it reset to "To Do", report as BUG [medium]: tab state not preserved
+
+TEST 2 — Scroll position:
+6. On /home, scroll down past 3 reco cards
+7. Tap the bottom nav to go to /friends
+8. Tap the bottom nav to return to /home
+9. Check: is the scroll position preserved? Or did it reset to the top?
+10. Report as BUG [low] if scroll resets (preferred behaviour is to preserve position)
+
+TEST 3 — Form state:
+11. Navigate to /reco?mode=give
+12. Select a category chip and type a partial title
+13. Navigate away using the bottom nav
+14. Navigate back to /reco?mode=give
+15. Check: was form state preserved or cleared?
+16. Report as BUG [low] if not cleared (form should reset) OR BUG [medium] if it preserved partial state inconsistently`,
+      successCriteria: 'You tested tab state, scroll position, and form state persistence. Call done.',
+      antiPatterns: [
+        'Be precise about what state was or was not preserved',
+        'These are UX quality checks — all have workarounds, so severity is usually low/medium',
+      ],
+    },
+
+    // ── Reco Request Received ──────────────────────────────────
+    {
+      id: 'J_REQUEST_RECEIVED',
+      name: 'Reco Request Received — Fulfil Flow',
+      startUrl: `${baseUrl}/notifications`,
+      goal: `Check the flow for fulfilling a reco request that someone sent you.
+Note: the seed data includes a reco request from Alex Friend to QA Agent.
+1. Look in notifications for a "request_received" type notification
+2. If present: tap it — verify it navigates to a page where you can fulfil the request
+3. Verify: the request shows who asked, what category they want, and any context they provided
+4. Look for a "Give reco" or "Fulfil request" button
+5. Tap it — verify it navigates to the reco form with the requester pre-filled
+6. Check: is the category pre-selected from the request?
+7. Navigate back
+
+If no request_received notification exists:
+- Navigate to /profile and look for "Your requests" section
+- Check what a received request looks like from the other side
+
+Report BUG [high] for: no way to fulfil a received request, request notification missing, form does not pre-fill.`,
+      successCriteria: 'You found the received request and checked the fulfilment flow. Call done.',
+      antiPatterns: [
+        'Do not actually send the reco — just verify the navigation and pre-fill',
+        'If request_received is not in notifications, look in profile or a dedicated requests page',
       ],
     },
 

@@ -46,23 +46,31 @@ export default function AddFriendsPage() {
   const search = useCallback(async (q: string, uid: string) => {
     if (q.length < 2) { setResults([]); return }
     setSearching(true)
-    const profiles = await searchProfiles(q, uid)
+    try {
+      const profiles = await searchProfiles(q, uid)
 
-    // Fetch connection status for each result in parallel
-    const withStatus = await Promise.all(
-      profiles.map(async (p) => {
-        const conn = await getConnectionStatus(uid, p.id)
-        let status: SearchResult['status'] = 'none'
-        if (conn) {
-          if (conn.status === 'accepted') status = 'accepted'
-          else if (conn.status === 'pending') {
-            status = conn.requester_id === uid ? 'pending_sent' : 'pending_received'
+      // Fetch connection status for each result in parallel
+      const withStatus = await Promise.all(
+        profiles.map(async (p) => {
+          try {
+            const conn = await getConnectionStatus(uid, p.id)
+            let status: SearchResult['status'] = 'none'
+            if (conn) {
+              if (conn.status === 'accepted') status = 'accepted'
+              else if (conn.status === 'pending') {
+                status = conn.requester_id === uid ? 'pending_sent' : 'pending_received'
+              }
+            }
+            return { ...p, status }
+          } catch {
+            return { ...p, status: 'none' as const }
           }
-        }
-        return { ...p, status }
-      })
-    )
-    setResults(withStatus)
+        })
+      )
+      setResults(withStatus)
+    } catch {
+      setResults([])
+    }
     setSearching(false)
   }, [])
 
@@ -150,12 +158,16 @@ export default function AddFriendsPage() {
   async function handleDiscoverAdd(person: DiscoverResult) {
     if (!userId) return
     setDiscovered(prev => prev.map(r => r.id === person.id ? { ...r, status: 'loading' } : r))
-    const { error } = await sendFriendRequest(userId, person.id)
-    if (error) {
+    try {
+      const { error } = await sendFriendRequest(userId, person.id)
+      if (error) {
+        setDiscovered(prev => prev.map(r => r.id === person.id ? { ...r, status: 'none' } : r))
+        return
+      }
+      setDiscovered(prev => prev.map(r => r.id === person.id ? { ...r, status: 'pending_sent' } : r))
+    } catch {
       setDiscovered(prev => prev.map(r => r.id === person.id ? { ...r, status: 'none' } : r))
-      return
     }
-    setDiscovered(prev => prev.map(r => r.id === person.id ? { ...r, status: 'pending_sent' } : r))
   }
 
   const hasContactPicker = typeof window !== 'undefined' && 'contacts' in navigator
@@ -320,7 +332,7 @@ export default function AddFriendsPage() {
       </div>
 
       {/* Confirmation overlay */}
-      {confirmPerson && (
+      {confirmPerson && confirmPerson.display_name && (
         <>
           <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm" onClick={() => setConfirmPerson(null)} />
           <div className="fixed inset-x-0 bottom-0 z-[201] p-4 pb-8">
@@ -328,11 +340,11 @@ export default function AddFriendsPage() {
               <div className="w-14 h-14 rounded-full bg-bg-card border border-border flex items-center justify-center text-[16px] font-bold text-text-secondary overflow-hidden mx-auto mb-3">
                 {confirmPerson.avatar_url
                   ? <img src={confirmPerson.avatar_url} alt="" className="w-full h-full object-cover" />
-                  : initials(confirmPerson.display_name)
+                  : initials(confirmPerson.display_name ?? '')
                 }
               </div>
               <div className="text-[16px] font-bold text-white mb-1">Add {confirmPerson.display_name}?</div>
-              <div className="text-[13px] text-text-muted mb-4">They'll receive a friend request from you.</div>
+              <div className="text-[13px] text-text-muted mb-4">They&#39;ll receive a friend request from you.</div>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmPerson(null)} className="flex-1 py-3 border border-border rounded-btn text-[14px] font-semibold text-text-faint">Cancel</button>
                 <button onClick={() => handleAdd(confirmPerson)} className="flex-[2] py-3 bg-accent text-accent-fg rounded-btn text-[14px] font-bold">Send request</button>
