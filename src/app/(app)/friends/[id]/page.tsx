@@ -149,7 +149,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Avatar + name */}
           <div className="px-6 pt-5 pb-5 border-b border-bg-card">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-bg-card border border-border flex items-center justify-center text-[20px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
+              <div className="w-[72px] h-[72px] rounded-full bg-bg-card flex items-center justify-center text-[22px] font-bold text-text-secondary overflow-hidden flex-shrink-0">
                 {profile.avatar_url
                   ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
                   : initials(profile.display_name)
@@ -185,6 +185,68 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
               <span className="text-[14px] font-semibold text-text-secondary">Get reco</span>
             </Link>
           </div>
+
+          {/* Stats */}
+          {stats && (
+            <div className="px-6 py-4 border-b border-bg-card">
+              {/* Reco flow bar */}
+              {(() => {
+                const sent = stats.recos_sent ?? 0
+                const received = stats.recos_received ?? 0
+                const completed = stats.recos_completed ?? 0
+                const stinkers = stats.stinkers_sent ?? 0
+                const total = sent + received + completed + stinkers || 1
+                return (
+                  <div className="mb-3">
+                    <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
+                      {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
+                      {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
+                      {completed > 0 && <div className="bg-[#4ADE80] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
+                      {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-accent" />
+                        <span className="text-[11px] font-bold text-white">{sent}</span>
+                        <span className="text-[11px] font-semibold text-accent">Given</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#5BC4F5]" />
+                        <span className="text-[11px] font-bold text-white">{received}</span>
+                        <span className="text-[11px] font-semibold text-[#5BC4F5]">Received</span>
+                      </div>
+                      <Link href={`/profile/recos?filter=completed&userId=${id}`} className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
+                        <span className="text-[11px] font-bold text-white">{completed}</span>
+                        <span className="text-[11px] font-semibold text-[#4ADE80]">Completed</span>
+                      </Link>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#F56E6E]" />
+                        <span className="text-[11px] font-bold text-white">{stinkers}</span>
+                        <span className="text-[11px] font-semibold text-[#F56E6E]">Stinkers</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-bg-card rounded-input p-2.5 text-center">
+                  <div className="text-[20px] font-bold text-white">{stats.avg_score}</div>
+                  <div className="text-[10px] text-text-faint mt-0.5">Avg score</div>
+                </div>
+                <div className="bg-bg-card rounded-input p-2.5 text-center">
+                  <div className="text-[20px] font-bold text-white">{stats.friends_count}</div>
+                  <div className="text-[10px] text-text-faint mt-0.5">Friends</div>
+                </div>
+                <div className="bg-bg-card rounded-input p-2.5 text-center">
+                  <div className="text-[20px] font-bold text-white">{stats.recos_completed}</div>
+                  <div className="text-[10px] text-text-faint mt-0.5">Completed</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sin bin status — if I'm in their sin bin */}
           {sinBinnedByFriend.length > 0 && (

@@ -107,6 +107,8 @@ export async function fetchFriendProfile(friendId: string) {
     { data: sentRecos },
     { count: friendsCount },
     { count: recosCompleted },
+    { count: recosReceived },
+    { data: scoredRecos },
   ] = await Promise.all([
     supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', friendId).single(),
     supabase.from('recommendations').select('id').eq('sender_id', friendId),
@@ -116,6 +118,12 @@ export async function fetchFriendProfile(friendId: string) {
     supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
       .eq('recipient_id', friendId)
       .eq('status', 'done'),
+    supabase.from('reco_recipients').select('*', { count: 'exact', head: true })
+      .eq('recipient_id', friendId),
+    supabase.from('reco_recipients').select('score')
+      .eq('recipient_id', friendId)
+      .eq('status', 'done')
+      .not('score', 'is', null),
   ])
 
   const sentIds = sentRecos?.map((r) => r.id) ?? []
@@ -144,9 +152,13 @@ export async function fetchFriendProfile(friendId: string) {
     memberNumber,
     stats: {
       recos_sent: sentIds.length,
+      recos_received: recosReceived ?? 0,
       friends_count: friendsCount ?? 0,
       recos_completed: recosCompleted ?? 0,
       stinkers_sent: stinkersSent,
+      avg_score: scoredRecos && scoredRecos.length > 0
+        ? (scoredRecos.reduce((sum: number, r: any) => sum + (r.score ?? 0), 0) / scoredRecos.length).toFixed(1)
+        : '—',
     },
   }
 }
