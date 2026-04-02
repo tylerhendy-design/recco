@@ -104,9 +104,11 @@ function HomePageInner() {
   const [catFilter, setCatFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
   const [senderFilter, setSenderFilter] = useState('all')
+  const [locationFilter, setLocationFilter] = useState('all')
   const [catDDOpen, setCatDDOpen] = useState(false)
   const [timeDDOpen, setTimeDDOpen] = useState(false)
   const [senderDDOpen, setSenderDDOpen] = useState(false)
+  const [locationDDOpen, setLocationDDOpen] = useState(false)
 
   const [headerVisible, setHeaderVisible] = useState(true)
   const lastScrollY = useRef(0)
@@ -292,6 +294,29 @@ function HomePageInner() {
     ]
   }, [grouped])
 
+  // Derive location options from grouped recos
+  const locationOptions = useMemo(() => {
+    const cities = new Map<string, number>()
+    for (const reco of grouped) {
+      const city = ((reco.meta?.location as string) || (reco.meta?.city as string))?.trim()
+      if (city) {
+        const key = city.toLowerCase()
+        cities.set(key, (cities.get(key) ?? 0) + 1)
+      }
+    }
+    return [
+      { value: 'all', label: 'anywhere' },
+      ...[...cities.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([key, count]) => ({
+          value: key,
+          label: `${key.charAt(0).toUpperCase() + key.slice(1)} (${count})`,
+        })),
+    ]
+  }, [grouped])
+
+  const locationLabel = locationOptions.find(f => f.value === locationFilter)?.label ?? 'anywhere'
+
   const filtered = useMemo(() => {
     return grouped
       .filter((r) => catFilter === 'all' || r.category === catFilter)
@@ -311,7 +336,12 @@ function HomePageInner() {
         if (manualName && senderFilter === `manual::${manualName.trim().toLowerCase()}`) return true
         return r.recommenders?.some((rec) => rec.profile.id === senderFilter) ?? false
       })
-  }, [grouped, catFilter, timeFilter, senderFilter])
+      .filter((r) => {
+        if (locationFilter === 'all') return true
+        const city = ((r.meta?.location as string) || (r.meta?.city as string))?.trim().toLowerCase()
+        return city === locationFilter
+      })
+  }, [grouped, catFilter, timeFilter, senderFilter, locationFilter])
 
   const doneByCategory = useMemo(() =>
     doneRecos.reduce<Record<string, Reco[]>>((acc, r) => {
@@ -340,6 +370,7 @@ function HomePageInner() {
     setCatDDOpen(false)
     setTimeDDOpen(false)
     setSenderDDOpen(false)
+    setLocationDDOpen(false)
   }
 
   async function handleFeedbackSubmit(score: number, text: string) {
@@ -510,10 +541,24 @@ function HomePageInner() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
           </button>
 
+          {/* Location pill */}
+          {locationOptions.length > 1 && (
+          <button
+            onClick={() => { setLocationDDOpen(o => !o); setCatDDOpen(false); setTimeDDOpen(false); setSenderDDOpen(false) }}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold transition-all flex-shrink-0 ${
+              locationFilter !== 'all' ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+            }`}
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {locationFilter === 'all' ? 'anywhere' : locationLabel}
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          )}
+
           {/* Clear all */}
-          {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all') && (
+          {(catFilter !== 'all' || timeFilter !== 'all' || senderFilter !== 'all' || locationFilter !== 'all') && (
             <button
-              onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all') }}
+              onClick={() => { setCatFilter('all'); setTimeFilter('all'); setSenderFilter('all'); setLocationFilter('all') }}
               className="flex-shrink-0 px-3 py-2 rounded-full text-[12px] font-semibold text-text-faint border border-dashed border-border"
             >
               Clear all ✕
@@ -560,6 +605,22 @@ function HomePageInner() {
               <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
                 <div className="text-[15px]">{f.label}</div>
                 {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {locationDDOpen && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setLocationDDOpen(false)} />
+          <div className="fixed bottom-0 left-0 right-0 z-[201] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto max-h-[60vh] overflow-y-auto">
+            <div className="sticky top-0 bg-bg-elevated">
+              <div className="flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
+              <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] px-6 mb-2">Location</div>
+            </div>
+            {locationOptions.map((f) => (
+              <button key={f.value} onClick={() => { setLocationFilter(f.value); setLocationDDOpen(false) }} className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors ${locationFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
+                <div className="text-[15px]">{f.label}</div>
               </button>
             ))}
           </div>
