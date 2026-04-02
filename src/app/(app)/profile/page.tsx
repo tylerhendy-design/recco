@@ -336,27 +336,23 @@ export default function ProfilePage() {
                     {completed > 0 && <div className="bg-[#4ADE80] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
                     {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                   </div>
-                  {/* Legend: dot · number · label (label matches dot colour) */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    <Link href="/profile/recos?filter=given" className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-accent" />
-                      <span className="text-[11px] font-bold text-white">{sent}</span>
-                      <span className="text-[11px] font-semibold text-accent">Given</span>
+                  {/* Legend: 2x2 grid, word then number, 16px regular */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link href="/profile/recos?filter=given" className="flex items-center gap-2 py-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
+                      <span className="text-[16px] text-accent">Given {sent}</span>
                     </Link>
-                    <Link href="/profile/recos?filter=received" className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#5BC4F5]" />
-                      <span className="text-[11px] font-bold text-white">{received}</span>
-                      <span className="text-[11px] font-semibold text-[#5BC4F5]">Received</span>
+                    <Link href="/profile/recos?filter=received" className="flex items-center gap-2 py-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#5BC4F5] flex-shrink-0" />
+                      <span className="text-[16px] text-[#5BC4F5]">Received {received}</span>
                     </Link>
-                    <Link href="/profile/recos?filter=completed" className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#4ADE80]" />
-                      <span className="text-[11px] font-bold text-white">{completed}</span>
-                      <span className="text-[11px] font-semibold text-[#4ADE80]">Completed</span>
+                    <Link href="/profile/recos?filter=completed" className="flex items-center gap-2 py-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80] flex-shrink-0" />
+                      <span className="text-[16px] text-[#4ADE80]">Completed {completed}</span>
                     </Link>
-                    <button onClick={() => setShowStinkers(true)} className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#F56E6E]" />
-                      <span className="text-[11px] font-bold text-white">{stinkers}</span>
-                      <span className="text-[11px] font-semibold text-[#F56E6E]">Stinkers</span>
+                    <button onClick={() => setShowStinkers(true)} className="flex items-center gap-2 py-1.5 text-left">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
+                      <span className="text-[16px] text-[#F56E6E]">Stinkers {stinkers}</span>
                     </button>
                   </div>
                 </div>
