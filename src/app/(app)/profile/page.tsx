@@ -336,23 +336,27 @@ export default function ProfilePage() {
                     {completed > 0 && <div className="bg-[#2DD4BF] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
                     {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                   </div>
-                  {/* Legend */}
+                  {/* Legend: dot · number · label (label matches dot colour) */}
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
                     <Link href="/profile/recos?filter=given" className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-accent" />
-                      <span className="text-[11px] text-text-faint">Given <span className="font-bold text-white">{sent}</span></span>
+                      <span className="text-[11px] font-bold text-white">{sent}</span>
+                      <span className="text-[11px] font-semibold text-accent">Given</span>
                     </Link>
                     <Link href="/profile/recos?filter=received" className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#5BC4F5]" />
-                      <span className="text-[11px] text-text-faint">Received <span className="font-bold text-white">{received}</span></span>
+                      <span className="text-[11px] font-bold text-white">{received}</span>
+                      <span className="text-[11px] font-semibold text-[#5BC4F5]">Received</span>
                     </Link>
                     <Link href="/profile/recos?filter=completed" className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#2DD4BF]" />
-                      <span className="text-[11px] text-text-faint">Completed <span className="font-bold text-white">{completed}</span></span>
+                      <span className="text-[11px] font-bold text-white">{completed}</span>
+                      <span className="text-[11px] font-semibold text-[#2DD4BF]">Completed</span>
                     </Link>
                     <button onClick={() => setShowStinkers(true)} className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-[#F56E6E]" />
-                      <span className="text-[11px] text-text-faint">Stinkers <span className="font-bold text-white">{stinkers}</span></span>
+                      <span className="text-[11px] font-bold text-white">{stinkers}</span>
+                      <span className="text-[11px] font-semibold text-[#F56E6E]">Stinkers</span>
                     </button>
                   </div>
                 </div>
