@@ -184,23 +184,20 @@ function HomePageInner() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setUserId(user.id)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('display_name, avatar_url')
-        .eq('id', user.id)
-        .single()
-      if (profile?.display_name) {
-        setUserInitials(initials(profile.display_name))
-      }
+
+      // Fire ALL queries in parallel — don't wait for profile before loading feed
+      const [profileResult, friendCountResult] = await Promise.all([
+        supabase.from('profiles').select('display_name, avatar_url').eq('id', user.id).single(),
+        supabase.from('friend_connections').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      ])
+
+      // Set profile data as soon as it arrives
+      const profile = profileResult.data
+      if (profile?.display_name) setUserInitials(initials(profile.display_name))
       if (profile?.avatar_url) setAvatarUrl(profile.avatar_url)
+      setFriendCount(friendCountResult.count ?? 0)
 
-      // Friend count
-      const { count: fc } = await supabase
-        .from('friend_connections')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      setFriendCount(fc ?? 0)
-
+      // Feed, done, and no-go load in parallel (already async)
       loadFeed(user.id)
       loadDone(user.id)
       loadNoGo(user.id)
