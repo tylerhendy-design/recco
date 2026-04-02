@@ -31,6 +31,7 @@ type ProfileStats = {
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
+  const [userId, setUserId] = useState<string | null>(null)
   const [profile, setProfile] = useState<ProfileStats | null>(null)
   const [picks, setPicks] = useState<Pick[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,6 +61,7 @@ export default function ProfilePage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setUserId(user.id)
 
       const [
         { data: prof },
@@ -267,19 +269,38 @@ export default function ProfilePage() {
         <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
 
           {/* Avatar + name */}
-          <div className="px-6 pb-6 border-b border-bg-card">
-            <div className="flex items-center gap-4 mb-5">
-              <div className="w-16 h-16 rounded-full bg-[#1e1c04] border-2 border-accent flex items-center justify-center text-[20px] font-bold text-accent flex-shrink-0 overflow-hidden">
+          <div className="px-6 pb-5 border-b border-bg-card">
+            <div className="flex items-center gap-4 mb-4">
+              {/* Profile picture — tappable to change */}
+              <label className="relative w-[72px] h-[72px] rounded-full bg-bg-card flex items-center justify-center text-[22px] font-bold text-text-secondary flex-shrink-0 overflow-hidden cursor-pointer">
                 {profile.avatar_url
                   ? <img src={profile.avatar_url} alt={profile.display_name} className="w-full h-full object-cover" />
                   : initials(profile.display_name)
                 }
-              </div>
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors rounded-full flex items-center justify-center">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" className="opacity-0 hover:opacity-100"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file || !userId) return
+                  const ext = file.name.split('.').pop() ?? 'jpg'
+                  const path = `${userId}/avatar-${crypto.randomUUID()}.${ext}`
+                  const form = new FormData()
+                  form.append('file', file)
+                  form.append('path', path)
+                  const res = await fetch('/api/upload-image', { method: 'POST', body: form })
+                  const data = await res.json()
+                  if (data.publicUrl) {
+                    await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', userId)
+                    setProfile((p: any) => p ? { ...p, avatar_url: data.publicUrl } : p)
+                  }
+                }} />
+              </label>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <div className="text-[20px] font-bold text-white tracking-[-0.4px]">{profile.display_name}</div>
-                  <button onClick={() => router.push('/edit-profile')} className="text-text-faint hover:text-white transition-colors flex-shrink-0">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <button onClick={() => router.push('/edit-profile')} className="text-text-faint hover:text-white transition-colors flex-shrink-0 p-1">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
                     </svg>
                   </button>
@@ -299,89 +320,55 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Reco flow graphic */}
+            {/* Reco flow — compact single bar */}
             {(() => {
               const sent = profile.recos_sent
               const received = profile.recos_received
               const completed = profile.recos_completed
               const stinkers = profile.stinkers_sent
-              const max = Math.max(sent, received, 1)
+              const total = sent + received + completed + stinkers || 1
               return (
-                <div className="mb-4 bg-bg-base border border-border rounded-xl px-4 py-3.5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">Reco flow</span>
-                    {profile.avg_completion_days > 0 && (
-                      <span className="text-[11px] text-text-faint">Avg {profile.avg_completion_days}d to complete</span>
-                    )}
+                <div className="mb-3">
+                  {/* Ratio bar */}
+                  <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
+                    {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
+                    {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
+                    {completed > 0 && <div className="bg-[#2DD4BF] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
+                    {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                   </div>
-                  <div className="flex flex-col gap-2.5">
-                    <Link href="/profile/recos?filter=given">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] font-semibold text-accent">Given</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-bold text-white">{sent}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
-                        <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${(sent / max) * 100}%` }} />
-                      </div>
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <Link href="/profile/recos?filter=given" className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-accent" />
+                      <span className="text-[11px] text-text-faint">Given <span className="font-bold text-white">{sent}</span></span>
                     </Link>
-                    <Link href="/profile/recos?filter=received">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] font-semibold text-[#5BC4F5]">Received</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-bold text-white">{received}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#5BC4F5] rounded-full transition-all" style={{ width: `${(received / max) * 100}%` }} />
-                      </div>
+                    <Link href="/profile/recos?filter=received" className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#5BC4F5]" />
+                      <span className="text-[11px] text-text-faint">Received <span className="font-bold text-white">{received}</span></span>
                     </Link>
-                    <Link href="/profile/recos?filter=completed">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] font-semibold text-[#2DD4BF]">Completed</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-bold text-white">{completed}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#2DD4BF] rounded-full transition-all" style={{ width: `${(completed / max) * 100}%` }} />
-                      </div>
+                    <Link href="/profile/recos?filter=completed" className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#2DD4BF]" />
+                      <span className="text-[11px] text-text-faint">Completed <span className="font-bold text-white">{completed}</span></span>
                     </Link>
-                    <button onClick={() => setShowStinkers(true)}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] font-semibold text-[#F56E6E]">💩 Stinkers</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-bold text-white">{stinkers}</span>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-[#1a1a1e] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#F56E6E] rounded-full transition-all" style={{ width: `${(stinkers / max) * 100}%` }} />
-                      </div>
+                    <button onClick={() => setShowStinkers(true)} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#F56E6E]" />
+                      <span className="text-[11px] text-text-faint">Stinkers <span className="font-bold text-white">{stinkers}</span></span>
                     </button>
                   </div>
                 </div>
               )
             })()}
 
-            {/* Stat grid */}
-            <div className="flex gap-2.5 mb-2.5">
+            {/* Stats — 3 columns, 2 rows */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <StatBox value={`${profile.hit_rate}%`} label="Hit rate" />
               <StatBox value={profile.avg_score} label="Avg score" />
-            </div>
-            <div className="flex gap-2.5 mb-2.5">
+              <Link href="/friends"><StatBox value={String(profile.friends_count)} label="Friends" /></Link>
               <StatBox value={String(profile.times_forwarded)} label="Forwarded" />
-              <StatBox value={`${profile.avg_completion_days}d`} label="Avg to complete" />
-            </div>
-            <div className="flex gap-2.5">
-              <Link href="/friends" className="flex-1"><StatBox value={String(profile.friends_count)} label="Friends" /></Link>
-              {profile.top_category && (
+              <StatBox value={`${profile.avg_completion_days}d`} label="Avg complete" />
+              {profile.top_category ? (
                 <StatBox value={getCategoryLabel(profile.top_category)} label="Top category" />
-              )}
+              ) : <div />}
             </div>
           </div>
 

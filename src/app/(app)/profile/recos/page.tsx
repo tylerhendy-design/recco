@@ -140,6 +140,31 @@ function ProfileRecosInner() {
     return [...map.entries()].sort((a, b) => b[1].length - a[1].length)
   }, [recos])
 
+  // Group by score for "completed" view
+  const [scoreFilter, setScoreFilter] = useState<number | null>(null)
+  const byScore = useMemo(() => {
+    if (filter !== 'completed') return new Map<number, typeof recos>()
+    const map = new Map<number, typeof recos>()
+    for (const r of recos) {
+      const s = r.score ?? 0
+      if (!map.has(s)) map.set(s, [])
+      map.get(s)!.push(r)
+    }
+    return map
+  }, [recos, filter])
+
+  const scoreCounts = useMemo(() => {
+    return Array.from({ length: 10 }, (_, i) => ({
+      score: 10 - i,
+      count: byScore.get(10 - i)?.length ?? 0,
+    })).filter(s => s.count > 0)
+  }, [byScore])
+
+  const filteredByScore = useMemo(() => {
+    if (scoreFilter === null) return recos
+    return recos.filter(r => r.score === scoreFilter)
+  }, [recos, scoreFilter])
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
@@ -205,8 +230,40 @@ function ProfileRecosInner() {
               ))}
             </div>
           ))
+        ) : filter === 'completed' ? (
+          // Completed view — score filter + cards
+          <>
+            {scoreCounts.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none mb-3">
+                <button
+                  onClick={() => setScoreFilter(null)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${
+                    scoreFilter === null ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+                  }`}
+                >
+                  All ({recos.length})
+                </button>
+                {scoreCounts.map(({ score, count }) => (
+                  <button
+                    key={score}
+                    onClick={() => setScoreFilter(scoreFilter === score ? null : score)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${
+                      scoreFilter === score ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+                    }`}
+                  >
+                    {score}/10 ({count})
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col gap-3">
+              {filteredByScore.map((reco) => (
+                <RecoCard key={reco.id} reco={reco as Reco} viewMode="full" />
+              ))}
+            </div>
+          </>
         ) : (
-          // Received/Completed/NoGos view — standard reco cards
+          // Received/NoGos view — standard reco cards
           <div className="flex flex-col gap-3">
             {recos.map((reco) => (
               <RecoCard key={reco.id} reco={reco as Reco} viewMode="full" />
