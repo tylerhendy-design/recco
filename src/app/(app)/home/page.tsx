@@ -39,6 +39,16 @@ const TIME_FILTERS = [
   { value: 'year', label: 'this year' },
 ]
 
+// Get the real sender name — manual_sender_name takes priority over sender profile
+function getRecoSenderName(reco: Reco): string {
+  const manual = (reco.meta?.manual_sender_name as string | undefined)?.trim()
+  return manual || reco.sender?.display_name || 'Someone'
+}
+
+function getRecoSenderFirstName(reco: Reco): string {
+  return getRecoSenderName(reco).split(' ')[0]
+}
+
 // Merge recos with same title+category into one card with multiple recommenders
 function groupRecos(recos: Reco[]): Reco[] {
   const map = new Map<string, Reco>()
@@ -321,7 +331,7 @@ function HomePageInner() {
     })
     if (reco.meta?.artwork_url) params.set('image', reco.meta.artwork_url)
     if (reco.why_text) params.set('why', reco.why_text)
-    if (reco.sender?.display_name) params.set('from', reco.sender.display_name.split(' ')[0])
+    if (reco.sender?.display_name) params.set('from', getRecoSenderFirstName(reco))
     if (reco.sender?.id) params.set('originalSenderId', reco.sender.id)
     router.push(`/reco?mode=give&${params.toString()}`)
   }
@@ -350,7 +360,7 @@ function HomePageInner() {
     if (result.sinBinTriggered) {
       setSinBinData({
         senderId: reco.sender_id,
-        senderName: reco.sender.display_name,
+        senderName: getRecoSenderName(reco),
         category: result.sinBinTriggered.category,
         offences: result.sinBinTriggered.offences,
       })
@@ -383,7 +393,7 @@ function HomePageInner() {
     setNoGoReco(null)
     setDoneIds((prev) => new Set(prev).add(reco.id))
     setNoGoRecos((prev) => [...prev, { ...reco, status: 'no_go' as const, feedback_text: reason }])
-    setNoGoSuccess({ senderName: reco.sender.display_name.split(' ')[0] })
+    setNoGoSuccess({ senderName: getRecoSenderFirstName(reco) })
     await markNoGo(reco.id, userId, reco.sender_id, reason, reco.title)
   }
 
@@ -753,7 +763,7 @@ function HomePageInner() {
           onClose={() => setSuccessState(null)}
           score={successState.score}
           recoTitle={successState.reco.title}
-          recommenderName={successState.reco.sender.display_name}
+          recommenderName={getRecoSenderName(successState.reco)}
           sinBinWarning={successState.sinBinWarning}
         />
       )}
@@ -784,7 +794,7 @@ function HomePageInner() {
         onRate={handleBeenThereRate}
         onRequestNew={handleBeenThereRequestNew}
         recoTitle={beenThereReco?.title ?? ''}
-        senderFirstName={beenThereReco?.sender.display_name.split(' ')[0] ?? ''}
+        senderFirstName={beenThereReco ? getRecoSenderFirstName(beenThereReco) : ''}
       />
 
       <NoGoSheet
@@ -792,7 +802,7 @@ function HomePageInner() {
         onClose={() => setNoGoReco(null)}
         onSubmit={handleNoGoSubmit}
         recoTitle={noGoReco?.title ?? ''}
-        senderName={noGoReco?.sender.display_name.split(' ')[0] ?? ''}
+        senderName={noGoReco ? getRecoSenderFirstName(noGoReco) : ''}
       />
 
       {noGoSuccess && (
