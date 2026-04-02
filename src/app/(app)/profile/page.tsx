@@ -328,8 +328,8 @@ export default function ProfilePage() {
               const stinkers = profile.stinkers_sent
               const total = sent + received + completed + stinkers || 1
               return (
-                <div className="mb-3 mt-2">
-                  <div className="text-[13px] font-semibold text-white tracking-[-0.2px] mb-2.5">Stats</div>
+                <div className="mb-3 mt-2 pt-4 border-t border-border">
+                  <div className="text-[20px] font-bold text-white tracking-[-0.4px] mb-3">Stats</div>
                   {/* Ratio bar */}
                   <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
                     {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
@@ -341,19 +341,19 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 gap-2">
                     <Link href="/profile/recos?filter=given" className="flex items-center gap-2 py-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
-                      <span className="text-[16px] text-accent">Given {sent}</span>
+                      <span className="text-[16px] text-white">Given {sent}</span>
                     </Link>
                     <Link href="/profile/recos?filter=received" className="flex items-center gap-2 py-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#5BC4F5] flex-shrink-0" />
-                      <span className="text-[16px] text-[#5BC4F5]">Received {received}</span>
+                      <span className="text-[16px] text-white">Received {received}</span>
                     </Link>
                     <Link href="/profile/recos?filter=completed" className="flex items-center gap-2 py-1.5">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
-                      <span className="text-[16px] text-[#16A34A]">Completed {completed}</span>
+                      <span className="text-[16px] text-white">Completed {completed}</span>
                     </Link>
                     <button onClick={() => setShowStinkers(true)} className="flex items-center gap-2 py-1.5 text-left">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
-                      <span className="text-[16px] text-[#F56E6E]">Stinkers {stinkers}</span>
+                      <span className="text-[16px] text-white">Stinkers {stinkers}</span>
                     </button>
                   </div>
                 </div>

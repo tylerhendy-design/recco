@@ -207,19 +207,19 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center gap-2 py-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-accent flex-shrink-0" />
-                        <span className="text-[16px] text-accent">Given {sent}</span>
+                        <span className="text-[16px] text-white">Given {sent}</span>
                       </div>
                       <div className="flex items-center gap-2 py-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#5BC4F5] flex-shrink-0" />
-                        <span className="text-[16px] text-[#5BC4F5]">Received {received}</span>
+                        <span className="text-[16px] text-white">Received {received}</span>
                       </div>
                       <Link href={`/profile/recos?filter=completed&userId=${id}`} className="flex items-center gap-2 py-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
-                        <span className="text-[16px] text-[#16A34A]">Completed {completed}</span>
+                        <span className="text-[16px] text-white">Completed {completed}</span>
                       </Link>
                       <div className="flex items-center gap-2 py-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
-                        <span className="text-[16px] text-[#F56E6E]">Stinkers {stinkers}</span>
+                        <span className="text-[16px] text-white">Stinkers {stinkers}</span>
                       </div>
                     </div>
                   </div>
