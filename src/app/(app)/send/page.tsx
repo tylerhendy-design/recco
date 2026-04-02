@@ -170,6 +170,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
   const [showLinkInput, setShowLinkInput] = useState(false)
   const [sending, setSending] = useState(false)
+  const [top03Dismissed, setTop03Dismissed] = useState(false)
   const [sent, setSent] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [dupeWarning, setDupeWarning] = useState<string | null>(null)
@@ -524,7 +525,6 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
 
   // ─── TOP 03 nudge (recommendation, not a blocker) ──────────────────────
-  const [top03Dismissed, setTop03Dismissed] = useState(false)
   const showTop03Nudge = picksCount !== null && !hasCompleteCategory && !isForward && totalRecosSent >= 3 && !top03Dismissed
 
   // ─── Forward mode ─────────────────────────────────────────────────────────
