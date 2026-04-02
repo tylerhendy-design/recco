@@ -474,6 +474,14 @@ function HomePageInner() {
                     </button>
                   )
                 })}
+                <Link
+                  href="/get/requests"
+                  onClick={() => setTabDDOpen(false)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-[14px] text-text-secondary font-semibold border-t border-border"
+                >
+                  Your Requests
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+                </Link>
               </div>
             )}
           </div>
