@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
+import { extractRecoCity } from '@/lib/city'
 import { RecoCard } from '@/components/ui/RecoCard'
 import { createClient } from '@/lib/supabase/client'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
@@ -73,83 +74,8 @@ export default function ListsPage() {
     })
   }, [])
 
-  // Aliases for common regional names → clean city
-  const CITY_ALIASES: Record<string, string> = {
-    'greater london': 'London', 'city of london': 'London', 'central london': 'London',
-    'inner london': 'London', 'outer london': 'London', 'city of westminster': 'London',
-    'borough market': 'London', 'soho': 'London', 'shoreditch': 'London', 'hackney': 'London',
-    'peckham': 'London', 'brixton': 'London', 'camden': 'London', 'notting hill': 'London',
-    'covent garden': 'London', 'mayfair': 'London', 'fitzrovia': 'London', 'dalston': 'London',
-    'islington': 'London', 'bermondsey': 'London', 'south bank': 'London', 'kings cross': 'London',
-    'marylebone': 'London', 'chelsea': 'London', 'kensington': 'London', 'battersea': 'London',
-    'clapham': 'London', 'fulham': 'London', 'stratford': 'London', 'greenwich': 'London',
-    'greater manchester': 'Manchester', 'city of manchester': 'Manchester',
-    'city of edinburgh': 'Edinburgh', 'city of bristol': 'Bristol',
-    'ile-de-france': 'Paris', 'arrondissement de paris': 'Paris',
-    'north holland': 'Amsterdam', 'noord-holland': 'Amsterdam',
-    'comunidad de madrid': 'Madrid', 'provincia de barcelona': 'Barcelona',
-    'metropolitan city of rome': 'Rome', 'citta metropolitana di roma': 'Rome',
-    'metropolitan city of milan': 'Milan', 'citta metropolitana di milano': 'Milan',
-    'new york county': 'New York', 'manhattan': 'New York', 'brooklyn': 'New York',
-    'queens': 'New York', 'the bronx': 'New York', 'staten island': 'New York',
-  }
-
   function extractCity(reco: Reco): string | null {
-    const city = reco.meta?.city as string | undefined
-    const loc = reco.meta?.location as string | undefined
-
-    // Strip postcodes from start/end of a string (e.g. "1016 HD Amsterdam" → "Amsterdam", "London SW1A 2AA" → "London")
-    function stripPostcodes(s: string): string {
-      return s
-        // Leading: EU numeric postcodes "1016 HD Amsterdam", "75001 Paris"
-        .replace(/^\d{3,5}\s*[A-Z]{0,2}\s+/i, '')
-        // Leading: UK postcodes "EC2R 8AH London"
-        .replace(/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\s+/i, '')
-        // Trailing: EU numeric postcodes "Amsterdam 1016"
-        .replace(/\s+\d{3,5}\s*[A-Z]{0,2}$/i, '')
-        // Trailing: UK postcodes "London SW1A 2AA"
-        .replace(/\s+[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i, '')
-        .trim()
-    }
-
-    // Clean the raw city/location value
-    function cleanCity(raw: string): string | null {
-      // Split by comma and process each part
-      const parts = raw.split(',').map(p => p.trim()).filter(Boolean)
-
-      for (const part of parts) {
-        const cleaned = stripPostcodes(part)
-        if (!cleaned || cleaned.length <= 2) continue
-        const lower = cleaned.toLowerCase()
-        if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-        // Skip if it's still just a postcode after cleaning
-        if (/^\d/.test(cleaned) || /^[A-Z]{1,2}\d/i.test(cleaned)) continue
-        return cleaned
-      }
-
-      // Fallback: try last non-postcode part
-      for (let i = parts.length - 1; i >= 0; i--) {
-        const cleaned = stripPostcodes(parts[i])
-        if (!cleaned || cleaned.length <= 2) continue
-        if (/^\d/.test(cleaned) || /^[A-Z]{1,2}\d/i.test(cleaned)) continue
-        const lower = cleaned.toLowerCase()
-        if (CITY_ALIASES[lower]) return CITY_ALIASES[lower]
-        return cleaned
-      }
-
-      return null
-    }
-
-    if (city) {
-      const result = cleanCity(city)
-      if (result) return result
-    }
-    if (loc) {
-      const result = cleanCity(loc)
-      if (result) return result
-    }
-
-    return null
+    return extractRecoCity(reco.meta)
   }
 
   // Group recos by city — deduplicate by title+category (same reco from multiple senders = one entry)

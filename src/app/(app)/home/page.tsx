@@ -18,6 +18,7 @@ import { fetchHomeFeed, fetchDoneRecos, fetchNoGoRecos, submitFeedback, markBeen
 import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import type { Reco, RecoRecommender } from '@/types/app.types'
+import { extractRecoCity } from '@/lib/city'
 
 type Tab = 'todo' | 'done' | 'nogo'
 
@@ -291,11 +292,11 @@ function HomePageInner() {
     ]
   }, [grouped])
 
-  // Derive location options from grouped recos
+  // Derive location options from grouped recos — uses shared city extraction
   const locationOptions = useMemo(() => {
     const cities = new Map<string, number>()
     for (const reco of grouped) {
-      const city = ((reco.meta?.location as string) || (reco.meta?.city as string))?.trim()
+      const city = extractRecoCity(reco.meta)
       if (city) {
         const key = city.toLowerCase()
         cities.set(key, (cities.get(key) ?? 0) + 1)
@@ -305,10 +306,11 @@ function HomePageInner() {
       { value: 'all', label: 'anywhere' },
       ...[...cities.entries()]
         .sort((a, b) => b[1] - a[1])
-        .map(([key, count]) => ({
-          value: key,
-          label: `${key.charAt(0).toUpperCase() + key.slice(1)} (${count})`,
-        })),
+        .map(([key, count]) => {
+          // Capitalise properly
+          const display = key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          return { value: key, label: `${display} (${count})` }
+        }),
     ]
   }, [grouped])
 
@@ -335,8 +337,8 @@ function HomePageInner() {
       })
       .filter((r) => {
         if (locationFilter === 'all') return true
-        const city = ((r.meta?.location as string) || (r.meta?.city as string))?.trim().toLowerCase()
-        return city === locationFilter
+        const city = extractRecoCity(r.meta)
+        return city?.toLowerCase() === locationFilter
       })
   }, [grouped, catFilter, timeFilter, senderFilter, locationFilter])
 
