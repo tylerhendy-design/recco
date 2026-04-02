@@ -172,6 +172,8 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   const [sending, setSending] = useState(false)
   const [top03Dismissed, setTop03Dismissed] = useState(false)
   const [sent, setSent] = useState(false)
+  const [sharedRecoUrl, setSharedRecoUrl] = useState<string | null>(null)
+  const [shareCopied, setShareCopied] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [dupeWarning, setDupeWarning] = useState<string | null>(null)
   const [dupeConfirmed, setDupeConfirmed] = useState(false)
@@ -363,6 +365,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
   const allDefs: ConstraintDef[] = [...activeDefs, ...customConstraintDefs]
 
   const canSend = category !== null && title.trim().length > 0 && selectedFriends.length > 0 && !sending
+  const canShare = category !== null && title.trim().length > 0 && !sending
 
   const sendingRef = useRef(false)
   async function handleSend(force = false) {
@@ -488,6 +491,121 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
       setSendError(e?.message ?? 'Something went wrong')
       setSending(false); sendingRef.current = false
     }
+  }
+
+  // ─── Share externally handler ─────────────────────────────────────────────
+  async function handleShareExternally() {
+    if (!canShare || !userId || !category || sendingRef.current) return
+    sendingRef.current = true
+    setSending(true)
+    setSendError(null)
+
+    try {
+      const finalCat = category === 'custom' ? 'custom' : category
+      const finalCustomCat = category === 'custom' ? customCat.trim() : undefined
+
+      const meta: Record<string, unknown> = {}
+      if (imageUrl) meta.artwork_url = imageUrl
+      if (linkMeta?.artist) meta.artist = linkMeta.artist
+      else if (manualArtist.trim()) meta.artist = manualArtist.trim()
+      if (linkMeta?.artworkUrl && !meta.artwork_url) meta.artwork_url = linkMeta.artworkUrl
+      if (linkMeta?.city) meta.location = linkMeta.city + (linkMeta.country ? `, ${linkMeta.country}` : '')
+      if (linkMeta?.address) meta.address = linkMeta.address
+      const KEY_MAP: Record<string, string> = { streaming: 'streaming_service' }
+      for (const [key, val] of Object.entries(constraints)) {
+        if (!val) continue
+        meta[KEY_MAP[key] ?? key] = val
+      }
+      const links: string[] = []
+      if (linkInput.trim()) links.push(linkInput.trim())
+      if (links.length > 0) meta.links = links
+
+      // Last-resort image for venues
+      if (!meta.artwork_url && isRestaurant && title.trim()) {
+        try {
+          const q = [title.trim(), meta.location, meta.address].filter(Boolean).join(', ')
+          const res = await fetch(`/api/place-photo?q=${encodeURIComponent(q as string)}`)
+          const data = await res.json()
+          if (data.photoUrl) meta.artwork_url = data.photoUrl
+        } catch {}
+      }
+
+      // Save the reco without recipients
+      const { recoId, error } = await sendReco({
+        senderId: userId,
+        category: finalCat,
+        customCat: finalCustomCat,
+        title: title.trim(),
+        whyText: why.trim() || undefined,
+        links,
+        meta,
+        recipientIds: [],
+      })
+
+      if (error || !recoId) { setSendError(error ?? 'Failed to save'); setSending(false); sendingRef.current = false; return }
+
+      const url = `${window.location.origin}/r/reco/${recoId}`
+      setSharedRecoUrl(url)
+      setSending(false)
+      sendingRef.current = false
+    } catch (e: any) {
+      setSendError(e?.message ?? 'Something went wrong')
+      setSending(false)
+      sendingRef.current = false
+    }
+  }
+
+  // ─── Share success screen ───────────────────────────────────────────────────
+  if (sharedRecoUrl) {
+    return (
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
+          <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <div>
+            <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">
+              Ready to share
+            </div>
+            <div className="text-[15px] text-text-dim leading-[1.6]">
+              Send this link to anyone — they don't need RECO to see it.
+            </div>
+          </div>
+
+          <div className="w-full flex flex-col gap-2">
+            <button
+              onClick={async () => {
+                if (navigator.share) {
+                  try { await navigator.share({ title: `RECO — ${title}`, text: `Check out ${title}`, url: sharedRecoUrl }); return } catch {}
+                }
+                await navigator.clipboard.writeText(sharedRecoUrl)
+                setShareCopied(true)
+                setTimeout(() => setShareCopied(false), 2000)
+              }}
+              className="w-full flex items-center justify-center gap-2 py-4 bg-accent text-accent-fg rounded-btn text-[15px] font-bold"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+              {shareCopied ? 'Link copied' : 'Share link'}
+            </button>
+            <button
+              onClick={() => { navigator.clipboard.writeText(sharedRecoUrl); setShareCopied(true); setTimeout(() => setShareCopied(false), 2000) }}
+              className="w-full text-center py-2 text-[12px] text-text-faint"
+            >
+              {sharedRecoUrl.replace('https://', '')}
+            </button>
+          </div>
+
+          <Link href="/home" className="text-[13px] text-text-faint underline underline-offset-2 mt-2">
+            Back home
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   // ─── Success screen ────────────────────────────────────────────────────────
@@ -1225,17 +1343,42 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
           </div>
         )}
 
-        {/* Send button */}
+        {/* Send / Share buttons */}
         {!dupeWarning && (
-          <button
-            onClick={() => handleSend()}
-            disabled={!canSend}
-            className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
-              canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
-            }`}
-          >
-            {sending ? 'Giving…' : 'Give reco'}
-          </button>
+          <div className="mt-3 flex flex-col gap-2">
+            <button
+              onClick={() => handleSend()}
+              disabled={!canSend}
+              className={`w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
+                canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+              }`}
+            >
+              {sending ? 'Giving…' : 'Give reco'}
+            </button>
+            {canShare && !canSend && (
+              <button
+                onClick={handleShareExternally}
+                disabled={sending}
+                className="w-full py-[15px] rounded-btn text-[15px] font-semibold border border-border text-text-secondary hover:border-accent hover:text-accent transition-colors"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Share externally
+                </span>
+              </button>
+            )}
+            {canSend && (
+              <button
+                onClick={handleShareExternally}
+                disabled={sending}
+                className="w-full text-center py-2 text-[12px] text-text-faint hover:text-accent transition-colors"
+              >
+                Or share externally instead
+              </button>
+            )}
+          </div>
         )}
       </div>
 

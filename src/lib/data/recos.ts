@@ -393,29 +393,32 @@ export async function sendReco({
 
   if (recoError) return { recoId: null, error: recoError.message }
 
-  // 2. Add recipients
-  const recipientRows = recipientIds.map((id) => ({
-    reco_id: recoId,
-    recipient_id: id,
-    status: 'unseen' as const,
-  }))
+  // 2. Add recipients (skip if sharing externally with no recipients)
+  if (recipientIds.length > 0) {
+    const recipientRows = recipientIds.map((id) => ({
+      reco_id: recoId,
+      recipient_id: id,
+      status: 'unseen' as const,
+    }))
 
-  const { error: recipientsError } = await supabase
-    .from('reco_recipients')
-    .insert(recipientRows)
+    const { error: recipientsError } = await supabase
+      .from('reco_recipients')
+      .insert(recipientRows)
 
-  if (recipientsError) return { recoId, error: recipientsError.message }
+    if (recipientsError) return { recoId, error: recipientsError.message }
+  }
 
-  // 3. Notify each recipient
-  const notifRows = recipientIds.map((id) => ({
-    user_id: id,
-    type: 'reco_received' as const,
-    actor_id: senderId,
-    reco_id: recoId,
-    payload: { title, category },
-  }))
-
-  await supabase.from('notifications').insert(notifRows)
+  // 3. Notify each recipient (skip if no recipients)
+  if (recipientIds.length > 0) {
+    const notifRows = recipientIds.map((id) => ({
+      user_id: id,
+      type: 'reco_received' as const,
+      actor_id: senderId,
+      reco_id: recoId,
+      payload: { title, category },
+    }))
+    await supabase.from('notifications').insert(notifRows)
+  }
 
   return { recoId, error: null }
 }
