@@ -633,8 +633,22 @@ function HomePageInner() {
         <div className="flex-1 overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
           <div className="px-5 pb-6" onClick={closeAllDD}>
           {loading && (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="rounded-card overflow-hidden bg-bg-card border border-border animate-pulse" style={{ animationDelay: `${i * 150}ms` }}>
+                  {/* Image skeleton */}
+                  <div className="w-full bg-[#1a1a1e]" style={{ height: i === 0 ? 280 : 200 }} />
+                  {/* Content skeleton */}
+                  <div className="px-4 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-14 h-4 bg-[#1a1a1e] rounded-full" />
+                      <div className="w-20 h-3 bg-[#1a1a1e] rounded-full" />
+                    </div>
+                    <div className="w-3/4 h-6 bg-[#1a1a1e] rounded-lg mb-2" />
+                    <div className="w-1/2 h-3 bg-[#1a1a1e] rounded-full" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -727,8 +741,14 @@ function HomePageInner() {
       {tab === 'done' && (
         <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingDone && (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+            <div className="flex flex-col gap-3 px-5">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="bg-bg-card border border-border rounded-card px-4 py-4 animate-pulse" style={{ animationDelay: `${i * 150}ms` }}>
+                  <div className="w-16 h-3 bg-[#1a1a1e] rounded-full mb-2" />
+                  <div className="w-2/3 h-5 bg-[#1a1a1e] rounded-lg mb-2" />
+                  <div className="w-1/3 h-3 bg-[#1a1a1e] rounded-full" />
+                </div>
+              ))}
             </div>
           )}
 
@@ -781,8 +801,14 @@ function HomePageInner() {
       {tab === 'nogo' && (
         <div className="flex-1 overflow-y-auto scrollbar-none pb-6" onScroll={handleFeedScroll}>
           {loadingNoGo ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="w-6 h-6 border-2 border-border border-t-accent rounded-full animate-spin" />
+            <div className="flex flex-col gap-3 px-5 pt-3">
+              {[0, 1].map((i) => (
+                <div key={i} className="bg-bg-card border border-border rounded-card px-4 py-4 animate-pulse" style={{ animationDelay: `${i * 150}ms` }}>
+                  <div className="w-16 h-3 bg-[#1a1a1e] rounded-full mb-2" />
+                  <div className="w-2/3 h-5 bg-[#1a1a1e] rounded-lg mb-2" />
+                  <div className="w-1/3 h-3 bg-[#1a1a1e] rounded-full" />
+                </div>
+              ))}
             </div>
           ) : noGoList.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
