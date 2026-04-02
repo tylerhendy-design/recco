@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
 import { type CategoryId, getCategoryLabel } from '@/constants/categories'
@@ -128,7 +129,6 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
 
       setSending(false)
       saveRecentSender(senderName)
-      setSent(true)
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong')
       setSending(false)
@@ -136,9 +136,10 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
   }
 
   const [recoCount, setRecoCount] = useState(0)
+  const [savedFlash, setSavedFlash] = useState(false)
+  const router = useRouter()
 
-  function addAnother() {
-    // Reset form but keep sender name
+  function resetForm() {
     setCategory(null)
     setCustomCat('')
     setTitle('')
@@ -146,39 +147,26 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
     setSelectedMeta(null)
     setSelectedImage(null)
     setError(null)
+    setSending(false)
     setSent(false)
-    setRecoCount(c => c + 1)
   }
 
-  if (sent) {
-    const firstName = senderName.trim()
-    return (
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {!embedded && <><StatusBar /><NavHeader title="Instant Add" closeHref="/home" /></>}
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
-          <div className="w-16 h-16 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-1">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          </div>
-          <div>
-            <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">Added. Nice one.</div>
-            <div className="text-[15px] text-text-dim leading-[1.6]">
-              {firstName}'s reco is in your feed.{recoCount > 0 && ` (${recoCount + 1} added)`}
-            </div>
-          </div>
-          <button
-            onClick={addAnother}
-            className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center"
-          >
-            Add another from {firstName}
-          </button>
-          <Link href="/home" className="text-[13px] text-text-faint underline underline-offset-2">
-            Done — back home
-          </Link>
-        </div>
-      </div>
-    )
+  async function handleSaveAndAddAnother() {
+    await handleSend()
+    if (!error) {
+      setRecoCount(c => c + 1)
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2000)
+      // Reset form but keep sender name
+      resetForm()
+    }
+  }
+
+  async function handleSaveAndFinish() {
+    await handleSend()
+    if (!error) {
+      router.push('/home')
+    }
   }
 
   return (
@@ -320,15 +308,34 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
 
         {error && <div className="mt-3 text-[13px] text-red-400 text-center">{error}</div>}
 
-        <button
-          onClick={handleSend}
-          disabled={!canSend}
-          className={`mt-3 w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
-            canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
-          }`}
-        >
-          {sending ? 'Adding...' : `Add ${senderName.trim() || ''}'s reco`}
-        </button>
+        {/* Saved flash toast */}
+        {savedFlash && (
+          <div className="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-btn bg-accent/10 border border-accent/30 text-accent text-[13px] font-semibold">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Saved{recoCount > 0 && ` · ${recoCount} added`}
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            onClick={handleSaveAndAddAnother}
+            disabled={!canSend}
+            className={`w-full py-[15px] rounded-btn text-[15px] font-bold transition-all ${
+              canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
+            }`}
+          >
+            {sending ? 'Saving...' : 'Save & add another'}
+          </button>
+          <button
+            onClick={handleSaveAndFinish}
+            disabled={!canSend}
+            className={`w-full py-[15px] rounded-btn text-[15px] font-semibold transition-all border ${
+              canSend ? 'border-border text-text-secondary hover:border-accent hover:text-accent' : 'border-border/50 text-text-faint/50 cursor-not-allowed'
+            }`}
+          >
+            {sending ? 'Saving...' : 'Save reco'}
+          </button>
+        </div>
       </div>
     </div>
   )
