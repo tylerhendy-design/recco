@@ -19,6 +19,8 @@ import { initials } from '@/lib/utils'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
 import type { Reco, RecoRecommender } from '@/types/app.types'
 import { extractRecoCity } from '@/lib/city'
+import { SenderMergeSheet, type SenderItem } from '@/components/sender-merge/SenderMergeSheet'
+import { mergeQuickAddNames, mergeQuickAddToUser, undoMerge } from '@/lib/data/merges'
 
 type Tab = 'todo' | 'done' | 'nogo'
 
@@ -109,6 +111,11 @@ function HomePageInner() {
   const [timeDDOpen, setTimeDDOpen] = useState(false)
   const [senderDDOpen, setSenderDDOpen] = useState(false)
   const [locationDDOpen, setLocationDDOpen] = useState(false)
+  const [mergeMode, setMergeMode] = useState(false)
+  const [mergeSelection, setMergeSelection] = useState<SenderItem[]>([])
+  const [mergeSheetOpen, setMergeSheetOpen] = useState(false)
+  const [mergeUndoId, setMergeUndoId] = useState<string | null>(null)
+  const [mergeUndoLabel, setMergeUndoLabel] = useState('')
 
   const [headerVisible, setHeaderVisible] = useState(true)
   const lastScrollY = useRef(0)
@@ -601,18 +608,72 @@ function HomePageInner() {
       )}
       {senderDDOpen && (
         <>
-          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setSenderDDOpen(false)} />
+          <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => { setSenderDDOpen(false); setMergeMode(false); setMergeSelection([]) }} />
           <div className="fixed bottom-0 left-0 right-0 z-[201] bg-bg-elevated border-t border-border rounded-t-[20px] pb-8 max-w-[390px] mx-auto max-h-[60vh] overflow-y-auto">
             <div className="sticky top-0 bg-bg-elevated">
               <div className="flex justify-center py-3"><div className="w-10 h-1 rounded-full bg-border" /></div>
-              <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] px-6 mb-2">Sent by</div>
+              <div className="flex items-center justify-between px-6 mb-2">
+                <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">
+                  {mergeMode ? `Select 2 to merge (${mergeSelection.length}/2)` : 'Sent by'}
+                </div>
+                {senderOptions.length > 2 && (
+                  <button
+                    onClick={() => { setMergeMode(!mergeMode); setMergeSelection([]) }}
+                    className="text-[11px] font-semibold text-accent"
+                  >
+                    {mergeMode ? 'Cancel' : 'Merge names'}
+                  </button>
+                )}
+              </div>
             </div>
-            {senderOptions.map((f) => (
-              <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
-                <div className="text-[15px]">{f.label}</div>
-                {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
-              </button>
-            ))}
+            {senderOptions.map((f) => {
+              if (f.value === 'all' && mergeMode) return null
+              const isManual = f.value.startsWith('manual::')
+              const senderItem: SenderItem = {
+                key: f.value,
+                label: f.label,
+                sub: f.sub || undefined,
+                isRegistered: !isManual && f.value !== 'all',
+                userId: !isManual && f.value !== 'all' ? f.value : undefined,
+              }
+              const isSelected = mergeSelection.some(s => s.key === f.value)
+
+              if (mergeMode) {
+                return (
+                  <button
+                    key={f.value}
+                    onClick={() => {
+                      if (isSelected) {
+                        setMergeSelection(prev => prev.filter(s => s.key !== f.value))
+                      } else if (mergeSelection.length < 2) {
+                        const next = [...mergeSelection, senderItem]
+                        setMergeSelection(next)
+                        if (next.length === 2) {
+                          setSenderDDOpen(false)
+                          setMergeSheetOpen(true)
+                        }
+                      }
+                    }}
+                    className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors flex items-center gap-3 ${isSelected ? 'bg-accent/8' : ''}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-accent' : 'border-border'}`}>
+                      {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
+                    </div>
+                    <div>
+                      <div className="text-[15px] text-text-secondary">{f.label}</div>
+                      {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+                    </div>
+                  </button>
+                )
+              }
+
+              return (
+                <button key={f.value} onClick={() => { setSenderFilter(f.value); setSenderDDOpen(false) }} className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors ${senderFilter === f.value ? 'text-accent font-semibold' : 'text-text-secondary'}`}>
+                  <div className="text-[15px]">{f.label}</div>
+                  {f.sub && <div className="text-[11px] text-text-faint mt-0.5">{f.sub}</div>}
+                </button>
+              )
+            })}
           </div>
         </>
       )}
@@ -918,6 +979,50 @@ function HomePageInner() {
               Done
             </button>
           </div>
+        </div>
+      )}
+      {/* Sender merge sheet */}
+      <SenderMergeSheet
+        open={mergeSheetOpen}
+        onClose={() => { setMergeSheetOpen(false); setMergeMode(false); setMergeSelection([]) }}
+        itemA={mergeSelection[0] ?? null}
+        itemB={mergeSelection[1] ?? null}
+        onMerge={async (canonical, absorbed, type) => {
+          if (!userId) return null
+          let result: { mergeId: string | null; error: string | null }
+          if (type === 'quick_add_to_user') {
+            result = await mergeQuickAddToUser(userId, canonical.userId!, canonical.name, absorbed.name)
+          } else {
+            result = await mergeQuickAddNames(userId, canonical.name, absorbed.name)
+          }
+          if (result.mergeId) {
+            setMergeSheetOpen(false)
+            setMergeMode(false)
+            setMergeSelection([])
+            setMergeUndoId(result.mergeId)
+            setMergeUndoLabel(`"${absorbed.name}" merged`)
+            setTimeout(() => setMergeUndoId(null), 5000)
+            // Refresh feed to update sender list
+            loadFeed(userId)
+          }
+          return result.mergeId
+        }}
+      />
+
+      {/* Merge undo toast */}
+      {mergeUndoId && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[300] bg-bg-elevated border border-border rounded-xl px-4 py-3 shadow-2xl flex items-center gap-3 max-w-[340px]">
+          <span className="text-[13px] text-white flex-1">{mergeUndoLabel}</span>
+          <button
+            onClick={async () => {
+              await undoMerge(mergeUndoId)
+              setMergeUndoId(null)
+              if (userId) loadFeed(userId)
+            }}
+            className="text-[13px] font-semibold text-accent"
+          >
+            Undo
+          </button>
         </div>
       )}
     </div>
