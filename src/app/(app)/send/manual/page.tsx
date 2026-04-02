@@ -117,7 +117,23 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
     }
   }
 
+  const [recoCount, setRecoCount] = useState(0)
+
+  function addAnother() {
+    // Reset form but keep sender name
+    setCategory(null)
+    setCustomCat('')
+    setTitle('')
+    setWhy('')
+    setSelectedMeta(null)
+    setSelectedImage(null)
+    setError(null)
+    setSent(false)
+    setRecoCount(c => c + 1)
+  }
+
   if (sent) {
+    const firstName = senderName.trim()
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         {!embedded && <><StatusBar /><NavHeader title="Instant Add" closeHref="/home" /></>}
@@ -130,10 +146,18 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
           <div>
             <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">Added. Nice one.</div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              {senderName.trim()}'s reco is in your feed.
+              {firstName}'s reco is in your feed.{recoCount > 0 && ` (${recoCount + 1} added)`}
             </div>
           </div>
-          <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">Back home</Link>
+          <button
+            onClick={addAnother}
+            className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center"
+          >
+            Add another from {firstName}
+          </button>
+          <Link href="/home" className="text-[13px] text-text-faint underline underline-offset-2">
+            Done — back home
+          </Link>
         </div>
       </div>
     )
