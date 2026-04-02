@@ -616,7 +616,7 @@ function HomePageInner() {
                 <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">
                   {mergeMode ? `Select 2 to merge (${mergeSelection.length}/2)` : 'Sent by'}
                 </div>
-                {senderOptions.length > 2 && (
+                {senderOptions.length > 1 && (
                   <button
                     onClick={() => { setMergeMode(!mergeMode); setMergeSelection([]) }}
                     className="text-[11px] font-semibold text-accent"
@@ -645,13 +645,19 @@ function HomePageInner() {
                     onClick={() => {
                       if (isSelected) {
                         setMergeSelection(prev => prev.filter(s => s.key !== f.value))
-                      } else if (mergeSelection.length < 2) {
-                        const next = [...mergeSelection, senderItem]
-                        setMergeSelection(next)
-                        if (next.length === 2) {
-                          setSenderDDOpen(false)
-                          setMergeSheetOpen(true)
-                        }
+                      } else {
+                        setMergeSelection(prev => {
+                          if (prev.length >= 2) return prev
+                          const next = [...prev, senderItem]
+                          if (next.length === 2) {
+                            // Delay to let state settle before opening sheet
+                            setTimeout(() => {
+                              setSenderDDOpen(false)
+                              setMergeSheetOpen(true)
+                            }, 100)
+                          }
+                          return next
+                        })
                       }
                     }}
                     className={`w-full text-left px-6 py-3.5 active:bg-bg-card transition-colors flex items-center gap-3 ${isSelected ? 'bg-accent/8' : ''}`}
