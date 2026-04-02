@@ -14,8 +14,8 @@ import Link from 'next/link'
 type ActiveItem = SeedReco & { section: string }
 
 function byLine(reco: SeedReco): string {
-  const names = reco.recommenders?.map((r) => r.profile.display_name.split(' ')[0]) ?? []
-  if (names.length === 0) return `Reco'd by ${reco.sender.display_name.split(' ')[0]}`
+  const names = reco.recommenders?.map((r) => r.profile.display_name) ?? []
+  if (names.length === 0) return `Reco'd by ${reco.sender.display_name}`
   if (names.length <= 2) return `Reco'd by ${names.join(', ')}`
   return `Reco'd by ${names[0]}, +${names.length - 1}`
 }

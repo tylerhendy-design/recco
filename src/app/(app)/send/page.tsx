@@ -488,7 +488,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
   // ─── Success screen ────────────────────────────────────────────────────────
   if (sent) {
-    const names = selectedFriends.map((f) => f.name.split(' ')[0])
+    const names = selectedFriends.map((f) => f.name)
     return (
       <div className="flex flex-col flex-1 overflow-hidden">
         {!embedded && <><StatusBar /><NavHeader title="Give a Reco" closeHref="/home" /></>}
@@ -553,7 +553,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
         // Notify the original sender that their reco was forwarded
         if (originalSenderId && originalSenderId !== userId) {
           const supabase = createClient()
-          const forwardedToNames = selectedFriends.map(f => f.name.split(' ')[0]).join(', ')
+          const forwardedToNames = selectedFriends.map(f => f.name).join(', ')
           await supabase.from('notifications').insert({
             user_id: originalSenderId,
             type: 'reco_received' as const,
@@ -667,7 +667,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
                   className="flex items-center gap-1.5 text-[12px] font-medium px-2.5 py-1.5 rounded-chip border transition-all"
                   style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
                 >
-                  {f.name.split(' ')[0]}
+                  {f.name}
                   <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               ))}
@@ -708,7 +708,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
             forwardCanSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
           }`}
         >
-          {sending ? 'Forwarding...' : `Forward to ${selectedFriends.length > 0 ? selectedFriends.map(f => f.name.split(' ')[0]).join(', ') : '...'}`}
+          {sending ? 'Forwarding...' : `Forward to ${selectedFriends.length > 0 ? selectedFriends.map(f => f.name).join(', ') : '...'}`}
         </button>
       </div>
     )
@@ -752,11 +752,11 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
                 <div className="text-[13px] text-accent leading-[1.4]">
                   {isProve ? (
                     <>
-                      <span className="font-semibold">Prove yourself to {friend.name.split(' ')[0]}.</span>{' '}
+                      <span className="font-semibold">Prove yourself to {friend.name}.</span>{' '}
                       <span className="text-accent/70">Make this one count.</span>
                     </>
                   ) : (
-                    <span className="font-semibold">Giving a reco to {friend.name.split(' ')[0]}</span>
+                    <span className="font-semibold">Giving a reco to {friend.name}</span>
                   )}
                 </div>
               </div>
@@ -1170,7 +1170,7 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
                   className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-chip border transition-all"
                   style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
                 >
-                  {f.name.split(' ')[0]}
+                  {f.name}
                   <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               ))}

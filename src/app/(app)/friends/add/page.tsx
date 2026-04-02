@@ -331,7 +331,7 @@ export default function AddFriendsPage() {
                   : initials(confirmPerson.display_name)
                 }
               </div>
-              <div className="text-[16px] font-bold text-white mb-1">Add {confirmPerson.display_name.split(' ')[0]}?</div>
+              <div className="text-[16px] font-bold text-white mb-1">Add {confirmPerson.display_name}?</div>
               <div className="text-[13px] text-text-muted mb-4">They'll receive a friend request from you.</div>
               <div className="flex gap-2">
                 <button onClick={() => setConfirmPerson(null)} className="flex-1 py-3 border border-border rounded-btn text-[14px] font-semibold text-text-faint">Cancel</button>

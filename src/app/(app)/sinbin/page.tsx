@@ -175,7 +175,7 @@ function SinBinCard({
   youGave?: boolean
 }) {
   const catLabel = getCategoryLabel(category).toLowerCase()
-  const firstName = name.split(' ')[0]
+  const firstName = name
   return (
     <div className="mx-4 mb-3 rounded-card border border-border bg-bg-card overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-3">

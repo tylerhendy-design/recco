@@ -128,7 +128,7 @@ export default function ProfilePage() {
             title: r.recommendations?.title ?? 'Unknown',
             category: r.recommendations?.category ?? 'custom',
             score: r.score,
-            recipient: r.profiles?.display_name?.split(' ')[0] ?? 'Someone',
+            recipient: r.profiles?.display_name ?? 'Someone',
           })))
         }
       }
@@ -394,7 +394,7 @@ export default function ProfilePage() {
                 <div key={i} className="px-4 py-3 border-b border-bad/10 last:border-0">
                   <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5]">
-                    You are in <span className="font-semibold">{entry.recipient_name.split(' ')[0]}'s</span> sin bin. You gave them{' '}
+                    You are in <span className="font-semibold">{entry.recipient_name}'s</span> sin bin. You gave them{' '}
                     <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   {entry.offences.length > 0 && (

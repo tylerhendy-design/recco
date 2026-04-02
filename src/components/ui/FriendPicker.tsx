@@ -100,7 +100,7 @@ export function FriendPicker({ friends, selectedIds, onToggle, onToggleAll, allS
                   : initials(f.display_name)
                 }
               </div>
-              <span className="text-[12px] font-medium text-text-secondary">{f.display_name.split(' ')[0]}</span>
+              <span className="text-[12px] font-medium text-text-secondary">{f.display_name}</span>
             </button>
           ))}
         </div>
@@ -119,7 +119,7 @@ export function FriendPicker({ friends, selectedIds, onToggle, onToggleAll, allS
                 className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-chip border transition-all"
                 style={{ color: '#D4E23A', borderColor: '#D4E23A', background: 'rgba(212,226,58,0.08)' }}
               >
-                {f.display_name.split(' ')[0]}
+                {f.display_name}
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             )

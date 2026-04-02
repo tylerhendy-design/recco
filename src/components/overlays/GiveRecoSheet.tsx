@@ -59,7 +59,7 @@ export function GiveRecoSheet({
   requestCount = 1,
   onAllSent,
 }: GiveRecoSheetProps) {
-  const firstName = recipientName.split(' ')[0]
+  const firstName = recipientName
   const total = requestCount ?? 1
 
   const [category, setCategory] = useState<CategoryId | null>((initialCategory as CategoryId) ?? null)

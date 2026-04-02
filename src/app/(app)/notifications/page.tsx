@@ -332,7 +332,7 @@ function NotifRow({
 }) {
   const actor = notif.actor
   const time = formatRelativeTime(notif.created_at)
-  const firstName = actor.display_name.split(' ')[0]
+  const firstName = actor.display_name
   const icon = getNotifIcon(notif)
 
   let heading = ''
@@ -537,7 +537,7 @@ function NotifRow({
               {handled === 'completed' ? (() => {
                 const count = notif.payload?.count ?? 1
                 const cat = notif.payload?.category
-                const firstName = actor.display_name.split(' ')[0]
+                const firstName = actor.display_name
                 return (
                   <span className="text-[12px] text-accent font-medium">
                     Completed {firstName}'s request for {count > 1 ? `${count} ` : ''}{cat ? `${cat} ` : ''}reco{count > 1 ? 's' : ''}.

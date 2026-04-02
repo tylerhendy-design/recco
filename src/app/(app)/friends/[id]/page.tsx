@@ -131,7 +131,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
     <div className="flex flex-col flex-1 overflow-hidden relative">
       <StatusBar />
       <NavHeader
-        title={loading ? '…' : (profile?.display_name.split(' ')[0].toLowerCase() ?? 'friend')}
+        title={loading ? '…' : (profile?.display_name.toLowerCase() ?? 'friend')}
         closeHref="/friends"
       />
 
@@ -193,7 +193,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 <div key={entry.category} className="px-4 py-3 border-b border-bad/10 last:border-0">
                   <div className="text-[11px] font-semibold text-bad tracking-[0.6px] uppercase mb-1">Sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5]">
-                    You're in {profile?.display_name.split(' ')[0]}'s sin bin. You gave them{' '}
+                    You're in {profile?.display_name}'s sin bin. You gave them{' '}
                     <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   {entry.offences.length > 0 && (
@@ -213,7 +213,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 <div key={entry.category} className="px-4 py-3 border-b border-accent/10 last:border-0">
                   <div className="text-[11px] font-semibold text-accent tracking-[0.6px] uppercase mb-1">In your sin bin</div>
                   <div className="text-[13px] text-white leading-[1.5] mb-2.5">
-                    {profile?.display_name.split(' ')[0]} is in your sin bin. They gave you{' '}
+                    {profile?.display_name} is in your sin bin. They gave you{' '}
                     <span className="font-semibold">{entry.bad_count} stinkers which were {getCategoryLabel(entry.category).toLowerCase()}</span>.
                   </div>
                   <button
@@ -246,12 +246,12 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
           {/* Picks */}
           <div className="px-6 pt-5">
             <h1 className="text-[20px] font-bold text-white tracking-[-0.4px] mb-4">
-              {profile.display_name.split(' ')[0]}'s TOP 03
+              {profile.display_name}'s TOP 03
             </h1>
 
             {picks.length === 0 ? (
               <p className="text-[13px] text-text-faint leading-[1.5]">
-                {profile.display_name.split(' ')[0]} hasn't set their top 3 yet.
+                {profile.display_name} hasn't set their top 3 yet.
               </p>
             ) : (
               Object.entries(picksByCategory).map(([category, items]) => {
@@ -390,7 +390,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-5 flex-shrink-0" />
             <div className="px-6 mb-4 flex-shrink-0">
               <div className="text-[18px] font-bold text-white tracking-[-0.4px]">
-                {profile?.display_name.split(' ')[0]}'s friends
+                {profile?.display_name}'s friends
               </div>
             </div>
             <div className="overflow-y-auto scrollbar-none">

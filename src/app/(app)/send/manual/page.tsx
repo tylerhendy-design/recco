@@ -130,7 +130,7 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
           <div>
             <div className="text-[24px] font-bold text-white tracking-[-0.6px] leading-[1.2] mb-2">Added. Nice one.</div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
-              {senderName.trim().split(' ')[0]}'s reco is in your feed.
+              {senderName.trim()}'s reco is in your feed.
             </div>
           </div>
           <Link href="/home" className="w-full bg-accent text-accent-fg py-4 rounded-btn text-[15px] font-bold text-center mt-2">Back home</Link>
@@ -160,7 +160,7 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
           {senderName.trim().length > 0 && (
             <div className="anim-in">
               <div className="text-[20px] font-semibold text-white tracking-[-0.5px] leading-[1.1] mb-3">
-                {category ? `What ${singular} did ${senderName.trim().split(' ')[0]} recommend?` : `What did ${senderName.trim().split(' ')[0]} recommend?`}
+                {category ? `What ${singular} did ${senderName.trim()} recommend?` : `What did ${senderName.trim()} recommend?`}
               </div>
               <CategoryChips
                 category={category}
@@ -270,7 +270,7 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
             canSend ? 'bg-accent text-accent-fg hover:opacity-90' : 'bg-accent/30 text-accent-fg/50 cursor-not-allowed'
           }`}
         >
-          {sending ? 'Adding...' : `Add ${senderName.trim().split(' ')[0] || ''}'s reco`}
+          {sending ? 'Adding...' : `Add ${senderName.trim() || ''}'s reco`}
         </button>
       </div>
     </div>

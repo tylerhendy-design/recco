@@ -129,7 +129,7 @@ function ThreadPageInner() {
     })
   }
 
-  const firstName = friendName.split(' ')[0]
+  const firstName = friendName
   const scoreColor = score != null ? getScoreColor(score) : null
 
   return (

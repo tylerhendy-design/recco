@@ -184,7 +184,7 @@ function ProfileRecosInner() {
                               r.status === 'no_go' ? 'border-red-500/40 text-red-400 bg-red-500/10' :
                               'border-border text-text-faint bg-bg-base'
                             }`}>
-                              {r.name.split(' ')[0]}
+                              {r.name}
                               {r.score != null && <span className="ml-1 font-bold">{r.score}/10</span>}
                               {r.status === 'no_go' && ' ✕'}
                               {r.status === 'unseen' && ' · pending'}

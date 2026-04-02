@@ -32,7 +32,7 @@ export function SuccessOverlay({ open, onClose, score, recoTitle, recommenderNam
   if (!open) return null
 
   const sentiment = scoreLabel(score)
-  const firstName = recommenderName?.split(' ')[0]
+  const firstName = recommenderName
 
   return (
     <div className="absolute inset-0 z-[150] bg-black/85 flex flex-col items-center justify-center px-8 text-center animate-fade-in">

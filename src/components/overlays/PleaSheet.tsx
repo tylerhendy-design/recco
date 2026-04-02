@@ -18,7 +18,7 @@ export function PleaSheet({ open, onClose, fromUserId, toUserId, toName, categor
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
-  const firstName = toName.split(' ')[0]
+  const firstName = toName
   const catLabel = getCategoryLabel(category).toLowerCase()
 
   function handleClose() {

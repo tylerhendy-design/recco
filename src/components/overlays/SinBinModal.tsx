@@ -25,7 +25,7 @@ export function SinBinModal({
   offences,
 }: SinBinModalProps) {
   const [releasing, setReleasing] = useState(false)
-  const firstName = senderName.split(' ')[0]
+  const firstName = senderName
   const catLabel = getCategoryLabel(category).toLowerCase()
 
   async function handleRelease() {

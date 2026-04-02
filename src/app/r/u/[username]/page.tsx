@@ -94,7 +94,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           href="/login"
           className="block w-full bg-[#D4E23A] text-[#111] py-4 rounded-full text-[15px] font-bold text-center"
         >
-          Join RECO to send {profile.display_name.split(' ')[0]} a reco
+          Join RECO to send {profile.display_name} a reco
         </Link>
         <div className="text-center mt-4">
           <Link href="/login" className="text-[13px] text-[#888] underline underline-offset-2">

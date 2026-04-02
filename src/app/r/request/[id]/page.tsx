@@ -66,7 +66,7 @@ export default async function PublicRequestPage({ params }: { params: Promise<{ 
     .eq('id', request.requester_id)
     .single()
 
-  const name = profile?.display_name?.split(' ')[0] ?? 'Someone'
+  const name = profile?.display_name ?? 'Someone'
   const payload = typeof request.context === 'string' ? JSON.parse(request.context) : request.context
   const category = request.category
   const catLabel = category ? (CATEGORY_LABELS[category] ?? category) : null

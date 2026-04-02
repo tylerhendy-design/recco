@@ -197,7 +197,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
 
   const whyMessages = reco.recommenders
     ?.filter((r) => r.why_text)
-    .map((r) => `${r.profile.display_name.split(' ')[0]}: "${r.why_text}"`) ?? []
+    .map((r) => `${r.profile.display_name}: "${r.why_text}"`) ?? []
   if (reco.why_text && whyMessages.length === 0) whyMessages.push(reco.why_text)
   const currentWhy = whyMessages[whyIndex] ?? reco.why_text ?? ''
 
@@ -206,10 +206,10 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
     ? manualSender
     : reco.recommenders && reco.recommenders.length > 0
       ? reco.recommenders
-          .map((r) => r.profile.display_name.split(' ')[0])
+          .map((r) => r.profile.display_name)
           .slice(0, 2)
           .join(' & ')
-      : reco.sender?.display_name?.split(' ')[0] ?? ''
+      : reco.sender?.display_name ?? ''
   const when = reco.created_at ? timeAgo(reco.created_at) : ''
   const details = getDetailPills(reco)
   const pills = pillClasses(reco.category)
@@ -580,10 +580,10 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
                     <span className="text-text-secondary font-medium">{manualSender}</span>
                   ) : reco.recommenders && reco.recommenders.length > 0 ? (
                     <span className="text-text-secondary font-medium">{reco.recommenders.map((r, i) => (
-                      <a key={r.profile.id} href={`/friends/${r.profile.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent hover:underline">{r.profile.display_name.split(' ')[0]}{i < Math.min(reco.recommenders!.length, 2) - 1 ? ' & ' : ''}</a>
+                      <a key={r.profile.id} href={`/friends/${r.profile.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent hover:underline">{r.profile.display_name}{i < Math.min(reco.recommenders!.length, 2) - 1 ? ' & ' : ''}</a>
                     ))}</span>
                   ) : reco.sender?.display_name ? (
-                    <a href={`/friends/${reco.sender.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent font-medium hover:underline">{reco.sender.display_name.split(' ')[0]}</a>
+                    <a href={`/friends/${reco.sender.id}`} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-accent font-medium hover:underline">{reco.sender.display_name}</a>
                   ) : null}
                 </span>
                 {reco.created_at && (

@@ -124,7 +124,7 @@ export default function MyRequestsPage() {
                   <div className="text-[11px] text-text-faint">
                     {timeAgo(req.created_at)}
                     {req.asked && req.asked.length > 0 && (
-                      <> · Asked {req.asked.map(a => a.name.split(' ')[0]).join(', ')}</>
+                      <> · Asked {req.asked.map(a => a.name).join(', ')}</>
                     )}
                   </div>
                   {(req.responseCount ?? 0) > 0 && (
@@ -169,7 +169,7 @@ export default function MyRequestsPage() {
                             <span key={i} className={`text-[11px] font-medium px-2.5 py-1 rounded-full border ${
                               responded ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-border text-text-faint bg-bg-base'
                             }`}>
-                              {a.name.split(' ')[0]}
+                              {a.name}
                               {responded ? ' ✓' : ' · pending'}
                             </span>
                           )
@@ -185,7 +185,7 @@ export default function MyRequestsPage() {
                       <div className="flex flex-col gap-1">
                         {req.responses.map((r, i) => (
                           <div key={i} className="text-[12px] text-text-secondary">
-                            <span className="font-medium text-white">{r.name.split(' ')[0]}</span> sent "{r.title}"
+                            <span className="font-medium text-white">{r.name}</span> sent "{r.title}"
                           </div>
                         ))}
                       </div>

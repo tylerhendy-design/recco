@@ -197,7 +197,7 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
             </div>
             <div className="text-[15px] text-text-dim leading-[1.6]">
               {selectedIds.length > 0
-                ? `Request sent to ${allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name.split(' ')[0] : `${selectedIds.length} people`}.`
+                ? `Request sent to ${allSelected ? 'all your friends' : selectedIds.length === 1 ? friends.find((f) => f.id === selectedIds[0])?.display_name : `${selectedIds.length} people`}.`
                 : 'Your request is ready to share.'}
             </div>
           </div>
@@ -240,7 +240,7 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
                   }
                 </div>
                 <div className="text-[13px] text-accent leading-[1.4]">
-                  <span className="font-semibold">Getting a reco from {friend.display_name.split(' ')[0]}</span>
+                  <span className="font-semibold">Getting a reco from {friend.display_name}</span>
                 </div>
               </div>
             ) : null

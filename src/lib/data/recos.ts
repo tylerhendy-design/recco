@@ -339,7 +339,7 @@ export async function checkDuplicateReco({
       .select('display_name')
       .in('id', dupeIds)
 
-    return { duplicateNames: (profiles ?? []).map(p => p.display_name.split(' ')[0]) }
+    return { duplicateNames: (profiles ?? []).map(p => p.display_name) }
   } catch {
     // Network error — skip duplicate check rather than blocking send
     return { duplicateNames: [] }

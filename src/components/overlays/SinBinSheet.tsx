@@ -26,7 +26,7 @@ export function SinBinSheet({
   offendingRecos = [],
 }: SinBinSheetProps) {
   const [released, setReleased] = useState(false)
-  const firstName = friendName.split(' ')[0]
+  const firstName = friendName
 
   function handleRelease() {
     setReleased(true)

@@ -47,8 +47,7 @@ function getRecoSenderName(reco: Reco): string {
 }
 
 function getRecoSenderFirstName(reco: Reco): string {
-  return getRecoSenderName(reco).split(' ')[0]
-}
+  return getRecoSenderName(reco)}
 
 // Merge recos with same title+category into one card with multiple recommenders
 function groupRecos(recos: Reco[]): Reco[] {
@@ -273,14 +272,14 @@ function HomePageInner() {
         const key = `manual::${manualName.trim().toLowerCase()}`
         if (!seen.has(key)) {
           seen.set(key, {
-            label: manualName.trim().split(' ')[0],
-            sub: manualName.trim(),
+            label: manualName.trim(),
+            sub: '',
           })
         }
       } else {
         for (const rec of reco.recommenders ?? []) {
           seen.set(rec.profile.id, {
-            label: rec.profile.display_name.split(' ')[0],
+            label: rec.profile.display_name,
             sub: `@${rec.profile.username}`,
           })
         }
