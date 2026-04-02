@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, Suspense } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { StatusBar } from '@/components/ui/StatusBar'
 import { NavHeader } from '@/components/ui/NavHeader'
@@ -32,6 +32,23 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const whyRef = useRef<HTMLTextAreaElement>(null)
+
+  // Recent sender names from localStorage
+  const [recentSenders, setRecentSenders] = useState<string[]>([])
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('reco-recent-senders')
+      if (stored) setRecentSenders(JSON.parse(stored))
+    } catch {}
+  }, [])
+
+  function saveRecentSender(name: string) {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    const updated = [trimmed, ...recentSenders.filter(n => n.toLowerCase() !== trimmed.toLowerCase())].slice(0, 10)
+    setRecentSenders(updated)
+    try { localStorage.setItem('reco-recent-senders', JSON.stringify(updated)) } catch {}
+  }
 
   const userLocation = useRef<{ lat: number; lng: number } | null>(null)
 
@@ -110,6 +127,7 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
       if (recipErr) { setError(recipErr.message); setSending(false); return }
 
       setSending(false)
+      saveRecentSender(senderName)
       setSent(true)
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong')
@@ -174,11 +192,26 @@ export function ManualAddInner({ embedded }: { embedded?: boolean } = {}) {
           <div className="text-[11px] font-semibold text-text-faint tracking-[0.5px] uppercase mb-2">Who gave you this reco?</div>
           <input
             autoFocus
-            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
+            className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
             placeholder="Their name..."
             value={senderName}
             onChange={(e) => setSenderName(e.target.value)}
           />
+          {/* Recent sender suggestions */}
+          {!senderName.trim() && recentSenders.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2 mb-4">
+              {recentSenders.slice(0, 5).map((name) => (
+                <button
+                  key={name}
+                  onClick={() => setSenderName(name)}
+                  className="text-[12px] font-medium px-2.5 py-1 rounded-chip border border-border text-text-secondary hover:border-accent hover:text-accent transition-colors"
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+          {(senderName.trim() || recentSenders.length === 0) && <div className="mb-4" />}
 
           {/* Step 2: Category */}
           {senderName.trim().length > 0 && (
