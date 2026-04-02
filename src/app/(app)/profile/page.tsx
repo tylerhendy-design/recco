@@ -269,7 +269,7 @@ export default function ProfilePage() {
         <div className="flex-1 overflow-y-auto scrollbar-none pb-6">
 
           {/* Avatar + name */}
-          <div className="px-6 pb-5 border-b border-bg-card">
+          <div className="px-6 pb-6 border-b border-bg-card mb-2">
             <div className="flex items-center gap-4 mb-4">
               {/* Profile picture — tappable to change */}
               <label className="relative w-[72px] h-[72px] rounded-full bg-bg-card flex items-center justify-center text-[22px] font-bold text-text-secondary flex-shrink-0 overflow-hidden cursor-pointer">
@@ -320,7 +320,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Reco flow — compact single bar */}
+            {/* Stats */}
             {(() => {
               const sent = profile.recos_sent
               const received = profile.recos_received
@@ -328,12 +328,13 @@ export default function ProfilePage() {
               const stinkers = profile.stinkers_sent
               const total = sent + received + completed + stinkers || 1
               return (
-                <div className="mb-3">
+                <div className="mb-3 mt-2">
+                  <div className="text-[13px] font-semibold text-white tracking-[-0.2px] mb-2.5">Stats</div>
                   {/* Ratio bar */}
                   <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
                     {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
                     {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
-                    {completed > 0 && <div className="bg-[#4ADE80] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
+                    {completed > 0 && <div className="bg-[#16A34A] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
                     {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                   </div>
                   {/* Legend: 2x2 grid, word then number, 16px regular */}
@@ -347,8 +348,8 @@ export default function ProfilePage() {
                       <span className="text-[16px] text-[#5BC4F5]">Received {received}</span>
                     </Link>
                     <Link href="/profile/recos?filter=completed" className="flex items-center gap-2 py-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80] flex-shrink-0" />
-                      <span className="text-[16px] text-[#4ADE80]">Completed {completed}</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
+                      <span className="text-[16px] text-[#16A34A]">Completed {completed}</span>
                     </Link>
                     <button onClick={() => setShowStinkers(true)} className="flex items-center gap-2 py-1.5 text-left">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
@@ -418,17 +419,6 @@ export default function ProfilePage() {
                 </>
               )
             })()}
-
-            {/* Add CTA */}
-            <Link
-              href="/profile/top3"
-              className="w-full flex items-center justify-center gap-2 py-3.5 mb-4 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add to your TOP 03
-            </Link>
 
             {/* Picks list */}
             {picks.length === 0 ? (
@@ -521,6 +511,16 @@ export default function ProfilePage() {
                 )
               })
             )}
+            {/* Add CTA — below picks */}
+            <Link
+              href="/profile/top3"
+              className="w-full flex items-center justify-center gap-2 py-3.5 mt-3 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add to your TOP 03
+            </Link>
           </div>
 
           {/* Sign out */}

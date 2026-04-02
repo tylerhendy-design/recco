@@ -201,7 +201,7 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                     <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
                       {sent > 0 && <div className="bg-accent transition-all" style={{ width: `${(sent / total) * 100}%` }} />}
                       {received > 0 && <div className="bg-[#5BC4F5] transition-all" style={{ width: `${(received / total) * 100}%` }} />}
-                      {completed > 0 && <div className="bg-[#4ADE80] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
+                      {completed > 0 && <div className="bg-[#16A34A] transition-all" style={{ width: `${(completed / total) * 100}%` }} />}
                       {stinkers > 0 && <div className="bg-[#F56E6E] transition-all" style={{ width: `${(stinkers / total) * 100}%` }} />}
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -214,8 +214,8 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                         <span className="text-[16px] text-[#5BC4F5]">Received {received}</span>
                       </div>
                       <Link href={`/profile/recos?filter=completed&userId=${id}`} className="flex items-center gap-2 py-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#4ADE80] flex-shrink-0" />
-                        <span className="text-[16px] text-[#4ADE80]">Completed {completed}</span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] flex-shrink-0" />
+                        <span className="text-[16px] text-[#16A34A]">Completed {completed}</span>
                       </Link>
                       <div className="flex items-center gap-2 py-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-[#F56E6E] flex-shrink-0" />
