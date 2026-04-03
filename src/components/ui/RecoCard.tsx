@@ -407,7 +407,7 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
       </div>}
       <div className="flex-1 min-w-0">
         <div className="text-[14px] font-semibold text-white truncate">{reco.title}</div>
-        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{hasLocation(reco) ? <span className="text-accent"> · {(reco.meta?.location || reco.meta?.city || reco.meta?.address) as string}</span> : ''}</div>
+        <div className="text-[11px] truncate"><span style={{ color: getCategoryColor(reco.category) }}>{getRecoCategory(reco)}</span>{recommenderNames ? <span className="text-text-faint"> · {recommenderNames}</span> : ''}{hasLocation(reco) ? <span className="text-accent"> · {(reco.meta?.location || reco.meta?.city) as string}</span> : ''}</div>
       </div>
       {hasActions && (
         <button className="flex gap-[3px] items-center p-1 flex-shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o) }}>

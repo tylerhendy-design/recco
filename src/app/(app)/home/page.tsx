@@ -10,7 +10,6 @@ import { BeenThereSheet } from '@/components/overlays/BeenThereSheet'
 import { NoGoSheet } from '@/components/overlays/NoGoSheet'
 import { SuccessOverlay } from '@/components/overlays/SuccessOverlay'
 import { SinBinModal } from '@/components/overlays/SinBinModal'
-import { MapSheet } from '@/components/overlays/MapSheet'
 import { SentimentBadge } from '@/components/ui/SentimentBadge'
 import { useRecos } from '@/lib/context/RecosContext'
 import { createClient } from '@/lib/supabase/client'
@@ -160,7 +159,6 @@ function HomePageInner() {
   const [feedbackReco, setFeedbackReco] = useState<Reco | null>(null)
   const [successState, setSuccessState] = useState<{ reco: Reco; score: number; sinBinWarning?: { category: string; remaining: number } } | null>(null)
   const [sinBinData, setSinBinData] = useState<{ senderId: string; senderName: string; category: string; offences: string[] } | null>(null)
-  const [mapReco, setMapReco] = useState<Reco | null>(null)
   const [beenThereReco, setBeenThereReco] = useState<Reco | null>(null)
   const [noGoReco, setNoGoReco] = useState<Reco | null>(null)
   const [noGoSuccess, setNoGoSuccess] = useState<{ senderName: string } | null>(null)
@@ -940,12 +938,6 @@ function HomePageInner() {
         />
       )}
 
-      <MapSheet
-        open={!!mapReco}
-        onClose={() => setMapReco(null)}
-        name={mapReco?.title ?? ''}
-        address={mapReco?.meta?.location}
-      />
 
 
       <BeenThereSheet

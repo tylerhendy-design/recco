@@ -109,7 +109,7 @@ export default function ProfilePage() {
           : Promise.resolve({ data: [] }),
         // Times my recos were forwarded
         sentIds.length > 0
-          ? supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('type', 'reco_received').contains('payload', { subtype: 'forwarded' })
+          ? supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('type', 'reco_received').eq('actor_id', user.id).contains('payload', { subtype: 'forwarded' })
           : Promise.resolve({ count: 0 }),
         // Top category sent
         supabase.from('recommendations').select('category').eq('sender_id', user.id),

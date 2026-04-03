@@ -10,9 +10,9 @@ import type { Reco } from '@/types/app.types'
  */
 export function getLocationCity(reco: Reco): string | null {
   const m = reco.meta ?? {}
+  // Per CLAUDE.md Rule #10: location = city, NEVER street address
   return (m.location as string | undefined)
     || (m.city as string | undefined)
-    || (m.address as string | undefined)
     || null
 }
 

@@ -7,7 +7,7 @@ import { NavHeader } from '@/components/ui/NavHeader'
 import { createClient } from '@/lib/supabase/client'
 import { fetchNotifications, markAllRead, markNotificationHandled, type NotificationRow } from '@/lib/data/notifications'
 import { acceptFriendRequest, declineFriendRequest } from '@/lib/data/friends'
-import { releaseSinBin } from '@/lib/data/sinbin'
+import { releaseSinBin, fetchBlockedCategories } from '@/lib/data/sinbin'
 import { initials, formatRelativeTime, getScoreColor, getScoreTextColor } from '@/lib/utils'
 import { GiveRecoSheet } from '@/components/overlays/GiveRecoSheet'
 
@@ -57,6 +57,7 @@ export default function NotificationsPage() {
     category: string | null
     context: string | null
     count: number
+    blockedCategories: string[]
   } | null>(null)
 
   useEffect(() => {
@@ -183,15 +184,19 @@ export default function NotificationsPage() {
               onDecline={() => handleDecline(n)}
               onReleasePlea={() => handleReleasePlea(n)}
               onKeepPlea={() => handleKeepPlea(n)}
-              onReply={() => setReplyTarget({
-                notifId: n.id,
-                notifPayload: n.payload,
-                recipientId: n.actor_id,
-                recipientName: n.actor.display_name,
-                category: n.payload?.category ?? null,
-                context: buildRequestContext(n.payload),
-                count: n.payload?.count ?? 1,
-              })}
+              onReply={async () => {
+                const blocked = userId ? await fetchBlockedCategories(userId, n.actor_id) : []
+                setReplyTarget({
+                  notifId: n.id,
+                  notifPayload: n.payload,
+                  recipientId: n.actor_id,
+                  recipientName: n.actor.display_name,
+                  category: n.payload?.category ?? null,
+                  context: buildRequestContext(n.payload),
+                  count: n.payload?.count ?? 1,
+                  blockedCategories: blocked,
+                })
+              }}
             />
           ))
         )}
@@ -204,6 +209,7 @@ export default function NotificationsPage() {
           senderId={userId}
           recipientId={replyTarget.recipientId}
           recipientName={replyTarget.recipientName}
+          blockedCategories={replyTarget.blockedCategories}
           initialCategory={replyTarget.category}
           requestContext={replyTarget.context}
           requestCount={replyTarget.count}
