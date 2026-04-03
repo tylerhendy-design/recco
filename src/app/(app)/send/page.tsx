@@ -1185,21 +1185,31 @@ export function GivePageInner({ embedded }: { embedded?: boolean } = {}) {
 
           {/* Expanded constraint input */}
           {openConstraint && (
-            <div className="mb-2 flex gap-2">
-              <input
-                autoFocus
-                className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2 text-[13px] text-white outline-none placeholder:text-[#333] font-sans"
-                placeholder={allDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
-                value={constraints[openConstraint] ?? ''}
-                onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
-                onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
-              />
-              <button
-                onClick={() => setOpenConstraint(null)}
-                className="px-4 py-2 rounded-input text-[13px] font-semibold bg-accent text-accent-fg"
-              >
-                OK
-              </button>
+            <div className="mb-2">
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  className="flex-1 bg-bg-base border border-border rounded-input px-3 py-2.5 text-[13px] text-white outline-none placeholder:text-[#444] focus:border-accent font-sans"
+                  placeholder={allDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
+                  value={constraints[openConstraint] ?? ''}
+                  onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
+                  onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
+                />
+                <button
+                  onClick={() => setOpenConstraint(null)}
+                  className="px-4 py-2.5 rounded-input text-[13px] font-semibold bg-accent text-accent-fg"
+                >
+                  Done
+                </button>
+              </div>
+              {(constraints[openConstraint] ?? '').trim() && (
+                <button
+                  onClick={() => { setConstraints(prev => { const n = { ...prev }; delete n[openConstraint!]; return n }); setOpenConstraint(null) }}
+                  className="mt-1.5 text-[11px] text-text-faint hover:text-bad transition-colors"
+                >
+                  Clear this field
+                </button>
+              )}
             </div>
           )}
 
