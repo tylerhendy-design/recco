@@ -18,6 +18,7 @@ type ConstraintDef = {
   label: string
   placeholder: string
   icon: React.ReactNode
+  presets?: string[]
 }
 
 const PIN = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -31,60 +32,60 @@ const BOOK = <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke=
 
 const CATEGORY_CONSTRAINTS: Record<string, ConstraintDef[]> = {
   restaurant: [
-    { key: 'location', label: 'Location', placeholder: 'e.g. Soho, Amsterdam, near the hotel…', icon: PIN },
-    { key: 'cuisine', label: 'Cuisine', placeholder: 'e.g. Italian, Asian, local delicacies…', icon: STAR },
-    { key: 'budget', label: 'Budget', placeholder: 'e.g. under £40pp, no budget, mid-range…', icon: MONEY },
-    { key: 'vibe', label: 'Vibe', placeholder: 'e.g. candlelit, hole in the wall, buzzy…', icon: STAR },
-    { key: 'group_size', label: 'Group size', placeholder: 'e.g. just me, couple, group of 8…', icon: STAR },
-    { key: 'booking', label: 'Reservations', placeholder: 'e.g. walk-in only, need to book, flexible…', icon: CLOCK },
-    { key: 'duration', label: 'How long', placeholder: 'e.g. quick bite, long lunch, 3-hour dinner…', icon: CLOCK },
-    { key: 'avoid', label: 'Avoid', placeholder: 'e.g. tourist traps, chains, nothing too fancy…', icon: STAR },
+    { key: 'cuisine', label: 'Cuisine', placeholder: 'Type a cuisine…', icon: STAR, presets: ['Italian', 'Japanese', 'Mexican', 'Indian', 'Thai', 'French', 'Chinese', 'Korean', 'Mediterranean', 'Local'] },
+    { key: 'vibe', label: 'Vibe', placeholder: 'Type a vibe…', icon: STAR, presets: ['Candlelit', 'Buzzy', 'Hole in the wall', 'Fine dining', 'Casual', 'Outdoor', 'Cosy', 'Lively'] },
+    { key: 'budget', label: 'Budget', placeholder: 'Type a budget…', icon: MONEY, presets: ['Under £20pp', '£20-40pp', '£40-80pp', 'Splurge', 'No budget'] },
+    { key: 'group_size', label: 'Group size', placeholder: 'Type group size…', icon: STAR, presets: ['Solo', 'Date', 'Small group', 'Big group', 'Family'] },
+    { key: 'booking', label: 'Reservations', placeholder: 'Type preference…', icon: CLOCK, presets: ['Walk-in only', 'Need to book', 'Flexible'] },
+    { key: 'duration', label: 'How long', placeholder: 'Type duration…', icon: CLOCK, presets: ['Quick bite', 'Long lunch', '3-hour dinner', 'All evening'] },
+    { key: 'avoid', label: 'Avoid', placeholder: 'Type what to avoid…', icon: STAR, presets: ['Tourist traps', 'Chains', 'Too fancy', 'Too loud', 'No spice'] },
+    { key: 'location', label: 'Location', placeholder: 'Type a location…', icon: PIN },
   ],
   bars: [
-    { key: 'location', label: 'Location', placeholder: 'e.g. Shoreditch, central, near the venue…', icon: PIN },
-    { key: 'vibe', label: 'Vibe', placeholder: 'e.g. speakeasy, rooftop, dive bar, cocktails…', icon: STAR },
-    { key: 'budget', label: 'Budget', placeholder: 'e.g. cheap drinks, splurge, mid-range…', icon: MONEY },
-    { key: 'group_size', label: 'Group size', placeholder: 'e.g. date, group, solo…', icon: STAR },
+    { key: 'vibe', label: 'Vibe', placeholder: 'Type a vibe…', icon: STAR, presets: ['Speakeasy', 'Rooftop', 'Dive bar', 'Cocktail bar', 'Wine bar', 'Pub', 'Beer garden'] },
+    { key: 'budget', label: 'Budget', placeholder: 'Type a budget…', icon: MONEY, presets: ['Cheap', 'Mid-range', 'Fancy', 'No budget'] },
+    { key: 'group_size', label: 'Group size', placeholder: 'Type group size…', icon: STAR, presets: ['Date', 'Small group', 'Big night', 'Solo'] },
+    { key: 'location', label: 'Location', placeholder: 'Type a location…', icon: PIN },
   ],
   tv: [
-    { key: 'genre', label: 'Genre', placeholder: 'e.g. thriller, dark comedy, sci-fi…', icon: FILM },
-    { key: 'streaming', label: 'Streaming', placeholder: 'e.g. Netflix, HBO, I have all of them…', icon: TV },
-    { key: 'mood', label: 'Mood', placeholder: "e.g. something light, can't stop watching…", icon: STAR },
-    { key: 'length', label: 'Length', placeholder: 'e.g. short series, long-running, limited…', icon: CLOCK },
+    { key: 'genre', label: 'Genre', placeholder: 'Type a genre…', icon: FILM, presets: ['Thriller', 'Comedy', 'Drama', 'Sci-fi', 'True crime', 'Reality', 'Documentary', 'Horror'] },
+    { key: 'mood', label: 'Mood', placeholder: 'Type a mood…', icon: STAR, presets: ['Binge-worthy', 'Light', 'Intense', 'Feel-good', 'Mind-bending', 'Slow burn'] },
+    { key: 'streaming', label: 'Streaming', placeholder: 'Type a service…', icon: TV, presets: ['Netflix', 'HBO', 'Prime', 'Apple TV+', 'Disney+', 'Any'] },
+    { key: 'length', label: 'Length', placeholder: 'Type preference…', icon: CLOCK, presets: ['Short series', 'Long-running', 'Limited series', 'Any'] },
   ],
   podcast: [
-    { key: 'topic', label: 'Topic', placeholder: 'e.g. true crime, business, history, comedy…', icon: MUSIC },
-    { key: 'length', label: 'Episode length', placeholder: 'e.g. 20 mins, 1 hour, doesn\'t matter…', icon: CLOCK },
-    { key: 'mood', label: 'Mood', placeholder: 'e.g. educational, entertaining, chill, gripping…', icon: STAR },
-    { key: 'context', label: 'Listening context', placeholder: 'e.g. commute, long drive, gym, cooking…', icon: STAR },
+    { key: 'topic', label: 'Topic', placeholder: 'Type a topic…', icon: MUSIC, presets: ['True crime', 'Business', 'Comedy', 'History', 'Science', 'Culture', 'Sport', 'Politics'] },
+    { key: 'mood', label: 'Mood', placeholder: 'Type a mood…', icon: STAR, presets: ['Educational', 'Entertaining', 'Gripping', 'Chill', 'Funny', 'Inspiring'] },
+    { key: 'length', label: 'Length', placeholder: 'Type a length…', icon: CLOCK, presets: ['Under 30 mins', '30-60 mins', '1 hour+', 'Any'] },
+    { key: 'context', label: 'For', placeholder: 'Type context…', icon: STAR, presets: ['Commute', 'Long drive', 'Gym', 'Cooking', 'Before bed', 'Background'] },
   ],
   music: [
-    { key: 'genre', label: 'Genre', placeholder: 'e.g. indie, jazz, hip-hop, anything…', icon: MUSIC },
-    { key: 'mood', label: 'Mood', placeholder: 'e.g. workout, late night, focus, dinner party…', icon: STAR },
-    { key: 'era', label: 'Era', placeholder: 'e.g. 90s nostalgia, brand new, timeless…', icon: CLOCK },
+    { key: 'genre', label: 'Genre', placeholder: 'Type a genre…', icon: MUSIC, presets: ['Indie', 'Jazz', 'Hip-hop', 'Electronic', 'Rock', 'R&B', 'Classical', 'Pop'] },
+    { key: 'mood', label: 'Mood', placeholder: 'Type a mood…', icon: STAR, presets: ['Workout', 'Late night', 'Focus', 'Dinner party', 'Road trip', 'Chill'] },
+    { key: 'era', label: 'Era', placeholder: 'Type an era…', icon: CLOCK, presets: ['Brand new', '2010s', '2000s', '90s', '80s', 'Timeless'] },
   ],
   book: [
-    { key: 'genre', label: 'Genre', placeholder: 'e.g. thriller, sci-fi, memoir, literary…', icon: BOOK },
-    { key: 'mood', label: 'Mood', placeholder: "e.g. can't put it down, slow burn, mind-bending…", icon: STAR },
-    { key: 'length', label: 'Length', placeholder: 'e.g. quick read, epic, audiobook friendly…', icon: CLOCK },
+    { key: 'genre', label: 'Genre', placeholder: 'Type a genre…', icon: BOOK, presets: ['Thriller', 'Sci-fi', 'Memoir', 'Literary fiction', 'Fantasy', 'Non-fiction', 'Self-help'] },
+    { key: 'mood', label: 'Mood', placeholder: 'Type a mood…', icon: STAR, presets: ["Can't put down", 'Slow burn', 'Mind-bending', 'Feel-good', 'Emotional', 'Funny'] },
+    { key: 'length', label: 'Length', placeholder: 'Type a length…', icon: CLOCK, presets: ['Quick read', 'Medium', 'Epic', 'Audiobook friendly'] },
   ],
   film: [
-    { key: 'genre', label: 'Genre', placeholder: 'e.g. horror, rom-com, documentary, foreign…', icon: FILM },
-    { key: 'streaming', label: 'Where', placeholder: "e.g. Netflix, cinema, doesn't matter…", icon: TV },
-    { key: 'mood', label: 'Mood', placeholder: 'e.g. feel-good, intense, make me think…', icon: STAR },
-    { key: 'watching_with', label: 'Watching with', placeholder: 'e.g. partner, family, alone, mates…', icon: STAR },
+    { key: 'genre', label: 'Genre', placeholder: 'Type a genre…', icon: FILM, presets: ['Horror', 'Rom-com', 'Documentary', 'Action', 'Drama', 'Sci-fi', 'Foreign', 'Animated'] },
+    { key: 'mood', label: 'Mood', placeholder: 'Type a mood…', icon: STAR, presets: ['Feel-good', 'Intense', 'Make me think', 'Make me cry', 'Escapism', 'Funny'] },
+    { key: 'streaming', label: 'Where', placeholder: 'Type where…', icon: TV, presets: ['Netflix', 'Cinema', 'Prime', 'Apple TV+', 'Any'] },
+    { key: 'watching_with', label: 'With', placeholder: 'Type who…', icon: STAR, presets: ['Partner', 'Family', 'Alone', 'Mates', 'Kids'] },
   ],
   culture: [
-    { key: 'location', label: 'Location', placeholder: 'e.g. central London, Amsterdam, local…', icon: PIN },
-    { key: 'type', label: 'Type', placeholder: 'e.g. gallery, museum, theatre, market…', icon: STAR },
-    { key: 'budget', label: 'Budget', placeholder: 'e.g. free, under £20, splash out…', icon: MONEY },
-    { key: 'vibe', label: 'Vibe', placeholder: 'e.g. rainy day, date, family-friendly…', icon: STAR },
+    { key: 'type', label: 'Type', placeholder: 'Type what…', icon: STAR, presets: ['Gallery', 'Museum', 'Theatre', 'Market', 'Live music', 'Festival', 'Walking tour'] },
+    { key: 'vibe', label: 'Vibe', placeholder: 'Type a vibe…', icon: STAR, presets: ['Rainy day', 'Date', 'Family-friendly', 'Nerdy', 'Chill', 'Instagram-worthy'] },
+    { key: 'budget', label: 'Budget', placeholder: 'Type a budget…', icon: MONEY, presets: ['Free', 'Under £20', 'Splash out', 'Any'] },
+    { key: 'location', label: 'Location', placeholder: 'Type a location…', icon: PIN },
   ],
   default: [
-    { key: 'location', label: 'Location', placeholder: "e.g. central, near me, doesn't matter…", icon: PIN },
-    { key: 'vibes', label: 'Vibes', placeholder: 'e.g. cosy, lively, adventurous…', icon: STAR },
-    { key: 'budget', label: 'Budget', placeholder: 'e.g. cheap and cheerful, no limit…', icon: MONEY },
-    { key: 'context', label: 'Context', placeholder: 'e.g. travelling, date night, solo…', icon: STAR },
+    { key: 'vibes', label: 'Vibes', placeholder: 'Type vibes…', icon: STAR, presets: ['Cosy', 'Lively', 'Adventurous', 'Relaxed', 'Romantic'] },
+    { key: 'budget', label: 'Budget', placeholder: 'Type a budget…', icon: MONEY, presets: ['Cheap', 'Mid-range', 'Splurge', 'Free'] },
+    { key: 'location', label: 'Location', placeholder: 'Type a location…', icon: PIN },
+    { key: 'context', label: 'Context', placeholder: 'Type context…', icon: STAR, presets: ['Travelling', 'Date night', 'Solo', 'Group', 'Weekend'] },
   ],
 }
 
@@ -324,24 +325,57 @@ export function GetPageInner({ embedded }: { embedded?: boolean } = {}) {
                   >
                     {def.icon}
                     {filled ? constraints[def.key] : `+ ${def.label}`}
+                    {filled && (
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"
+                        onClick={(e) => { e.stopPropagation(); setConstraints(prev => { const n = { ...prev }; delete n[def.key]; return n }); setOpenConstraint(null) }}
+                      ><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    )}
                   </button>
                 )
               })}
             </div>
 
-            {/* Expanded input */}
-            {openConstraint && (
-              <div className="mb-2.5">
-                <input
-                  autoFocus
-                  className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
-                  placeholder={activeDefs.find((d) => d.key === openConstraint)?.placeholder ?? ''}
-                  value={constraints[openConstraint] ?? ''}
-                  onChange={(e) => setConstraints((prev) => ({ ...prev, [openConstraint]: e.target.value }))}
-                  onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
-                />
-              </div>
-            )}
+            {/* Expanded: preset chips + type your own */}
+            {openConstraint && (() => {
+              const def = activeDefs.find((d) => d.key === openConstraint)
+              if (!def) return null
+              const presets = def.presets ?? []
+              const currentVal = constraints[openConstraint] ?? ''
+              return (
+                <div className="mb-2.5 bg-bg-base border border-border rounded-xl p-3">
+                  <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-2">{def.label}</div>
+                  {presets.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mb-2">
+                      {presets.map((preset) => {
+                        const active = currentVal.toLowerCase() === preset.toLowerCase()
+                        return (
+                          <button
+                            key={preset}
+                            onClick={() => {
+                              setConstraints(prev => ({ ...prev, [openConstraint]: active ? '' : preset }))
+                              if (!active) setOpenConstraint(null)
+                            }}
+                            className={`px-2.5 py-1.5 rounded-chip text-[12px] font-medium transition-all ${
+                              active ? 'bg-accent text-accent-fg' : 'bg-bg-card border border-border text-text-secondary'
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <input
+                    autoFocus={presets.length === 0}
+                    className="w-full bg-bg-card border border-border rounded-input px-3 py-2.5 text-[13px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans"
+                    placeholder={def.placeholder}
+                    value={currentVal}
+                    onChange={(e) => setConstraints(prev => ({ ...prev, [openConstraint]: e.target.value }))}
+                    onKeyDown={(e) => e.key === 'Enter' && setOpenConstraint(null)}
+                  />
+                </div>
+              )
+            })()}
 
             {/* Free text details */}
             <div className="mt-4">
