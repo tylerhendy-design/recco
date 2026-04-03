@@ -1,3 +1,11 @@
 node_modules/
 .next/
 qa-agent/.env
+
+# PWA generated files (built at deploy time)
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+public/worker-*.js
+public/worker-*.js.map
