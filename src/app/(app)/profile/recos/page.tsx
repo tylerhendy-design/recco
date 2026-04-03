@@ -51,7 +51,8 @@ function ProfileRecosInner() {
           .eq('sender_id', user.id)
           .order('created_at', { ascending: false })
 
-        data = (sent ?? []).map((r: any) => {
+        // Exclude Quick Add recos (manual_sender_name = self-added, not "given")
+        data = (sent ?? []).filter((r: any) => !r.meta?.manual_sender_name).map((r: any) => {
           const recipients = (r.reco_recipients ?? []).map((rr: any) => ({
             name: rr.profiles?.display_name ?? 'Unknown',
             status: rr.status,

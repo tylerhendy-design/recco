@@ -72,7 +72,7 @@ export default function ProfilePage() {
         userPicks,
       ] = await Promise.all([
         supabase.from('profiles').select('id, display_name, username, avatar_url, joined_at').eq('id', user.id).single(),
-        supabase.from('recommendations').select('id').eq('sender_id', user.id),
+        supabase.from('recommendations').select('id, meta').eq('sender_id', user.id),
         supabase.from('friend_connections').select('*', { count: 'exact', head: true })
           .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
           .eq('status', 'accepted'),
@@ -82,7 +82,9 @@ export default function ProfilePage() {
         fetchUserPicks(user.id),
       ])
 
-      const sentIds = sentRecos?.map((r) => r.id) ?? []
+      // Exclude Quick Add recos (where manual_sender_name exists) from "Given" count
+      const actualSentRecos = (sentRecos ?? []).filter((r: any) => !r.meta?.manual_sender_name)
+      const sentIds = actualSentRecos.map((r) => r.id)
 
       // Rich stats queries in parallel
       const [

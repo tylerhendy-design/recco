@@ -114,7 +114,7 @@ export async function fetchFriendProfile(friendId: string) {
     { data: scoredRecos },
   ] = await Promise.all([
     supabase.from('profiles').select('display_name, username, avatar_url, joined_at').eq('id', friendId).single(),
-    supabase.from('recommendations').select('id').eq('sender_id', friendId),
+    supabase.from('recommendations').select('id, meta').eq('sender_id', friendId),
     supabase.from('friend_connections').select('*', { count: 'exact', head: true })
       .or(`requester_id.eq.${friendId},addressee_id.eq.${friendId}`)
       .eq('status', 'accepted'),
@@ -129,7 +129,8 @@ export async function fetchFriendProfile(friendId: string) {
       .not('score', 'is', null),
   ])
 
-  const sentIds = sentRecos?.map((r) => r.id) ?? []
+  const actualSent = (sentRecos ?? []).filter((r: any) => !r.meta?.manual_sender_name)
+  const sentIds = actualSent.map((r) => r.id)
   let stinkersSent = 0
   if (sentIds.length > 0) {
     const { count } = await supabase
