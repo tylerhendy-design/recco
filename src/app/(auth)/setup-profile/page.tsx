@@ -77,7 +77,7 @@ export default function SetupProfilePage() {
       return
     }
 
-    router.push('/onboarding')
+    router.push('/welcome')
   }
 
   const usernameClean = username.toLowerCase().replace(/[^a-z0-9_]/g, '')
