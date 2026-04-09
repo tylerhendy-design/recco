@@ -360,137 +360,192 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* TOP 03 */}
-          <div className="px-6 pt-5">
-            {(() => {
-              // Count picks per category
-              const catCounts: Record<string, number> = {}
-              for (const p of picks) { const k = p.category.toLowerCase().trim(); catCounts[k] = (catCounts[k] ?? 0) + 1 }
-              const completedCategories = Object.values(catCounts).filter(c => c >= 3).length
-              const hasAnyComplete = completedCategories > 0
+          {/* TOP 03 — Blog-style rich cards */}
+          <div className="px-4 pt-5">
+            <div className="flex items-baseline justify-between mb-4 px-2">
+              <h1 className="text-[22px] font-bold text-white tracking-[-0.5px]">TOP 03</h1>
+              <Link href="/profile/top3" className="text-[12px] font-semibold text-accent">+ Add</Link>
+            </div>
 
-              return (
-                <>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <h1 className="text-[20px] font-bold text-white tracking-[-0.4px]">TOP 03</h1>
-                    {hasAnyComplete && <span className="text-[11px] text-accent font-semibold">{completedCategories} {completedCategories === 1 ? 'category' : 'categories'} complete</span>}
-                  </div>
-                  <div className="text-[13px] text-text-muted leading-[1.5] mb-4">
-                    {!hasAnyComplete
-                      ? 'Pick a category and add your top 3. Complete at least one category to unlock sending recos.'
-                      : 'Your top 3 in each category. The ones you think everyone should try.'
-                    }
-                  </div>
-                </>
-              )
-            })()}
-
-            {/* Picks list */}
             {picks.length === 0 ? (
-              <p className="text-[13px] text-text-faint leading-[1.5] pb-4">
-                Add your favourite restaurants, films, books and more. The stuff that shows people who you are. The stuff that changed your life.
-              </p>
+              <div className="px-2 pb-4">
+                <p className="text-[14px] text-text-muted leading-[1.6] mb-4">
+                  The stuff that shows people who you are. The restaurants that changed your life, the films you never shut up about, the music you play on repeat.
+                </p>
+                <Link href="/profile/top3" className="inline-flex items-center gap-2 bg-accent text-accent-fg px-5 py-3 rounded-xl text-[14px] font-bold">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Start your TOP 03
+                </Link>
+              </div>
             ) : (
               Object.entries(picksByCategory).map(([category, items]) => {
                 const color = getCategoryColor(category)
-                const isOpen = expanded[category] ?? false
-                // Group by city within this category
-                const byCityMap = items.reduce<Record<string, Pick[]>>((acc, p) => {
-                  const city = p.location ? p.location.split(',')[0].trim() : ''
-                  const k = city || '__none__'
-                  if (!acc[k]) acc[k] = []
-                  acc[k].push(p)
-                  return acc
-                }, {})
-                const hasCities = Object.keys(byCityMap).some((k) => k !== '__none__')
+                const catLabel = getCategoryLabel(category)
                 return (
-                  <div key={category} className="border border-border rounded-card mb-2">
-                    <button
-                      onClick={() => toggleExpanded(category)}
-                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-card transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                        <span className="text-[13px] font-semibold text-white">{getCategoryLabel(category)}</span>
-                        <span className={`text-[11px] font-semibold ${items.length >= 3 ? 'text-accent' : 'text-text-faint'}`}>{items.length}/3</span>
-                      </div>
-                      <svg
-                        width="14" height="14" viewBox="0 0 24 24" fill="none"
-                        stroke="#6e6e78" strokeWidth="2" strokeLinecap="round"
-                        className={`transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
-                      >
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
-                    </button>
+                  <div key={category} className="mb-5">
+                    {/* Category header */}
+                    <div className="flex items-center gap-2 mb-3 px-1">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                      <span className="text-[13px] font-bold text-white uppercase tracking-[0.5px]">{catLabel}</span>
+                      <span className="text-[11px] text-text-faint">{items.length}/3</span>
+                    </div>
 
-                    {isOpen && (
-                      <div className="border-t border-border">
-                        {hasCities
-                          ? Object.entries(byCityMap).map(([cityKey, cityPicks]) => (
-                              <div key={cityKey}>
-                                {cityKey !== '__none__' && (
-                                  <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-text-faint tracking-[0.6px] uppercase border-b border-[#0e0e10]">
-                                    {cityKey}
-                                  </div>
-                                )}
-                                {cityPicks.map((pick) => (
-                                  <PickRow
-                                    key={pick.id}
-                                    pick={pick}
-                                    editingPick={editingPick}
-                                    editTitle={editTitle} setEditTitle={setEditTitle}
-                                    editCity={editCity} setEditCity={setEditCity}
-                                    editWhy={editWhy} setEditWhy={setEditWhy}
-                                    editLinks={editLinks} setEditLinks={setEditLinks}
-                                    savingEdit={savingEdit}
-                                    menuOpenId={menuOpenId} setMenuOpenId={setMenuOpenId}
-                                    onSave={handleSaveEdit}
-                                    onCancel={() => setEditingPick(null)}
-                                    onEdit={startEdit}
-                                    onDelete={handleRemovePick}
-                                  />
-                                ))}
+                    {/* Rich pick cards */}
+                    {items.map((pick, idx) => (
+                      <div key={pick.id} className="mb-3 bg-bg-card border border-border rounded-2xl overflow-hidden">
+                        {/* Hero image */}
+                        {pick.image_url && (
+                          <div className="relative w-full h-44">
+                            <img src={pick.image_url} alt="" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
+                            {/* Rank badge */}
+                            <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                              <span className="text-[12px] font-bold text-white">{idx + 1}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="px-4 pb-4" style={{ paddingTop: pick.image_url ? 8 : 16 }}>
+                          {/* Rank if no image */}
+                          {!pick.image_url && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: color + '30' }}>
+                                <span className="text-[11px] font-bold" style={{ color }}>{idx + 1}</span>
                               </div>
-                            ))
-                          : items.map((pick) => (
-                              <PickRow
-                                key={pick.id}
-                                pick={pick}
-                                editingPick={editingPick}
-                                editTitle={editTitle} setEditTitle={setEditTitle}
-                                editCity={editCity} setEditCity={setEditCity}
-                                editWhy={editWhy} setEditWhy={setEditWhy}
-                                editLinks={editLinks} setEditLinks={setEditLinks}
-                                savingEdit={savingEdit}
-                                menuOpenId={menuOpenId} setMenuOpenId={setMenuOpenId}
-                                onSave={handleSaveEdit}
-                                onCancel={() => setEditingPick(null)}
-                                onEdit={startEdit}
-                                onDelete={handleRemovePick}
-                              />
-                            ))
-                        }
+                            </div>
+                          )}
+
+                          {/* Title */}
+                          <div className="text-[18px] font-bold text-white tracking-[-0.3px] leading-tight">{pick.title}</div>
+
+                          {/* Location */}
+                          {pick.location && (
+                            <div className="text-[12px] text-text-faint mt-1 flex items-center gap-1">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                              {pick.location}
+                            </div>
+                          )}
+
+                          {/* Why — the story */}
+                          {pick.why && (
+                            <div className="text-[14px] text-text-secondary leading-[1.6] mt-3">
+                              {pick.why}
+                            </div>
+                          )}
+
+                          {/* Links row */}
+                          {(pick.links.length > 0 || pick.location) && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {pick.links.map((link, i) => (
+                                <a
+                                  key={i}
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] font-semibold text-accent flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20"
+                                >
+                                  {getLinkLabel(link)}
+                                </a>
+                              ))}
+                              {pick.links.length === 0 && pick.location && (
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[11px] font-semibold text-accent flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20"
+                                >
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                  Google Maps
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action row: share + edit */}
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                            <button
+                              onClick={async () => {
+                                const url = pick.links[0] || (pick.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}` : window.location.href)
+                                const text = `${pick.title}${pick.location ? ` — ${pick.location}` : ''}${pick.why ? `\n\n${pick.why}` : ''}`
+                                if (navigator.share) {
+                                  try { await navigator.share({ title: pick.title, text, url }); return } catch {}
+                                }
+                                await navigator.clipboard.writeText(`${text}\n${url}`)
+                                setMenuOpenId(`shared-${pick.id}`)
+                                setTimeout(() => setMenuOpenId(null), 2000)
+                              }}
+                              className="flex items-center gap-1.5 text-[12px] font-semibold text-text-secondary"
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                              </svg>
+                              {menuOpenId === `shared-${pick.id}` ? 'Copied' : 'Share'}
+                            </button>
+                            <button
+                              onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)}
+                              className="text-text-faint p-1"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Edit/delete menu */}
+                        {menuOpenId === pick.id && (
+                          <>
+                            <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setMenuOpenId(null)} />
+                            <div className="fixed inset-x-0 bottom-0 z-[201] p-4 pb-8">
+                              <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+                                <button onClick={() => startEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white hover:bg-bg-card transition-colors border-b border-border font-semibold">Edit</button>
+                                <button onClick={() => handleRemovePick(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 hover:bg-bg-card transition-colors border-b border-border font-semibold">Delete</button>
+                                <button onClick={() => setMenuOpenId(null)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Inline edit form */}
+                        {editingPick?.id === pick.id && (
+                          <div className="px-4 pb-4 border-t border-border pt-3">
+                            <div className="flex flex-col gap-2.5">
+                              <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white outline-none focus:border-accent font-sans" />
+                              <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
+                              <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={2} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none" />
+                              {editLinks.map((link, i) => (
+                                <div key={i} className="flex items-center gap-2">
+                                  <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link" className="flex-1 bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
+                                  {editLinks.length > 1 && <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>}
+                                </div>
+                              ))}
+                              <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint text-left">+ Add link</button>
+                              <div className="flex gap-2 mt-1">
+                                <button onClick={() => setEditingPick(null)} className="flex-1 py-2.5 border border-border rounded-xl text-[13px] font-semibold text-text-dim">Cancel</button>
+                                <button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2.5 rounded-xl bg-accent text-accent-fg text-[13px] font-bold disabled:opacity-40">{savingEdit ? 'Saving...' : 'Save'}</button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )
               })
             )}
-            {/* Add CTA — below picks */}
-            <Link
-              href="/profile/top3"
-              className="w-full flex items-center justify-center gap-2 py-3.5 mt-3 rounded-btn border border-dashed border-accent/40 text-accent text-[14px] font-semibold hover:border-accent hover:bg-accent/5 transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Add to your TOP 03
-            </Link>
 
-            {/* Your Lists */}
+            {/* Add more + Lists */}
+            {picks.length > 0 && (
+              <Link
+                href="/profile/top3"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-dashed border-accent/40 text-accent text-[14px] font-semibold"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add to your TOP 03
+              </Link>
+            )}
+
             <Link
               href="/profile/lists"
-              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-btn bg-bg-card border border-border"
+              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-xl bg-bg-card border border-border"
             >
               <div className="flex items-center gap-2.5">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -594,89 +649,6 @@ async function geocodeCity(city: string): Promise<string> {
   return city.trim()
 }
 
-function PickRow({ pick, editingPick, editTitle, setEditTitle, editCity, setEditCity, editWhy, setEditWhy, editLinks, setEditLinks, savingEdit, menuOpenId, setMenuOpenId, onSave, onCancel, onEdit, onDelete }: {
-  pick: Pick
-  editingPick: Pick | null
-  editTitle: string; setEditTitle: (v: string) => void
-  editCity: string; setEditCity: (v: string) => void
-  editWhy: string; setEditWhy: (v: string) => void
-  editLinks: string[]; setEditLinks: (v: string[]) => void
-  savingEdit: boolean
-  menuOpenId: string | null; setMenuOpenId: (v: string | null) => void
-  onSave: () => void; onCancel: () => void
-  onEdit: (p: Pick) => void; onDelete: (id: string) => void
-}) {
-  return (
-    <div className="px-4 py-3 border-b border-[#0e0e10] last:border-0">
-      {editingPick?.id === pick.id ? (
-        <div className="flex flex-col gap-2.5">
-          <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
-          {pick.category === 'restaurant' && (
-            <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
-          )}
-          <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={1} className="w-full bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[44px]" />
-          {editLinks.map((link, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link (optional)" className="flex-1 bg-bg-card border border-border rounded-input px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
-              {editLinks.length > 1 && (
-                <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint hover:text-red-400 transition-colors">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                </button>
-              )}
-            </div>
-          ))}
-          <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint hover:text-accent transition-colors text-left">+ Add link</button>
-          <div className="flex gap-2 mt-1">
-            <button onClick={onCancel} className="flex-1 py-2 border border-border rounded-input text-[12px] font-semibold text-text-dim">Cancel</button>
-            <button onClick={onSave} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2 rounded-input bg-accent text-accent-fg text-[12px] font-bold disabled:opacity-40">
-              {savingEdit ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-medium text-white">{pick.title}</div>
-            {pick.why && <div className="text-[12px] text-text-muted mt-0.5 leading-[1.5]">{pick.why}</div>}
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {pick.links.map((link, i) => (
-                <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent underline underline-offset-2">{getLinkLabel(link)}</a>
-              ))}
-              {/* Auto-generate Google Maps link for venue picks without links */}
-              {pick.links.length === 0 && pick.location && (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-[11px] text-accent underline underline-offset-2"
-                >
-                  Google Maps
-                </a>
-              )}
-            </div>
-          </div>
-          <div className="flex-shrink-0">
-            <button onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)} className="text-text-faint hover:text-white transition-colors p-1">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-            </button>
-            {menuOpenId === pick.id && (
-              <>
-                <div className="fixed inset-0 z-[120] bg-black/20 backdrop-blur-sm" onClick={() => setMenuOpenId(null)} />
-                <div className="fixed inset-x-0 bottom-0 z-[121] p-4 pb-8">
-                  <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
-                    <button onClick={() => onEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white hover:bg-bg-card transition-colors border-b border-border font-semibold">Edit</button>
-                    <button onClick={() => onDelete(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 hover:bg-bg-card transition-colors border-b border-border font-semibold">Delete</button>
-                    <button onClick={() => setMenuOpenId(null)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 function getLinkLabel(url: string): string {
   try {
