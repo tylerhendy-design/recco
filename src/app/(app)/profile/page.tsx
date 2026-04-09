@@ -43,6 +43,8 @@ export default function ProfilePage() {
   const [stinkerRecos, setStinkerRecos] = useState<{ title: string; category: string; score: number; recipient: string }[]>([])
   const [sinBinStatuses, setSinBinStatuses] = useState<Array<{ category: string; bad_count: number; recipient_name: string; offences: string[] }>>([])
 
+  // Lists
+  const [lists, setLists] = useState<{ id: string; title: string; item_count: number; hero_image: string | null }[]>([])
 
   // Add pick form
 
@@ -196,6 +198,22 @@ export default function ProfilePage() {
           .select('*', { count: 'exact', head: true })
           .lte('joined_at', prof.joined_at)
         setMemberNumber(count ?? 1)
+      }
+
+      // Fetch lists
+      const { data: listsData } = await supabase
+        .from('lists')
+        .select('id, title, list_items (id, meta)')
+        .eq('owner_id', user.id)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+      if (listsData) {
+        setLists(listsData.map((l: any) => ({
+          id: l.id,
+          title: l.title,
+          item_count: l.list_items?.length ?? 0,
+          hero_image: l.list_items?.find((i: any) => i.meta?.artwork_url)?.meta?.artwork_url ?? null,
+        })))
       }
 
       setLoading(false)
@@ -599,17 +617,65 @@ export default function ProfilePage() {
               </Link>
             )}
 
-            <Link href="/profile/lists"
-              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-xl bg-bg-card border border-border">
-              <div className="flex items-center gap-2.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                </svg>
-                <span className="text-[14px] font-semibold text-white">Your Lists</span>
+            {/* ── LISTS ── */}
+            <div className="mt-5">
+              <div className="flex items-baseline justify-between mb-3">
+                <h2 className="text-[18px] font-bold text-white tracking-[-0.3px]">Lists</h2>
+                <Link href="/profile/lists" className="text-[12px] font-semibold text-accent">
+                  {lists.length > 0 ? 'See all' : '+ Import'}
+                </Link>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
-            </Link>
+
+              {lists.length === 0 ? (
+                <Link
+                  href="/profile/lists"
+                  className="flex items-center gap-3 p-4 bg-bg-card border border-border rounded-2xl"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-[14px] font-semibold text-white">Import from Google Maps</div>
+                    <div className="text-[12px] text-text-faint">Bring in your saved places with one link</div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-1">
+                  {lists.map(list => (
+                    <Link
+                      key={list.id}
+                      href="/profile/lists"
+                      className="flex-shrink-0 w-[200px] bg-bg-card border border-border rounded-2xl overflow-hidden"
+                    >
+                      {list.hero_image ? (
+                        <div className="w-full h-24 relative">
+                          <img src={list.hero_image} alt="" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
+                        </div>
+                      ) : (
+                        <div className="w-full h-16 bg-[#1a1a1e] flex items-center justify-center">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                      )}
+                      <div className="px-3 py-2.5">
+                        <div className="text-[13px] font-bold text-white truncate">{list.title}</div>
+                        <div className="text-[11px] text-text-faint">{list.item_count} places</div>
+                      </div>
+                    </Link>
+                  ))}
+                  {/* Add another list card */}
+                  <Link
+                    href="/profile/lists"
+                    className="flex-shrink-0 w-[120px] bg-bg-card border border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-1.5 min-h-[120px]"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span className="text-[11px] font-semibold text-accent">Import</span>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sign out */}
