@@ -24,6 +24,8 @@ type RecoList = {
   items: ListItem[]
 }
 
+type ImportStep = 'idle' | 'name' | 'places' | 'preview'
+
 export default function ListsPage() {
   const supabase = createClient()
   const [userId, setUserId] = useState<string | null>(null)
@@ -31,18 +33,14 @@ export default function ListsPage() {
   const [loading, setLoading] = useState(true)
   const [openListId, setOpenListId] = useState<string | null>(null)
 
-  // Import state — two-step flow
-  type ImportStep = 'idle' | 'paste' | 'text-fallback' | 'name'
+  // Import state
   const [importStep, setImportStep] = useState<ImportStep>('idle')
-  const [importUrl, setImportUrl] = useState('')
-  const [importText, setImportText] = useState('')
   const [importTitle, setImportTitle] = useState('')
+  const [importText, setImportText] = useState('')
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<any[] | null>(null)
   const [importError, setImportError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-
-  // Sharing
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,37 +65,11 @@ export default function ListsPage() {
     setLoading(false)
   }
 
-  // Step 1: Paste URL → fetch places
-  async function handleFetchPlaces() {
-    if (!importUrl.trim()) return
-    setImporting(true)
-    setImportError(null)
-
-    try {
-      const res = await fetch('/api/import-list', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: importUrl.trim() }),
-      })
-      const data = await res.json()
-      const places = data.places ?? []
-      if (places.length === 0) {
-        // Offer text fallback instead of dead-ending
-        setImportStep('text-fallback')
-      } else {
-        setImportResults(places)
-        setImportStep('name')
-      }
-    } catch {
-      setImportStep('text-fallback')
-    }
-    setImporting(false)
-  }
-
-  // Text fallback: user types place names
-  async function handleTextImport() {
+  // Find places from text input
+  async function handleFindPlaces() {
     if (!importText.trim()) return
     setImporting(true)
+    setImportError(null)
 
     try {
       const res = await fetch('/api/import-list', {
@@ -108,10 +80,10 @@ export default function ListsPage() {
       const data = await res.json()
       const places = data.places ?? []
       if (places.length === 0) {
-        setImportError('No places found. Try different names.')
+        setImportError('No places found. Check the names and try again.')
       } else {
         setImportResults(places)
-        setImportStep('name')
+        setImportStep('preview')
       }
     } catch {
       setImportError('Something went wrong. Try again.')
@@ -119,7 +91,7 @@ export default function ListsPage() {
     setImporting(false)
   }
 
-  // Step 2: Name it → save
+  // Save the list
   async function handleSave() {
     if (!userId || !importResults || !importTitle.trim()) return
     setSaving(true)
@@ -151,11 +123,9 @@ export default function ListsPage() {
     await supabase.from('list_items').insert(items)
     await loadLists(userId)
 
-    // Reset
     setImportStep('idle')
-    setImportUrl('')
-    setImportText('')
     setImportTitle('')
+    setImportText('')
     setImportResults(null)
     setSaving(false)
     setOpenListId(list.id)
@@ -163,9 +133,8 @@ export default function ListsPage() {
 
   function cancelImport() {
     setImportStep('idle')
-    setImportUrl('')
-    setImportText('')
     setImportTitle('')
+    setImportText('')
     setImportResults(null)
     setImportError(null)
   }
@@ -203,66 +172,64 @@ export default function ListsPage() {
           importStep !== 'idle' ? (
             <button onClick={cancelImport} className="text-text-faint text-[13px] font-semibold">Cancel</button>
           ) : (
-            <button onClick={() => setImportStep('paste')} className="text-accent text-[13px] font-semibold">+ Import</button>
+            <button onClick={() => setImportStep('name')} className="text-accent text-[13px] font-semibold">+ New list</button>
           )
         }
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-none pb-24">
 
-        {/* ── STEP 1: Paste your Maps link ── */}
-        {importStep === 'paste' && (
+        {/* ── STEP 1: Name your list ── */}
+        {importStep === 'name' && (
           <div className="px-6 pt-6 pb-4">
-            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Import from Google Maps</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Create a list</div>
             <div className="text-[13px] text-text-faint leading-[1.5] mb-5">
-              Open your list in Google Maps, tap Share, copy the link, and paste it here.
+              Give your list a name — like "London Restaurants", "Date Night Spots", or "Best Pizza".
             </div>
 
-            <label className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-1.5 block">Public list link</label>
+            <label className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-1.5 block">List name</label>
             <input
-              value={importUrl}
-              onChange={(e) => { setImportUrl(e.target.value); setImportError(null) }}
-              placeholder="https://maps.app.goo.gl/..."
+              value={importTitle}
+              onChange={(e) => setImportTitle(e.target.value)}
+              placeholder="e.g. London Restaurants"
               autoFocus
-              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-3"
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
             />
 
-            {importError && (
-              <div className="text-[13px] text-bad mb-3">{importError}</div>
-            )}
-
             <button
-              onClick={handleFetchPlaces}
-              disabled={importing || !importUrl.trim()}
+              onClick={() => setImportStep('places')}
+              disabled={!importTitle.trim()}
               className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
-                !importing && importUrl.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
+                importTitle.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
               }`}
             >
-              {importing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-accent-fg/30 border-t-accent-fg rounded-full animate-spin" />
-                  Finding places...
-                </span>
-              ) : 'Next'}
+              Next
             </button>
           </div>
         )}
 
-        {/* ── FALLBACK: Type place names ── */}
-        {importStep === 'text-fallback' && (
+        {/* ── STEP 2: Add your places ── */}
+        {importStep === 'places' && (
           <div className="px-6 pt-6 pb-4">
-            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Type your places</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Add places to "{importTitle}"</div>
             <div className="text-[13px] text-text-faint leading-[1.5] mb-4">
-              Google Maps lists are tricky to parse automatically. Type or paste your place names below — one per line — and we'll find them for you.
+              Type your place names — one per line. We'll find the images, addresses, and links automatically.
+            </div>
+
+            <div className="bg-bg-card border border-border rounded-xl p-3 mb-3">
+              <div className="text-[11px] font-semibold text-text-faint mb-2">TIP: Open your Google Maps list and type the names here</div>
+              <div className="text-[11px] text-text-faint leading-[1.5]">
+                Google Maps links can't be read automatically, but typing place names works perfectly — we use Google to find every detail.
+              </div>
             </div>
 
             <textarea
               value={importText}
               onChange={(e) => { setImportText(e.target.value); setImportError(null); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
-              placeholder={"Padella\nBao Soho\nLina Stores\nDishoom King's Cross"}
-              rows={5}
+              placeholder={"Padella\nBao Soho\nLina Stores\nDishoom King's Cross\nFlat Iron"}
+              rows={6}
               autoFocus
-              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[120px] mb-3"
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[160px] mb-3"
             />
 
             {importError && (
@@ -270,7 +237,7 @@ export default function ListsPage() {
             )}
 
             <button
-              onClick={handleTextImport}
+              onClick={handleFindPlaces}
               disabled={importing || !importText.trim()}
               className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
                 !importing && importText.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
@@ -285,68 +252,52 @@ export default function ListsPage() {
             </button>
 
             <button
-              onClick={() => { setImportStep('paste'); setImportError(null) }}
+              onClick={() => setImportStep('name')}
               className="w-full py-3 text-[13px] font-semibold text-text-faint mt-2"
             >
-              Back to link
+              Back
             </button>
           </div>
         )}
 
-        {/* ── STEP 2: Name your list ── */}
-        {importStep === 'name' && importResults && (
+        {/* ── STEP 3: Preview + save ── */}
+        {importStep === 'preview' && importResults && (
           <div className="px-6 pt-6 pb-4">
-            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Name your list</div>
-            <div className="text-[13px] text-text-faint leading-[1.5] mb-4">
-              {importResults.length} places found. Give this list a name.
-            </div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">"{importTitle}"</div>
+            <div className="text-[13px] text-accent font-semibold mb-4">{importResults.length} places found</div>
 
-            <input
-              value={importTitle}
-              onChange={(e) => setImportTitle(e.target.value)}
-              placeholder="e.g. London Restaurants, Date Night, Pizza"
-              autoFocus
-              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
-            />
-
-            {/* Preview of found places */}
-            <div className="mb-4">
-              <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-2">Places</div>
-              <div className="flex flex-col gap-1.5 max-h-[40vh] overflow-y-auto scrollbar-none">
-                {importResults.map((place, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-3 py-2.5">
-                    {place.imageUrl ? (
-                      <img src={place.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-[#1a1a1e] flex items-center justify-center flex-shrink-0">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-white truncate">{place.name}</div>
-                      {place.city && <div className="text-[11px] text-text-faint truncate">{place.city}</div>}
+            <div className="flex flex-col gap-1.5 max-h-[45vh] overflow-y-auto scrollbar-none mb-4">
+              {importResults.map((place, i) => (
+                <div key={i} className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-3 py-2.5">
+                  {place.imageUrl ? (
+                    <img src={place.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-[#1a1a1e] flex items-center justify-center flex-shrink-0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-semibold text-white truncate">{place.name}</div>
+                    {place.city && <div className="text-[11px] text-text-faint truncate">{place.city}</div>}
                   </div>
-                ))}
-              </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              ))}
             </div>
 
             <button
               onClick={handleSave}
-              disabled={saving || !importTitle.trim()}
-              className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
-                !saving && importTitle.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
-              }`}
+              disabled={saving}
+              className="w-full py-3.5 rounded-xl text-[15px] font-bold bg-accent text-accent-fg"
             >
               {saving ? 'Saving...' : `Save list (${importResults.length} places)`}
             </button>
 
             <button
-              onClick={() => { setImportStep('paste'); setImportResults(null) }}
+              onClick={() => { setImportStep('places'); setImportResults(null) }}
               className="w-full py-3 text-[13px] font-semibold text-text-faint mt-2"
             >
-              Back
+              Back to edit
             </button>
           </div>
         )}
@@ -363,13 +314,13 @@ export default function ListsPage() {
             <div className="text-[36px] mb-1">📋</div>
             <div className="text-[17px] font-semibold text-white">No lists yet</div>
             <div className="text-[14px] text-text-muted leading-[1.6]">
-              Import your Google Maps lists to browse and share them.
+              Create a list of your favourite places. Type the names and we'll find the images, addresses, and links.
             </div>
             <button
-              onClick={() => setImportStep('paste')}
+              onClick={() => setImportStep('name')}
               className="mt-2 bg-accent text-accent-fg px-6 py-3 rounded-xl text-[14px] font-bold"
             >
-              Import a list
+              Create a list
             </button>
           </div>
         )}
@@ -381,11 +332,7 @@ export default function ListsPage() {
               const heroImage = list.items.find(i => i.meta?.artwork_url)?.meta?.artwork_url
               return (
                 <div key={list.id} className="mb-3 bg-bg-card border border-border rounded-2xl overflow-hidden">
-                  {/* List header — hero image + title */}
-                  <button
-                    onClick={() => setOpenListId(isOpen ? null : list.id)}
-                    className="w-full text-left"
-                  >
+                  <button onClick={() => setOpenListId(isOpen ? null : list.id)} className="w-full text-left">
                     {heroImage && !isOpen && (
                       <div className="w-full h-28 relative">
                         <img src={heroImage} alt="" className="w-full h-full object-cover" />
@@ -402,34 +349,23 @@ export default function ListsPage() {
                           <div className="text-[16px] font-bold text-white">{list.title}</div>
                           <div className="text-[12px] text-text-faint mt-0.5">{list.items.length} places</div>
                         </div>
-                        <svg
-                          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"
-                          className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                        >
-                          <path d="M6 9l6 6 6-6"/>
-                        </svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"
+                          className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
                       </div>
                     )}
                   </button>
 
-                  {/* Expanded: full item list + share */}
                   {isOpen && (
                     <div className="border-t border-border">
-                      {/* Share bar */}
                       <div className="flex items-center justify-between px-4 py-2.5 bg-bg-base/50">
                         <div className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px]">{list.items.length} places</div>
-                        <button
-                          onClick={() => shareList(list)}
-                          className="flex items-center gap-1.5 text-[12px] font-semibold text-accent"
-                        >
+                        <button onClick={() => shareList(list)} className="flex items-center gap-1.5 text-[12px] font-semibold text-accent">
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
                           </svg>
                           {copiedId === `list-${list.id}` ? 'Link copied' : 'Share list'}
                         </button>
                       </div>
-
-                      {/* Items */}
                       <div className="px-3 pb-3">
                         {list.items.map((item) => (
                           <div key={item.id} className="flex items-center gap-3 py-3 border-b border-[#1a1a1e] last:border-0">
@@ -442,31 +378,24 @@ export default function ListsPage() {
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="text-[14px] font-semibold text-white truncate">{item.title}</div>
-                              {item.meta?.city && (
-                                <div className="text-[11px] text-text-faint mt-0.5">{item.meta.city}</div>
-                              )}
-                              {/* Item action row */}
+                              {item.meta?.city && <div className="text-[11px] text-text-faint mt-0.5">{item.meta.city}</div>}
                               <div className="flex items-center gap-3 mt-1.5">
                                 {item.meta?.maps_url && (
                                   <a href={item.meta.maps_url} target="_blank" rel="noopener noreferrer"
-                                    className="text-[11px] font-semibold text-accent flex items-center gap-1"
-                                    onClick={e => e.stopPropagation()}>
+                                    className="text-[11px] font-semibold text-accent flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                     Maps
                                   </a>
                                 )}
                                 {item.meta?.website && (
                                   <a href={item.meta.website} target="_blank" rel="noopener noreferrer"
-                                    className="text-[11px] font-semibold text-accent flex items-center gap-1"
-                                    onClick={e => e.stopPropagation()}>
+                                    className="text-[11px] font-semibold text-accent flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
                                     Website
                                   </a>
                                 )}
-                                <button
-                                  onClick={() => shareItem(item)}
-                                  className="text-[11px] font-semibold text-text-faint flex items-center gap-1"
-                                >
+                                <button onClick={() => shareItem(item)}
+                                  className="text-[11px] font-semibold text-text-faint flex items-center gap-1">
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
                                   </svg>
