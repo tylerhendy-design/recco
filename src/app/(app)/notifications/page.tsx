@@ -259,6 +259,10 @@ function getNotifIcon(notif: NotificationRow): { emoji?: string; svg?: React.Rea
   if (notif.type === 'feedback_received' && subtype === 'been_there') {
     return { emoji: '🔄', bg: '#0a1a2a' }
   }
+  // Progress update
+  if (notif.type === 'feedback_received' && subtype === 'progress') {
+    return { emoji: '📍', bg: '#1a1e0a' }
+  }
   // Feedback (generic)
   if (notif.type === 'feedback_received') {
     return { emoji: '⭐', bg: '#2a2500' }
@@ -427,6 +431,10 @@ function NotifRow({
     } else if (subtype === 'been_there') {
       heading = `🔄 Been there`
       body = `${firstName} already did${recoTitle ? ` "${recoTitle}"` : ' this one'}.`
+    } else if (subtype === 'progress') {
+      const progressLabel = notif.payload?.progress_label ?? 'made progress'
+      heading = `📍 ${progressLabel}`
+      body = `${firstName} updated their progress on${recoTitle ? ` "${recoTitle}"` : ' your reco'}.`
     } else {
       if (score != null && score >= 9) heading = `${icon.emoji} They loved it`
       else if (score != null && score >= 7) heading = `${icon.emoji} Solid reco`

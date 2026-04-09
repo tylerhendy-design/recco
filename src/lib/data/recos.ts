@@ -484,42 +484,25 @@ export function getProgressActions(category: string): ProgressAction[] {
 
 export async function saveProgress(
   recoId: string,
-  recipientId: string,
-  senderId: string,
+  _recipientId: string,
+  _senderId: string,
   progressValue: string,
   progressLabel: string,
   recoTitle: string,
 ): Promise<{ error: string | null }> {
-  const supabase = createClient()
-
-  // Store progress in meta keyed by recipient
-  const { data: current, error: fetchErr } = await supabase
-    .from('recommendations')
-    .select('meta')
-    .eq('id', recoId)
-    .single()
-  if (fetchErr) return { error: fetchErr.message }
-
-  const meta = current?.meta as Record<string, unknown> ?? {}
-  const progress = (meta.progress as Record<string, unknown>) ?? {}
-  progress[recipientId] = { status: progressValue, label: progressLabel, updated_at: new Date().toISOString() }
-
-  const { error } = await supabase
-    .from('recommendations')
-    .update({ meta: { ...meta, progress } })
-    .eq('id', recoId)
-  if (error) return { error: error.message }
-
-  // Notify the sender (unless it's a self-reco)
-  if (senderId !== recipientId) {
-    await (supabase.from('notifications') as any).insert({
-      user_id: senderId,
-      type: 'feedback_received',
-      actor_id: recipientId,
-      reco_id: recoId,
-      payload: { subtype: 'progress', progress_label: progressLabel, reco_title: recoTitle },
+  // Uses API route with service role to bypass RLS (recipient can't update recommendations)
+  try {
+    const res = await fetch('/api/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recoId, progressValue, progressLabel, recoTitle }),
     })
+    if (!res.ok) {
+      const data = await res.json()
+      return { error: data.error ?? 'Failed to save progress' }
+    }
+    return { error: null }
+  } catch (e) {
+    return { error: 'Network error' }
   }
-
-  return { error: null }
 }
