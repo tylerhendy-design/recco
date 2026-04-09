@@ -32,6 +32,7 @@ const CATEGORY_FILTERS = [
   { value: 'music', label: 'music' },
   { value: 'book', label: 'books' },
   { value: 'film', label: 'films' },
+  { value: 'shopping', label: 'shopping' },
 ]
 
 const TIME_FILTERS = [

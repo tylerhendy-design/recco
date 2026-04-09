@@ -9,6 +9,7 @@ export type CategoryId =
   | 'music'
   | 'podcast'
   | 'pubs'
+  | 'shopping'
   | 'tv'
   | 'wine_bars'
   | 'custom'
@@ -139,6 +140,17 @@ export const CATEGORIES: CategoryDef[] = [
     bgColor: '#1a2008',
     extraFields: [
       { id: 'location', label: 'Location', placeholder: 'e.g. Hampstead, London...', type: 'location' },
+    ],
+  },
+  {
+    id: 'shopping',
+    label: 'Shopping',
+    color: '#F59E0B',
+    bgColor: '#2a1e08',
+    extraFields: [
+      { id: 'location', label: 'Location', placeholder: 'e.g. Carnaby Street, London...', type: 'location' },
+      { id: 'website', label: 'Website', placeholder: 'Website URL...', type: 'url' },
+      { id: 'instagram', label: 'Instagram', placeholder: 'Instagram handle...', type: 'text' },
     ],
   },
   {

@@ -16,6 +16,7 @@ const WALLET_COLORS: Record<string, { bg: string; gradient: string; text: string
   music:       { bg: '#1B5E20', gradient: '#43A047', text: '#fff' },
   podcast:     { bg: '#4A148C', gradient: '#7B1FA2', text: '#fff' },
   pubs:        { bg: '#33691E', gradient: '#689F38', text: '#fff' },
+  shopping:    { bg: '#B45309', gradient: '#F59E0B', text: '#fff' },
   tv:          { bg: '#0D47A1', gradient: '#1976D2', text: '#fff' },
   wine_bars:   { bg: '#4A0E0E', gradient: '#7B1F1F', text: '#fff' },
   custom:      { bg: '#9E9D24', gradient: '#D4E23A', text: '#111' },
@@ -86,7 +87,7 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
   const colors = getWalletColor(reco.category)
   const artworkUrl = reco.meta?.artwork_url || reco.meta?.image_url
   const senderName = (reco.meta?.manual_sender_name as string)?.trim() || reco.sender?.display_name || 'Someone'
-  const catLabel = getCategoryLabel(reco.category)
+  const catLabel = reco.category === 'custom' && reco.custom_cat ? reco.custom_cat : getCategoryLabel(reco.category)
   const isDone = reco.status === 'done'
   const isNoGo = reco.status === 'no_go'
   const detailPills = getDetailPills(reco)
