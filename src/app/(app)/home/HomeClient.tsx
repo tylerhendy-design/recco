@@ -276,7 +276,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
   )
 
   // Everything tab: combine ALL recos (todo + done + nogo) into one chronological wallet
-  const [walletExpandedReco, setWalletExpandedReco] = useState<Reco | null>(null)
+  const [expandedWalletId, setExpandedWalletId] = useState<string | null>(null)
 
   // Lightweight count for dropdown (always computed)
   const everythingCount = useMemo(() => {
@@ -763,7 +763,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                   <div
                     key={i}
                     className="w-full rounded-2xl bg-[#1a1a1e] animate-pulse relative"
-                    style={{ height: 88, marginTop: i === 0 ? 0 : -46, zIndex: i, animationDelay: `${i * 80}ms` }}
+                    style={{ height: 100, marginTop: i === 0 ? 0 : -48, zIndex: i, animationDelay: `${i * 80}ms` }}
                   />
                 ))}
               </div>
@@ -776,35 +776,33 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                 </div>
               </div>
             ) : (
-              walletFiltered.map((reco, i) => (
-                <div
-                  key={reco.id}
-                  className="relative"
-                  style={{ marginTop: i === 0 ? 0 : -46, zIndex: i }}
-                >
-                  <WalletCard
-                    reco={reco}
-                    onClick={() => setWalletExpandedReco(reco)}
-                  />
-                </div>
-              ))
+              walletFiltered.map((reco, i) => {
+                const isExpanded = expandedWalletId === reco.id
+                return (
+                  <div
+                    key={reco.id}
+                    className="relative"
+                    style={{
+                      marginTop: i === 0 ? 0 : isExpanded ? 8 : -48,
+                      zIndex: isExpanded ? 100 : i,
+                      transition: 'margin-top 0.3s ease, z-index 0s',
+                    }}
+                  >
+                    <WalletCard
+                      reco={reco}
+                      expanded={isExpanded}
+                      onToggle={() => setExpandedWalletId(isExpanded ? null : reco.id)}
+                      onMarkDone={setFeedbackReco}
+                      onBeenThere={setBeenThereReco}
+                      onNoGo={setNoGoReco}
+                      onForward={handleForward}
+                    />
+                  </div>
+                )
+              })
             )}
           </div>
         </div>
-      )}
-
-      {/* Wallet expanded card overlay */}
-      {walletExpandedReco && (
-        <RecoCard
-          reco={walletExpandedReco}
-          initialOpen
-          viewMode="full"
-          onMarkDone={(r) => { setFeedbackReco(r) }}
-          onBeenThere={(r) => { setBeenThereReco(r) }}
-          onNoGo={(r) => { setNoGoReco(r) }}
-          onForward={handleForward}
-          onClose={() => setWalletExpandedReco(null)}
-        />
       )}
 
       {/* ── TO DO TAB ── */}
