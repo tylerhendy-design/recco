@@ -40,6 +40,21 @@ Always ensure legible colour contrast for important information. White text on l
 
 **Tagline: "It's not for everyone."** That's the point — not every reco is right for every person. The app is built around human nuance, not algorithmic matching.
 
+### The soul of RECO
+
+RECO is an app for shared experience and a nuanced understanding of your friends. The power of a recommendation can change someone's trip or their life. It holds up a mirror — when you give someone a reco, you're showing them what you think they'd love. And in doing so, you're showing them what *you* think is good. It reveals where you have shared taste and where you don't. Often, that difference is the most interesting part.
+
+This is going back to the roots of social: meaningful and genuinely connected. Fewer connections that are deeper, not a lot of surface level. RECO is primarily **a place for all your recommendations, in a shared space with your closest friends.**
+
+### The enemy
+
+RECO exists because the current tools are broken:
+
+- **Google Maps stars** you added seven years ago and don't know why you still have them.
+- **Spreadsheets** you share with visitors to your city because you can't be bothered giving them a personalised one.
+- **Your notes app** filled with write-ups of where to go next, forgetting who told you to go there.
+- **One-size-fits-all recommendation lists** — going where Top Jaw says to go isn't personalised. Complex individuals need something an algorithm won't provide. Only a human who deeply knows you will.
+
 ### The problem it solves
 
 Recommendations break down in three ways today:
