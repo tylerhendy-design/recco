@@ -360,9 +360,9 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* TOP 03 — Blog-style rich cards */}
+          {/* TOP 03 — Collapsed categories → grouped by location/type → rich cards */}
           <div className="px-4 pt-5">
-            <div className="flex items-baseline justify-between mb-4 px-2">
+            <div className="flex items-baseline justify-between mb-3 px-2">
               <h1 className="text-[22px] font-bold text-white tracking-[-0.5px]">TOP 03</h1>
               <Link href="/profile/top3" className="text-[12px] font-semibold text-accent">+ Add</Link>
             </div>
@@ -381,152 +381,210 @@ export default function ProfilePage() {
               Object.entries(picksByCategory).map(([category, items]) => {
                 const color = getCategoryColor(category)
                 const catLabel = getCategoryLabel(category)
+                const isCatOpen = expanded[category] ?? false
+
+                // Group picks by location/type
+                const groups = items.reduce<Record<string, Pick[]>>((acc, p) => {
+                  const key = p.location?.trim() || 'General'
+                  if (!acc[key]) acc[key] = []
+                  acc[key].push(p)
+                  return acc
+                }, {})
+                const groupEntries = Object.entries(groups).sort((a, b) => b[1].length - a[1].length)
+                const hasMultipleGroups = groupEntries.length > 1 || (groupEntries.length === 1 && groupEntries[0][0] !== 'General')
+
+                // Share a whole group
+                async function shareGroup(groupName: string, groupPicks: Pick[]) {
+                  const title = groupName === 'General' ? `My Top ${catLabel}` : `My Top ${groupName} ${catLabel}`
+                  const lines = groupPicks.map((p, i) => `${i + 1}. ${p.title}${p.why ? ` — "${p.why}"` : ''}`)
+                  const text = `${title}\n\n${lines.join('\n')}\n\nvia RECO`
+                  const url = window.location.href
+                  if (navigator.share) {
+                    try { await navigator.share({ title, text, url }); return } catch {}
+                  }
+                  await navigator.clipboard.writeText(text)
+                  setMenuOpenId(`shared-group-${category}-${groupName}`)
+                  setTimeout(() => setMenuOpenId(null), 2000)
+                }
+
                 return (
-                  <div key={category} className="mb-5">
-                    {/* Category header */}
-                    <div className="flex items-center gap-2 mb-3 px-1">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
-                      <span className="text-[13px] font-bold text-white uppercase tracking-[0.5px]">{catLabel}</span>
-                      <span className="text-[11px] text-text-faint">{items.length}/3</span>
-                    </div>
-
-                    {/* Rich pick cards */}
-                    {items.map((pick, idx) => (
-                      <div key={pick.id} className="mb-3 bg-bg-card border border-border rounded-2xl overflow-hidden">
-                        {/* Hero image */}
-                        {pick.image_url && (
-                          <div className="relative w-full h-44">
-                            <img src={pick.image_url} alt="" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
-                            {/* Rank badge */}
-                            <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                              <span className="text-[12px] font-bold text-white">{idx + 1}</span>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="px-4 pb-4" style={{ paddingTop: pick.image_url ? 8 : 16 }}>
-                          {/* Rank if no image */}
-                          {!pick.image_url && (
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: color + '30' }}>
-                                <span className="text-[11px] font-bold" style={{ color }}>{idx + 1}</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Title */}
-                          <div className="text-[18px] font-bold text-white tracking-[-0.3px] leading-tight">{pick.title}</div>
-
-                          {/* Location */}
-                          {pick.location && (
-                            <div className="text-[12px] text-text-faint mt-1 flex items-center gap-1">
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                              {pick.location}
-                            </div>
-                          )}
-
-                          {/* Why — the story */}
-                          {pick.why && (
-                            <div className="text-[14px] text-text-secondary leading-[1.6] mt-3">
-                              {pick.why}
-                            </div>
-                          )}
-
-                          {/* Links row */}
-                          {(pick.links.length > 0 || pick.location) && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {pick.links.map((link, i) => (
-                                <a
-                                  key={i}
-                                  href={link}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[11px] font-semibold text-accent flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20"
-                                >
-                                  {getLinkLabel(link)}
-                                </a>
-                              ))}
-                              {pick.links.length === 0 && pick.location && (
-                                <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[11px] font-semibold text-accent flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20"
-                                >
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                  Google Maps
-                                </a>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Action row: share + edit */}
-                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                            <button
-                              onClick={async () => {
-                                const url = pick.links[0] || (pick.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}` : window.location.href)
-                                const text = `${pick.title}${pick.location ? ` — ${pick.location}` : ''}${pick.why ? `\n\n${pick.why}` : ''}`
-                                if (navigator.share) {
-                                  try { await navigator.share({ title: pick.title, text, url }); return } catch {}
-                                }
-                                await navigator.clipboard.writeText(`${text}\n${url}`)
-                                setMenuOpenId(`shared-${pick.id}`)
-                                setTimeout(() => setMenuOpenId(null), 2000)
-                              }}
-                              className="flex items-center gap-1.5 text-[12px] font-semibold text-text-secondary"
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-                              </svg>
-                              {menuOpenId === `shared-${pick.id}` ? 'Copied' : 'Share'}
-                            </button>
-                            <button
-                              onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)}
-                              className="text-text-faint p-1"
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Edit/delete menu */}
-                        {menuOpenId === pick.id && (
-                          <>
-                            <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setMenuOpenId(null)} />
-                            <div className="fixed inset-x-0 bottom-0 z-[201] p-4 pb-8">
-                              <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
-                                <button onClick={() => startEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white hover:bg-bg-card transition-colors border-b border-border font-semibold">Edit</button>
-                                <button onClick={() => handleRemovePick(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 hover:bg-bg-card transition-colors border-b border-border font-semibold">Delete</button>
-                                <button onClick={() => setMenuOpenId(null)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Inline edit form */}
-                        {editingPick?.id === pick.id && (
-                          <div className="px-4 pb-4 border-t border-border pt-3">
-                            <div className="flex flex-col gap-2.5">
-                              <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white outline-none focus:border-accent font-sans" />
-                              <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City" className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
-                              <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why? (optional)" rows={2} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none" />
-                              {editLinks.map((link, i) => (
-                                <div key={i} className="flex items-center gap-2">
-                                  <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link" className="flex-1 bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
-                                  {editLinks.length > 1 && <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>}
-                                </div>
-                              ))}
-                              <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint text-left">+ Add link</button>
-                              <div className="flex gap-2 mt-1">
-                                <button onClick={() => setEditingPick(null)} className="flex-1 py-2.5 border border-border rounded-xl text-[13px] font-semibold text-text-dim">Cancel</button>
-                                <button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2.5 rounded-xl bg-accent text-accent-fg text-[13px] font-bold disabled:opacity-40">{savingEdit ? 'Saving...' : 'Save'}</button>
-                              </div>
-                            </div>
-                          </div>
+                  <div key={category} className="mb-2 border border-border rounded-2xl overflow-hidden bg-bg-card">
+                    {/* Category header — collapsed by default */}
+                    <button
+                      onClick={() => toggleExpanded(category)}
+                      className="w-full flex items-center justify-between px-4 py-3.5"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                        <span className="text-[14px] font-bold text-white">{catLabel}</span>
+                        <span className={`text-[11px] font-semibold ${items.length >= 3 ? 'text-accent' : 'text-text-faint'}`}>{items.length}</span>
+                        {hasMultipleGroups && (
+                          <span className="text-[10px] text-text-faint">· {groupEntries.length} groups</span>
                         )}
                       </div>
-                    ))}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"
+                        className={`transition-transform duration-200 ${isCatOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+
+                    {/* Expanded: groups with picks */}
+                    {isCatOpen && (
+                      <div className="border-t border-border">
+                        {groupEntries.map(([groupName, groupPicks]) => {
+                          const groupKey = `${category}::${groupName}`
+                          const isGroupOpen = expanded[groupKey] ?? false
+                          const showGroupHeader = hasMultipleGroups || groupName !== 'General'
+
+                          return (
+                            <div key={groupName}>
+                              {/* Group header with share */}
+                              {showGroupHeader && (
+                                <button
+                                  onClick={() => toggleExpanded(groupKey)}
+                                  className="w-full flex items-center justify-between px-4 py-3 border-b border-border/50 bg-bg-base/30"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[13px] font-semibold text-white">{groupName}</span>
+                                    <span className="text-[11px] text-text-faint">{groupPicks.length}</span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span
+                                      onClick={async (e) => { e.stopPropagation(); await shareGroup(groupName, groupPicks) }}
+                                      className="text-[11px] font-semibold text-accent flex items-center gap-1"
+                                    >
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                                      </svg>
+                                      {menuOpenId === `shared-group-${category}-${groupName}` ? 'Copied' : 'Share'}
+                                    </span>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"
+                                      className={`transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`}><path d="M6 9l6 6 6-6"/></svg>
+                                  </div>
+                                </button>
+                              )}
+
+                              {/* Rich pick cards (show if group is open, or if no sub-groups) */}
+                              {(!showGroupHeader || isGroupOpen) && groupPicks.map((pick, idx) => (
+                                <div key={pick.id} className="border-b border-border/30 last:border-0">
+                                  {/* Card with image */}
+                                  {pick.image_url && (
+                                    <div className="relative w-full h-40">
+                                      <img src={pick.image_url} alt="" className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
+                                      <div className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                                        <span className="text-[12px] font-bold text-white">{idx + 1}</span>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  <div className="px-4 pb-3.5" style={{ paddingTop: pick.image_url ? 8 : 14 }}>
+                                    {!pick.image_url && (
+                                      <div className="flex items-center gap-2 mb-1.5">
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: color + '30' }}>
+                                          <span className="text-[10px] font-bold" style={{ color }}>{idx + 1}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="text-[17px] font-bold text-white tracking-[-0.3px] leading-tight">{pick.title}</div>
+
+                                    {pick.location && !showGroupHeader && (
+                                      <div className="text-[12px] text-text-faint mt-0.5 flex items-center gap-1">
+                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        {pick.location}
+                                      </div>
+                                    )}
+
+                                    {pick.why && (
+                                      <div className="text-[13px] text-text-secondary leading-[1.5] mt-2">{pick.why}</div>
+                                    )}
+
+                                    {(pick.links.length > 0 || pick.location) && (
+                                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                                        {pick.links.map((link, i) => (
+                                          <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                                            className="text-[10px] font-semibold text-accent px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20">
+                                            {getLinkLabel(link)}
+                                          </a>
+                                        ))}
+                                        {pick.links.length === 0 && pick.location && (
+                                          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}`}
+                                            target="_blank" rel="noopener noreferrer"
+                                            className="text-[10px] font-semibold text-accent px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 flex items-center gap-1">
+                                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                            Maps
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Share + edit row */}
+                                    <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border/30">
+                                      <button
+                                        onClick={async () => {
+                                          const url = pick.links[0] || (pick.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([pick.title, pick.location].join(', '))}` : window.location.href)
+                                          const text = `${pick.title}${pick.location ? ` — ${pick.location}` : ''}${pick.why ? `\n\n${pick.why}` : ''}`
+                                          if (navigator.share) {
+                                            try { await navigator.share({ title: pick.title, text, url }); return } catch {}
+                                          }
+                                          await navigator.clipboard.writeText(`${text}\n${url}`)
+                                          setMenuOpenId(`shared-${pick.id}`)
+                                          setTimeout(() => setMenuOpenId(null), 2000)
+                                        }}
+                                        className="flex items-center gap-1 text-[11px] font-semibold text-text-faint"
+                                      >
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                                        </svg>
+                                        {menuOpenId === `shared-${pick.id}` ? 'Copied' : 'Share'}
+                                      </button>
+                                      <button onClick={() => setMenuOpenId(menuOpenId === pick.id ? null : pick.id)} className="text-text-faint p-0.5">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Edit/delete menu */}
+                                  {menuOpenId === pick.id && (
+                                    <>
+                                      <div className="fixed inset-0 z-[200] bg-black/40" onClick={() => setMenuOpenId(null)} />
+                                      <div className="fixed inset-x-0 bottom-0 z-[201] p-4 pb-8">
+                                        <div className="bg-bg-elevated border border-border rounded-2xl overflow-hidden shadow-2xl max-w-[390px] mx-auto">
+                                          <button onClick={() => startEdit(pick)} className="w-full text-left px-5 py-4 text-[14px] text-white font-semibold border-b border-border">Edit</button>
+                                          <button onClick={() => handleRemovePick(pick.id)} className="w-full text-left px-5 py-4 text-[14px] text-red-400 font-semibold border-b border-border">Delete</button>
+                                          <button onClick={() => setMenuOpenId(null)} className="w-full text-center px-5 py-3.5 text-[14px] font-semibold text-text-faint">Cancel</button>
+                                        </div>
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {/* Inline edit */}
+                                  {editingPick?.id === pick.id && (
+                                    <div className="px-4 pb-4 pt-3 border-t border-border">
+                                      <div className="flex flex-col gap-2.5">
+                                        <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white outline-none focus:border-accent font-sans" />
+                                        <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="City / Type / Genre" className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
+                                        <textarea value={editWhy} onChange={(e) => { setEditWhy(e.target.value); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }} placeholder="Why?" rows={2} className="w-full bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-text-secondary placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none" />
+                                        {editLinks.map((link, i) => (
+                                          <div key={i} className="flex items-center gap-2">
+                                            <input value={link} onChange={(e) => { const n = [...editLinks]; n[i] = e.target.value; setEditLinks(n) }} placeholder="Link" className="flex-1 bg-bg-base border border-border rounded-xl px-3.5 py-3 text-[14px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans" />
+                                            {editLinks.length > 1 && <button onClick={() => setEditLinks(editLinks.filter((_, j) => j !== i))} className="text-text-faint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>}
+                                          </div>
+                                        ))}
+                                        <button onClick={() => setEditLinks([...editLinks, ''])} className="text-[11px] text-text-faint text-left">+ Add link</button>
+                                        <div className="flex gap-2 mt-1">
+                                          <button onClick={() => setEditingPick(null)} className="flex-1 py-2.5 border border-border rounded-xl text-[13px] font-semibold text-text-dim">Cancel</button>
+                                          <button onClick={handleSaveEdit} disabled={savingEdit || !editTitle.trim()} className="flex-[2] py-2.5 rounded-xl bg-accent text-accent-fg text-[13px] font-bold disabled:opacity-40">{savingEdit ? 'Saving...' : 'Save'}</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
                 )
               })
@@ -534,19 +592,15 @@ export default function ProfilePage() {
 
             {/* Add more + Lists */}
             {picks.length > 0 && (
-              <Link
-                href="/profile/top3"
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-dashed border-accent/40 text-accent text-[14px] font-semibold"
-              >
+              <Link href="/profile/top3"
+                className="w-full flex items-center justify-center gap-2 py-3.5 mt-2 rounded-xl border border-dashed border-accent/40 text-accent text-[14px] font-semibold">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add to your TOP 03
               </Link>
             )}
 
-            <Link
-              href="/profile/lists"
-              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-xl bg-bg-card border border-border"
-            >
+            <Link href="/profile/lists"
+              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-xl bg-bg-card border border-border">
               <div className="flex items-center gap-2.5">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
