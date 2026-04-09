@@ -30,7 +30,18 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p))
+
+  // Rewrite /@username → /r/u/username (pretty profile URLs)
+  if (pathname.startsWith('/@')) {
+    const username = pathname.slice(2) // remove /@
+    if (username && !username.includes('/')) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/r/u/${username}`
+      return NextResponse.rewrite(url)
+    }
+  }
+
+  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith('/@')
 
   // Unauthenticated users can only access public paths
   if (!user && !isPublic) {
