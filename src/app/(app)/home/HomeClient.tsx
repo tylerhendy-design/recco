@@ -756,8 +756,8 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
 
       {/* ── EVERYTHING TAB (wallet stack) ── */}
       {tab === 'everything' && (
-        <div className="flex-1 overflow-y-auto scrollbar-none" onScroll={handleFeedScroll} style={{ position: 'relative', zIndex: expandedWalletId ? 60 : 'auto' }}>
-          <div className="px-4 pt-2" style={{ paddingBottom: expandedWalletId ? '28rem' : '6rem' }}>
+        <div className="flex-1 overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
+          <div className="px-4 pt-2 pb-24">
             {loading ? (
               <div className="flex flex-col gap-0">
                 {[0, 1, 2, 3, 4].map(i => (
@@ -783,12 +783,6 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                   <div
                     key={reco.id}
                     className="relative"
-                    ref={el => {
-                      // Auto-scroll expanded card into view
-                      if (isExpanded && el) {
-                        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
-                      }
-                    }}
                     style={{
                       marginTop: i === 0 ? 0 : isExpanded ? 8 : -48,
                       zIndex: isExpanded ? 100 : i,

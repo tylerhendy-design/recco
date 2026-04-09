@@ -29,7 +29,6 @@ export function getWalletColor(category: string) {
   return WALLET_COLORS[category] || { bg: '#333', gradient: '#555', text: '#fff' }
 }
 
-// Extract 1-2 detail pills from reco meta
 function getDetailPills(reco: Reco): string[] {
   const pills: string[] = []
   const meta = reco.meta
@@ -45,7 +44,6 @@ function getDetailPills(reco: Reco): string[] {
   return pills
 }
 
-// All available detail pills for expanded view
 function getAllPills(reco: Reco): { label: string; value: string }[] {
   const pills: { label: string; value: string }[] = []
   const meta = reco.meta
@@ -111,266 +109,244 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
     })
   }, [reco.meta])
 
-  return (
+  // ── Collapsed card header (always rendered in the wallet stack) ──
+  const cardHeader = (
     <div
-      className="w-full rounded-2xl overflow-hidden cursor-pointer"
-      style={{
-        background: `linear-gradient(135deg, ${colors.gradient} 0%, ${colors.bg} 100%)`,
-        boxShadow: '0 -1px 0 rgba(255,255,255,0.08) inset, 0 4px 12px rgba(0,0,0,0.4)',
-        transition: 'max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-        maxHeight: expanded ? 600 : 100,
-      }}
+      className="flex items-center px-5 gap-3 active:opacity-80 transition-opacity"
+      style={{ height: 100 }}
+      onClick={onToggle}
     >
-      {/* Collapsed header — always visible, this is what peeks through the stack */}
-      <div
-        className="flex items-center px-5 gap-3 active:opacity-80 transition-opacity"
-        style={{ height: 100 }}
-        onClick={onToggle}
-      >
-        <div className="flex-1 min-w-0">
-          {/* Row 1: Category + detail lozenges */}
-          <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
-            <span
-              className="text-[10px] font-bold uppercase tracking-[0.8px] flex-shrink-0"
-              style={{ color: colors.text, opacity: 0.55 }}
-            >
-              {catLabel}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
+          <span className="text-[10px] font-bold uppercase tracking-[0.8px] flex-shrink-0" style={{ color: colors.text, opacity: 0.55 }}>
+            {catLabel}
+          </span>
+          {detailPills.map((pill, i) => (
+            <span key={i} className="text-[9px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[100px] flex-shrink-0" style={pillStyle}>
+              {pill}
             </span>
-            {detailPills.map((pill, i) => (
-              <span
-                key={i}
-                className="text-[9px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[100px] flex-shrink-0"
-                style={pillStyle}
-              >
-                {pill}
-              </span>
-            ))}
-            {isDone && reco.score != null && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>
-                {reco.score}/10
-              </span>
-            )}
-            {isNoGo && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>
-                No go
-              </span>
-            )}
-            {localProgress && !isDone && !isNoGo && (
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(212,226,58,0.25)', color: '#D4E23A' }}>
-                {localProgress.label}
-              </span>
-            )}
-          </div>
-          {/* Row 2: Title */}
-          <div className="text-[17px] font-bold truncate leading-tight" style={{ color: colors.text }}>
-            {reco.title}
-          </div>
-          {/* Row 3: Sender */}
-          <div className="text-[11px] mt-0.5 truncate" style={{ color: colors.text, opacity: 0.45 }}>
-            from {senderName} · {timeAgo(reco.created_at)}
-          </div>
-        </div>
-        {artworkUrl && (
-          <img
-            src={artworkUrl}
-            alt=""
-            className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-            style={{ border: '1px solid rgba(255,255,255,0.12)' }}
-          />
-        )}
-        {expanded && (
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={colors.text} strokeWidth="2.5" strokeLinecap="round">
-              <path d="M18 15l-6-6-6 6"/>
-            </svg>
-          </div>
-        )}
-      </div>
-
-      {/* Expanded content — slides open below header */}
-      {expanded && (
-        <div className="px-5 pb-5" style={{ color: colors.text }}>
-          {/* Hero image */}
-          {artworkUrl && (
-            <img
-              src={artworkUrl}
-              alt=""
-              className="w-full h-44 object-cover rounded-xl mb-4"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-            />
-          )}
-
-          {/* All detail pills */}
-          {getAllPills(reco).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {getAllPills(reco).map((pill, i) => (
-                <span
-                  key={i}
-                  className="text-[11px] font-medium px-2.5 py-1 rounded-full"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: colors.text }}
-                >
-                  {pill.value}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Why text */}
-          {reco.why_text && (
-            <div className="mb-4">
-              <div className="text-[10px] font-bold uppercase tracking-[0.5px] mb-1" style={{ opacity: 0.5 }}>
-                Why
-              </div>
-              <div className="text-[14px] leading-[1.5]" style={{ opacity: 0.85 }}>
-                "{reco.why_text}"
-              </div>
-            </div>
-          )}
-
-          {/* Links */}
-          {(reco.meta?.website || reco.meta?.spotify_url || reco.meta?.instagram) && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {reco.meta?.website && (
-                <a
-                  href={reco.meta.website as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  Website
-                </a>
-              )}
-              {reco.meta?.spotify_url && (
-                <a
-                  href={reco.meta.spotify_url as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  Spotify
-                </a>
-              )}
-              {reco.meta?.instagram && (
-                <a
-                  href={`https://instagram.com/${(reco.meta.instagram as string).replace('@', '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-semibold px-3 py-1.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  Instagram
-                </a>
-              )}
-            </div>
-          )}
-
-          {/* Progress actions */}
-          {!isDone && !isNoGo && progressActions.length > 0 && viewerId && (
-            <div className="mb-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.5px] mb-2" style={{ color: colors.text, opacity: 0.4 }}>
-                Update progress
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {progressActions.map(action => {
-                  const isActive = localProgress?.status === action.value
-                  return (
-                    <button
-                      key={action.value}
-                      disabled={progressSaving}
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        if (!viewerId) return
-                        setProgressSaving(true)
-                        const { error } = await saveProgress(reco.id, viewerId, reco.sender_id, action.value, action.label, reco.title)
-                        if (!error) setLocalProgress({ status: action.value, label: action.label })
-                        setProgressSaving(false)
-                      }}
-                      className="text-[12px] font-semibold px-3 py-1.5 rounded-full transition-all"
-                      style={{
-                        backgroundColor: isActive ? 'rgba(212,226,58,0.25)' : 'rgba(255,255,255,0.12)',
-                        color: isActive ? '#D4E23A' : colors.text,
-                        border: isActive ? '1px solid rgba(212,226,58,0.4)' : '1px solid transparent',
-                      }}
-                    >
-                      {isActive && '✓ '}{action.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          {!isDone && !isNoGo && (onMarkDone || onBeenThere || onNoGo) && (
-            <div className="flex gap-2 mt-2">
-              {onMarkDone && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onMarkDone(reco) }}
-                  className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-center"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: colors.text }}
-                >
-                  Done it
-                </button>
-              )}
-              {onBeenThere && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onBeenThere(reco) }}
-                  className="flex-1 py-2.5 rounded-xl text-[13px] font-bold text-center"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.12)', color: colors.text }}
-                >
-                  Been there
-                </button>
-              )}
-              {onNoGo && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onNoGo(reco) }}
-                  className="py-2.5 px-4 rounded-xl text-[13px] font-bold"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: colors.text, opacity: 0.7 }}
-                >
-                  No go
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Forward for done recos */}
-          {isDone && onForward && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onForward(reco) }}
-              className="w-full py-2.5 rounded-xl text-[13px] font-bold text-center mt-2"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }}
-            >
-              Forward to a friend
-            </button>
-          )}
-
-          {/* Score display for done */}
+          ))}
           {isDone && reco.score != null && (
-            <div className="flex items-center gap-3 mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-[18px] font-bold"
-                style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }}
-              >
-                {reco.score}
-              </div>
-              <div>
-                <div className="text-[13px] font-semibold" style={{ opacity: 0.8 }}>Your score</div>
-                {reco.feedback_text && (
-                  <div className="text-[12px] mt-0.5" style={{ opacity: 0.5 }}>"{reco.feedback_text}"</div>
-                )}
-              </div>
-            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>{reco.score}/10</span>
+          )}
+          {isNoGo && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>No go</span>
+          )}
+          {localProgress && !isDone && !isNoGo && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(212,226,58,0.25)', color: '#D4E23A' }}>
+              {localProgress.label}
+            </span>
           )}
         </div>
+        <div className="text-[17px] font-bold truncate leading-tight" style={{ color: colors.text }}>{reco.title}</div>
+        <div className="text-[11px] mt-0.5 truncate" style={{ color: colors.text, opacity: 0.45 }}>
+          from {senderName} · {timeAgo(reco.created_at)}
+        </div>
+      </div>
+      {artworkUrl && (
+        <img src={artworkUrl} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.12)' }} />
       )}
     </div>
+  )
+
+  return (
+    <>
+      {/* Collapsed card in the wallet stack */}
+      <div
+        className="w-full rounded-2xl overflow-hidden cursor-pointer"
+        style={{
+          background: `linear-gradient(135deg, ${colors.gradient} 0%, ${colors.bg} 100%)`,
+          boxShadow: '0 -1px 0 rgba(255,255,255,0.08) inset, 0 4px 12px rgba(0,0,0,0.4)',
+          height: 100,
+        }}
+      >
+        {cardHeader}
+      </div>
+
+      {/* Expanded overlay — fixed position, above EVERYTHING including TabBar */}
+      {expanded && (
+        <>
+          <div className="fixed inset-0 z-[200] bg-black/60" onClick={onToggle} />
+          <div
+            className="fixed inset-x-0 bottom-0 z-[201] max-h-[85vh] overflow-y-auto scrollbar-none rounded-t-[20px]"
+            style={{ background: `linear-gradient(135deg, ${colors.gradient} 0%, ${colors.bg} 100%)` }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1 sticky top-0" style={{ background: `linear-gradient(135deg, ${colors.gradient} 0%, ${colors.bg} 100%)` }}>
+              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.25)' }} />
+            </div>
+
+            {/* Card header repeated in overlay */}
+            <div className="flex items-center px-5 gap-3 pb-2" style={{ color: colors.text }}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-1 overflow-hidden">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.8px] flex-shrink-0" style={{ opacity: 0.55 }}>{catLabel}</span>
+                  {detailPills.map((pill, i) => (
+                    <span key={i} className="text-[9px] font-semibold px-2 py-0.5 rounded-full truncate max-w-[100px] flex-shrink-0" style={pillStyle}>{pill}</span>
+                  ))}
+                  {isDone && reco.score != null && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>{reco.score}/10</span>
+                  )}
+                  {isNoGo && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>No go</span>
+                  )}
+                  {localProgress && !isDone && !isNoGo && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(212,226,58,0.25)', color: '#D4E23A' }}>
+                      {localProgress.label}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[22px] font-bold leading-tight">{reco.title}</div>
+                <div className="text-[12px] mt-1" style={{ opacity: 0.5 }}>from {senderName} · {timeAgo(reco.created_at)}</div>
+              </div>
+              {artworkUrl && (
+                <img src={artworkUrl} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.12)' }} />
+              )}
+            </div>
+
+            {/* Expanded content */}
+            <div className="px-5 pb-8" style={{ color: colors.text }}>
+              {/* Hero image */}
+              {artworkUrl && (
+                <img src={artworkUrl} alt="" className="w-full h-44 object-cover rounded-xl mb-4 mt-2" style={{ border: '1px solid rgba(255,255,255,0.1)' }} />
+              )}
+
+              {/* All detail pills */}
+              {getAllPills(reco).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {getAllPills(reco).map((pill, i) => (
+                    <span key={i} className="text-[11px] font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                      {pill.value}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Why text */}
+              {reco.why_text && (
+                <div className="mb-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.5px] mb-1" style={{ opacity: 0.5 }}>Why</div>
+                  <div className="text-[14px] leading-[1.5]" style={{ opacity: 0.85 }}>"{reco.why_text}"</div>
+                </div>
+              )}
+
+              {/* Links */}
+              {(reco.meta?.website || reco.meta?.spotify_url || reco.meta?.instagram) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {reco.meta?.website && (
+                    <a href={reco.meta.website as string} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                      onClick={e => e.stopPropagation()}>Website</a>
+                  )}
+                  {reco.meta?.spotify_url && (
+                    <a href={reco.meta.spotify_url as string} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                      onClick={e => e.stopPropagation()}>Spotify</a>
+                  )}
+                  {reco.meta?.instagram && (
+                    <a href={`https://instagram.com/${(reco.meta.instagram as string).replace('@', '')}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[11px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                      onClick={e => e.stopPropagation()}>Instagram</a>
+                  )}
+                </div>
+              )}
+
+              {/* Progress actions */}
+              {!isDone && !isNoGo && progressActions.length > 0 && viewerId && (
+                <div className="mb-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.5px] mb-2" style={{ opacity: 0.4 }}>Update progress</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {progressActions.map(action => {
+                      const isActive = localProgress?.status === action.value
+                      return (
+                        <button
+                          key={action.value}
+                          disabled={progressSaving}
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            if (!viewerId) return
+                            setProgressSaving(true)
+                            const { error } = await saveProgress(reco.id, viewerId, reco.sender_id, action.value, action.label, reco.title)
+                            if (!error) setLocalProgress({ status: action.value, label: action.label })
+                            setProgressSaving(false)
+                          }}
+                          className="text-[12px] font-semibold px-3 py-1.5 rounded-full transition-all"
+                          style={{
+                            backgroundColor: isActive ? 'rgba(212,226,58,0.25)' : 'rgba(255,255,255,0.12)',
+                            color: isActive ? '#D4E23A' : colors.text,
+                            border: isActive ? '1px solid rgba(212,226,58,0.4)' : '1px solid transparent',
+                          }}
+                        >
+                          {isActive && '✓ '}{action.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {!isDone && !isNoGo && (onMarkDone || onBeenThere || onNoGo) && (
+                <div className="flex gap-2 mb-3">
+                  {onMarkDone && (
+                    <button onClick={(e) => { e.stopPropagation(); onMarkDone(reco); onToggle?.() }}
+                      className="flex-1 py-3 rounded-xl text-[14px] font-bold text-center"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
+                      Done it
+                    </button>
+                  )}
+                  {onBeenThere && (
+                    <button onClick={(e) => { e.stopPropagation(); onBeenThere(reco); onToggle?.() }}
+                      className="flex-1 py-3 rounded-xl text-[14px] font-bold text-center"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                      Been there
+                    </button>
+                  )}
+                  {onNoGo && (
+                    <button onClick={(e) => { e.stopPropagation(); onNoGo(reco); onToggle?.() }}
+                      className="py-3 px-5 rounded-xl text-[14px] font-bold"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', opacity: 0.7 }}>
+                      No go
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Forward for done recos */}
+              {isDone && onForward && (
+                <button onClick={(e) => { e.stopPropagation(); onForward(reco); onToggle?.() }}
+                  className="w-full py-3 rounded-xl text-[14px] font-bold text-center mb-3"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                  Forward to a friend
+                </button>
+              )}
+
+              {/* Score display for done */}
+              {isDone && reco.score != null && (
+                <div className="flex items-center gap-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-[18px] font-bold"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                    {reco.score}
+                  </div>
+                  <div>
+                    <div className="text-[13px] font-semibold" style={{ opacity: 0.8 }}>Your score</div>
+                    {reco.feedback_text && <div className="text-[12px] mt-0.5" style={{ opacity: 0.5 }}>"{reco.feedback_text}"</div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancel / close */}
+              <button
+                onClick={onToggle}
+                className="w-full py-3.5 rounded-xl text-[14px] font-semibold text-center mt-4"
+                style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   )
 }

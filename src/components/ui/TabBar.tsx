@@ -105,7 +105,7 @@ export function TabBar() {
   }, [])
 
   return (
-    <div className="flex px-0.5 pb-5 pt-2 border-t border-border/50 bg-bg-base flex-shrink-0 relative z-50">
+    <div className="flex px-0.5 pb-5 pt-2 border-t border-border/50 bg-bg-base flex-shrink-0 relative z-[1]">
       {TABS.map((tab) => {
         const isActive = pathname.startsWith(tab.href)
         const showBadge = tab.href === '/friends' && pendingRequests > 0
