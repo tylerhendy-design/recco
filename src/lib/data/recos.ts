@@ -448,3 +448,78 @@ export async function updateRecoMeta(
 
   return { error: error?.message ?? null }
 }
+
+// ── Progress updates ────────────────────────────────────────────────────────
+
+export interface ProgressAction {
+  value: string
+  label: string
+}
+
+// Category-specific progress actions — what makes sense for each type of reco
+const PROGRESS_MAP: Record<string, ProgressAction[]> = {
+  restaurant:  [{ value: 'booked', label: 'Made a booking' }, { value: 'planned', label: 'Planning to go' }],
+  bars:        [{ value: 'booked', label: 'Made a booking' }, { value: 'planned', label: 'Planning to go' }],
+  book:        [{ value: 'purchased', label: 'Bought the book' }, { value: 'started', label: 'Started reading' }],
+  clubs:       [{ value: 'booked', label: 'Booked tickets' }],
+  cocktails:   [{ value: 'booked', label: 'Made a booking' }],
+  culture:     [{ value: 'booked', label: 'Booked tickets' }, { value: 'planned', label: 'Planning to go' }],
+  film:        [{ value: 'started', label: 'Started watching' }],
+  music:       [{ value: 'added', label: 'Added to library' }, { value: 'started', label: 'Started listening' }],
+  podcast:     [{ value: 'started', label: 'Started listening' }],
+  pubs:        [{ value: 'planned', label: 'Planning to go' }],
+  shopping:    [{ value: 'visited', label: 'Been there' }, { value: 'purchased', label: 'Made a purchase' }],
+  tv:          [{ value: 'started', label: 'Started watching' }],
+  wine_bars:   [{ value: 'booked', label: 'Made a booking' }],
+}
+
+const DEFAULT_PROGRESS: ProgressAction[] = [
+  { value: 'started', label: 'Started it' },
+  { value: 'looking', label: 'Looking into it' },
+]
+
+export function getProgressActions(category: string): ProgressAction[] {
+  return PROGRESS_MAP[category] ?? DEFAULT_PROGRESS
+}
+
+export async function saveProgress(
+  recoId: string,
+  recipientId: string,
+  senderId: string,
+  progressValue: string,
+  progressLabel: string,
+  recoTitle: string,
+): Promise<{ error: string | null }> {
+  const supabase = createClient()
+
+  // Store progress in meta keyed by recipient
+  const { data: current, error: fetchErr } = await supabase
+    .from('recommendations')
+    .select('meta')
+    .eq('id', recoId)
+    .single()
+  if (fetchErr) return { error: fetchErr.message }
+
+  const meta = current?.meta as Record<string, unknown> ?? {}
+  const progress = (meta.progress as Record<string, unknown>) ?? {}
+  progress[recipientId] = { status: progressValue, label: progressLabel, updated_at: new Date().toISOString() }
+
+  const { error } = await supabase
+    .from('recommendations')
+    .update({ meta: { ...meta, progress } })
+    .eq('id', recoId)
+  if (error) return { error: error.message }
+
+  // Notify the sender (unless it's a self-reco)
+  if (senderId !== recipientId) {
+    await (supabase.from('notifications') as any).insert({
+      user_id: senderId,
+      type: 'feedback_received',
+      actor_id: recipientId,
+      reco_id: recoId,
+      payload: { subtype: 'progress', progress_label: progressLabel, reco_title: recoTitle },
+    })
+  }
+
+  return { error: null }
+}

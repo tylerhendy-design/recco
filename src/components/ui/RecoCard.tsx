@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { CategoryDot } from './CategoryDot'
 import { LocationPill, AddressPill, hasLocation } from './LocationPill'
 import { InteractiveMap } from './InteractiveMap'
 import { cn } from '@/lib/utils'
 import type { Reco } from '@/types/app.types'
 import { getCategoryLabel, getCategoryColor } from '@/constants/categories'
-import { updateRecoMeta } from '@/lib/data/recos'
+import { updateRecoMeta, getProgressActions, saveProgress } from '@/lib/data/recos'
 
 function getRecoCategory(reco: { category: string; custom_cat?: string }): string {
   if (reco.category === 'custom' && reco.custom_cat) return reco.custom_cat
@@ -148,6 +149,17 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, onC
   const [editSaving, setEditSaving] = useState(false)
   const [localMeta, setLocalMeta] = useState(reco.meta)
   const [showMap, setShowMap] = useState(false)
+  const [progressSaving, setProgressSaving] = useState(false)
+  const [viewerId, setViewerId] = useState<string | null>(null)
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => { if (data.user) setViewerId(data.user.id) })
+  }, [])
+
+  // Read current progress for this user from meta
+  const progressData = (localMeta?.progress as Record<string, { status: string; label: string }> | undefined)
+  const myProgress = viewerId && progressData?.[viewerId] ? progressData[viewerId] : null
+  const progressActions = getProgressActions(reco.category)
 
   function startEditing() {
     setEditLinks([...(localMeta?.links ?? []), ''])
@@ -275,6 +287,11 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, onC
           </span>
           {recommenderNames && <span className="text-[11px] text-white/60">from {recommenderNames}</span>}
           {when && <span className="text-[11px] text-white/40">· {when}</span>}
+          {myProgress && (
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-chip bg-accent/20 text-accent border border-accent/30">
+              {myProgress.label}
+            </span>
+          )}
         </div>
         {reco.meta?.forwarded_from && (
           <div className="text-[11px] text-white/40 mb-1">Originally from {reco.meta.forwarded_from}</div>
@@ -443,6 +460,49 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, onC
             <div className="flex justify-center py-3">
               <div className="w-10 h-1 rounded-full bg-border" />
             </div>
+            {/* Progress actions — category-specific */}
+            {reco.status !== 'done' && reco.status !== 'no_go' && progressActions.length > 0 && (
+              <>
+                <div className="px-6 pt-3 pb-1">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.5px] text-text-faint">Update progress</div>
+                </div>
+                {progressActions.map((action) => {
+                  const isActive = myProgress?.status === action.value
+                  return (
+                    <button
+                      key={action.value}
+                      disabled={progressSaving}
+                      className={`w-full text-left px-6 py-3 text-[14px] active:bg-bg-card transition-colors border-b border-border/50 ${isActive ? 'bg-accent/10' : ''}`}
+                      onClick={async () => {
+                        if (!viewerId) return
+                        setProgressSaving(true)
+                        const { error } = await saveProgress(reco.id, viewerId, reco.sender_id, action.value, action.label, reco.title)
+                        if (!error) {
+                          setLocalMeta(prev => ({
+                            ...prev,
+                            progress: { ...((prev?.progress as Record<string, unknown>) ?? {}), [viewerId]: { status: action.value, label: action.label } },
+                          }))
+                        }
+                        setProgressSaving(false)
+                        setMenuOpen(false)
+                      }}
+                    >
+                      <div className="font-semibold text-white flex items-center gap-2">
+                        {isActive && <span className="text-accent">✓</span>}
+                        {action.label}
+                      </div>
+                    </button>
+                  )
+                })}
+              </>
+            )}
+
+            {/* Existing actions */}
+            {reco.status !== 'done' && reco.status !== 'no_go' && (
+              <div className="px-6 pt-3 pb-1">
+                <div className="text-[10px] font-bold uppercase tracking-[0.5px] text-text-faint">Mark as</div>
+              </div>
+            )}
             <button
               className="w-full text-left px-6 py-4 text-[14px] active:bg-bg-card transition-colors border-b border-border"
               onClick={() => { setMenuOpen(false); onBeenThere?.(reco) }}

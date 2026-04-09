@@ -1,7 +1,10 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { getCategoryLabel } from '@/constants/categories'
 import { extractRecoCity } from '@/lib/city'
+import { getProgressActions, saveProgress } from '@/lib/data/recos'
+import { createClient } from '@/lib/supabase/client'
 import type { Reco } from '@/types/app.types'
 
 // Rich, saturated card colours per category — inspired by Apple Wallet
@@ -92,6 +95,21 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
   const isNoGo = reco.status === 'no_go'
   const detailPills = getDetailPills(reco)
   const pillStyle = { backgroundColor: 'rgba(255,255,255,0.15)', color: colors.text }
+  const progressActions = getProgressActions(reco.category)
+
+  const [viewerId, setViewerId] = useState<string | null>(null)
+  const [localProgress, setLocalProgress] = useState<{ status: string; label: string } | null>(null)
+  const [progressSaving, setProgressSaving] = useState(false)
+
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setViewerId(data.user.id)
+        const prog = (reco.meta?.progress as Record<string, { status: string; label: string }> | undefined)
+        if (prog?.[data.user.id]) setLocalProgress(prog[data.user.id])
+      }
+    })
+  }, [reco.meta])
 
   return (
     <div
@@ -135,6 +153,11 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
             {isNoGo && (
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={pillStyle}>
                 No go
+              </span>
+            )}
+            {localProgress && !isDone && !isNoGo && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: 'rgba(212,226,58,0.25)', color: '#D4E23A' }}>
+                {localProgress.label}
               </span>
             )}
           </div>
@@ -246,6 +269,42 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
                   Instagram
                 </a>
               )}
+            </div>
+          )}
+
+          {/* Progress actions */}
+          {!isDone && !isNoGo && progressActions.length > 0 && viewerId && (
+            <div className="mb-3">
+              <div className="text-[10px] font-bold uppercase tracking-[0.5px] mb-2" style={{ color: colors.text, opacity: 0.4 }}>
+                Update progress
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {progressActions.map(action => {
+                  const isActive = localProgress?.status === action.value
+                  return (
+                    <button
+                      key={action.value}
+                      disabled={progressSaving}
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        if (!viewerId) return
+                        setProgressSaving(true)
+                        const { error } = await saveProgress(reco.id, viewerId, reco.sender_id, action.value, action.label, reco.title)
+                        if (!error) setLocalProgress({ status: action.value, label: action.label })
+                        setProgressSaving(false)
+                      }}
+                      className="text-[12px] font-semibold px-3 py-1.5 rounded-full transition-all"
+                      style={{
+                        backgroundColor: isActive ? 'rgba(212,226,58,0.25)' : 'rgba(255,255,255,0.12)',
+                        color: isActive ? '#D4E23A' : colors.text,
+                        border: isActive ? '1px solid rgba(212,226,58,0.4)' : '1px solid transparent',
+                      }}
+                    >
+                      {isActive && '✓ '}{action.label}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
