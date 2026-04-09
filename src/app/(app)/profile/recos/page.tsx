@@ -28,11 +28,16 @@ function ProfileRecosInner() {
   const [recos, setRecos] = useState<Reco[]>([])
   const [loading, setLoading] = useState(true)
 
+  const viewUserId = searchParams.get('userId')
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
+      // If viewing another user's recos, use their ID
+      const targetUserId = viewUserId || user.id
 
       let data: any[] = []
 
@@ -48,7 +53,7 @@ function ProfileRecosInner() {
               profiles:recipient_id (id, display_name, username, avatar_url)
             )
           `)
-          .eq('sender_id', user.id)
+          .eq('sender_id', targetUserId)
           .order('created_at', { ascending: false })
 
         // Exclude Quick Add recos (manual_sender_name = self-added, not "given")
@@ -87,7 +92,7 @@ function ProfileRecosInner() {
               profiles (id, display_name, username, avatar_url)
             )
           `)
-          .eq('recipient_id', user.id)
+          .eq('recipient_id', targetUserId)
           .order('created_at', { ascending: false })
 
         if (statusFilter) {
@@ -128,7 +133,7 @@ function ProfileRecosInner() {
       setLoading(false)
     }
     load()
-  }, [filter])
+  }, [filter, viewUserId])
 
   // Group by category for the "given" view
   const byCategory = useMemo(() => {
@@ -169,7 +174,7 @@ function ProfileRecosInner() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <StatusBar />
-      <NavHeader title={TITLES[filter] ?? 'Recos'} backHref="/profile" />
+      <NavHeader title={TITLES[filter] ?? 'Recos'} backHref={viewUserId ? `/friends/${viewUserId}` : '/profile'} />
 
       <div className="flex-1 overflow-y-auto scrollbar-none px-4 pt-2 pb-24">
         {loading ? (

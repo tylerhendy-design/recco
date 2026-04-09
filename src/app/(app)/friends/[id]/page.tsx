@@ -197,6 +197,8 @@ export default function FriendProfilePage({ params }: { params: Promise<{ id: st
                 stinkersSent={stats.stinkers_sent ?? 0}
                 avgScore={stats.avg_score ?? '—'}
                 friendsCount={stats.friends_count ?? 0}
+                givenHref={`/profile/recos?filter=given&userId=${id}`}
+                receivedHref={`/profile/recos?filter=received&userId=${id}`}
                 completedHref={`/profile/recos?filter=completed&userId=${id}`}
               />
             </div>
