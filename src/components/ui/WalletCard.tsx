@@ -112,7 +112,7 @@ export function WalletCard({ reco, expanded, onToggle, onMarkDone, onBeenThere, 
   // ── Collapsed card header (always rendered in the wallet stack) ──
   const cardHeader = (
     <div
-      className="flex items-center px-5 gap-3 active:opacity-80 transition-opacity"
+      className="flex items-start px-5 pt-3 gap-3 active:opacity-80 transition-opacity"
       style={{ height: 100 }}
       onClick={onToggle}
     >

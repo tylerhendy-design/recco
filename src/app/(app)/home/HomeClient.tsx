@@ -764,7 +764,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                   <div
                     key={i}
                     className="w-full rounded-2xl bg-[#1a1a1e] animate-pulse relative"
-                    style={{ height: 100, marginTop: i === 0 ? 0 : -48, zIndex: i, animationDelay: `${i * 80}ms` }}
+                    style={{ height: 100, marginTop: i === 0 ? 0 : -34, zIndex: i, animationDelay: `${i * 80}ms` }}
                   />
                 ))}
               </div>
@@ -784,7 +784,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                     key={reco.id}
                     className="relative"
                     style={{
-                      marginTop: i === 0 ? 0 : isExpanded ? 8 : -48,
+                      marginTop: i === 0 ? 0 : isExpanded ? 8 : -34,
                       zIndex: isExpanded ? 100 : i,
                       transition: 'margin-top 0.3s ease, z-index 0s',
                     }}
