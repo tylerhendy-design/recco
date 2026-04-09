@@ -24,7 +24,7 @@ type RecoList = {
   items: ListItem[]
 }
 
-type ImportStep = 'idle' | 'name' | 'places' | 'preview'
+type ImportStep = 'idle' | 'link' | 'name' | 'places-fallback' | 'preview'
 
 export default function ListsPage() {
   const supabase = createClient()
@@ -35,6 +35,7 @@ export default function ListsPage() {
 
   // Import state
   const [importStep, setImportStep] = useState<ImportStep>('idle')
+  const [importUrl, setImportUrl] = useState('')
   const [importTitle, setImportTitle] = useState('')
   const [importText, setImportText] = useState('')
   const [importing, setImporting] = useState(false)
@@ -65,7 +66,33 @@ export default function ListsPage() {
     setLoading(false)
   }
 
-  // Find places from text input
+  // Import from Google Maps link
+  async function handleImportUrl() {
+    if (!importUrl.trim()) return
+    setImporting(true)
+    setImportError(null)
+
+    try {
+      const res = await fetch('/api/import-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: importUrl.trim() }),
+      })
+      const data = await res.json()
+      const places = data.places ?? []
+      if (places.length === 0) {
+        setImportError(data.error || 'Could not extract places from this link.')
+      } else {
+        setImportResults(places)
+        setImportStep('name')
+      }
+    } catch {
+      setImportError('Something went wrong. Check the link and try again.')
+    }
+    setImporting(false)
+  }
+
+  // Fallback: find places from text input
   async function handleFindPlaces() {
     if (!importText.trim()) return
     setImporting(true)
@@ -83,7 +110,7 @@ export default function ListsPage() {
         setImportError('No places found. Check the names and try again.')
       } else {
         setImportResults(places)
-        setImportStep('preview')
+        setImportStep('name')
       }
     } catch {
       setImportError('Something went wrong. Try again.')
@@ -124,6 +151,7 @@ export default function ListsPage() {
     await loadLists(userId)
 
     setImportStep('idle')
+    setImportUrl('')
     setImportTitle('')
     setImportText('')
     setImportResults(null)
@@ -133,6 +161,7 @@ export default function ListsPage() {
 
   function cancelImport() {
     setImportStep('idle')
+    setImportUrl('')
     setImportTitle('')
     setImportText('')
     setImportResults(null)
@@ -172,61 +201,70 @@ export default function ListsPage() {
           importStep !== 'idle' ? (
             <button onClick={cancelImport} className="text-text-faint text-[13px] font-semibold">Cancel</button>
           ) : (
-            <button onClick={() => setImportStep('name')} className="text-accent text-[13px] font-semibold">+ New list</button>
+            <button onClick={() => setImportStep('link')} className="text-accent text-[13px] font-semibold">+ Import</button>
           )
         }
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-none pb-24">
 
-        {/* ── STEP 1: Name your list ── */}
-        {importStep === 'name' && (
+        {/* ── STEP 1: Paste your Google Maps link ── */}
+        {importStep === 'link' && (
           <div className="px-6 pt-6 pb-4">
-            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Create a list</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Import from Google Maps</div>
             <div className="text-[13px] text-text-faint leading-[1.5] mb-5">
-              Give your list a name — like "London Restaurants", "Date Night Spots", or "Best Pizza".
+              Open your list in Google Maps, tap Share, copy the link, and paste it here. We'll pull in every place automatically.
             </div>
 
-            <label className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-1.5 block">List name</label>
+            <label className="text-[11px] font-semibold text-text-faint uppercase tracking-[0.5px] mb-1.5 block">List link</label>
             <input
-              value={importTitle}
-              onChange={(e) => setImportTitle(e.target.value)}
-              placeholder="e.g. London Restaurants"
+              value={importUrl}
+              onChange={(e) => { setImportUrl(e.target.value); setImportError(null) }}
+              placeholder="https://maps.app.goo.gl/..."
               autoFocus
-              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-3"
             />
 
+            {importError && (
+              <div className="text-[13px] text-bad mb-3">{importError}</div>
+            )}
+
             <button
-              onClick={() => setImportStep('places')}
-              disabled={!importTitle.trim()}
+              onClick={handleImportUrl}
+              disabled={importing || !importUrl.trim()}
               className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
-                importTitle.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
+                !importing && importUrl.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
               }`}
             >
-              Next
+              {importing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-accent-fg/30 border-t-accent-fg rounded-full animate-spin" />
+                  Reading list... this may take a moment
+                </span>
+              ) : 'Import list'}
+            </button>
+
+            <button
+              onClick={() => setImportStep('places-fallback')}
+              className="w-full py-3 text-[13px] font-semibold text-text-faint mt-3"
+            >
+              Or type place names manually
             </button>
           </div>
         )}
 
-        {/* ── STEP 2: Add your places ── */}
-        {importStep === 'places' && (
+        {/* ── FALLBACK: Type places manually ── */}
+        {importStep === 'places-fallback' && (
           <div className="px-6 pt-6 pb-4">
-            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Add places to "{importTitle}"</div>
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Add places manually</div>
             <div className="text-[13px] text-text-faint leading-[1.5] mb-4">
-              Type your place names — one per line. We'll find the images, addresses, and links automatically.
-            </div>
-
-            <div className="bg-bg-card border border-border rounded-xl p-3 mb-3">
-              <div className="text-[11px] font-semibold text-text-faint mb-2">TIP: Open your Google Maps list and type the names here</div>
-              <div className="text-[11px] text-text-faint leading-[1.5]">
-                Google Maps links can't be read automatically, but typing place names works perfectly — we use Google to find every detail.
-              </div>
+              Type place names one per line. We'll find the images, addresses, and links automatically.
             </div>
 
             <textarea
               value={importText}
               onChange={(e) => { setImportText(e.target.value); setImportError(null); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
-              placeholder={"Padella\nBao Soho\nLina Stores\nDishoom King's Cross\nFlat Iron"}
+              placeholder={"Padella\nBao Soho\nLina Stores\nDishoom King's Cross"}
               rows={6}
               autoFocus
               className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[160px] mb-3"
@@ -252,7 +290,60 @@ export default function ListsPage() {
             </button>
 
             <button
-              onClick={() => setImportStep('name')}
+              onClick={() => { setImportStep('link'); setImportError(null) }}
+              className="w-full py-3 text-[13px] font-semibold text-text-faint mt-2"
+            >
+              Back to link import
+            </button>
+          </div>
+        )}
+
+        {/* ── STEP 2: Name your list ── */}
+        {importStep === 'name' && importResults && (
+          <div className="px-6 pt-6 pb-4">
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Name your list</div>
+            <div className="text-[13px] text-accent font-semibold mb-4">{importResults.length} places found</div>
+
+            <input
+              value={importTitle}
+              onChange={(e) => setImportTitle(e.target.value)}
+              placeholder="e.g. London Restaurants, Date Night, Pizza"
+              autoFocus
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans mb-4"
+            />
+
+            {/* Preview of found places */}
+            <div className="flex flex-col gap-1.5 max-h-[40vh] overflow-y-auto scrollbar-none mb-4">
+              {importResults.map((place, i) => (
+                <div key={i} className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-3 py-2.5">
+                  {place.imageUrl ? (
+                    <img src={place.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-[#1a1a1e] flex items-center justify-center flex-shrink-0">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-semibold text-white truncate">{place.name}</div>
+                    {place.city && <div className="text-[11px] text-text-faint truncate">{place.city}</div>}
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleSave}
+              disabled={saving || !importTitle.trim()}
+              className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
+                !saving && importTitle.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
+              }`}
+            >
+              {saving ? 'Saving...' : `Save list (${importResults.length} places)`}
+            </button>
+
+            <button
+              onClick={() => { setImportStep('link'); setImportResults(null) }}
               className="w-full py-3 text-[13px] font-semibold text-text-faint mt-2"
             >
               Back
@@ -260,8 +351,8 @@ export default function ListsPage() {
           </div>
         )}
 
-        {/* ── STEP 3: Preview + save ── */}
-        {importStep === 'preview' && importResults && (
+        {/* ── (old preview step removed — merged into name step) ── */}
+        {null && (
           <div className="px-6 pt-6 pb-4">
             <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">"{importTitle}"</div>
             <div className="text-[13px] text-accent font-semibold mb-4">{importResults.length} places found</div>
@@ -317,10 +408,10 @@ export default function ListsPage() {
               Create a list of your favourite places. Type the names and we'll find the images, addresses, and links.
             </div>
             <button
-              onClick={() => setImportStep('name')}
+              onClick={() => setImportStep('link')}
               className="mt-2 bg-accent text-accent-fg px-6 py-3 rounded-xl text-[14px] font-bold"
             >
-              Create a list
+              Import from Google Maps
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
-const DESKTOP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+export const maxDuration = 60 // Allow up to 60s for browser rendering
 
 type ParsedPlace = {
   name: string
@@ -13,77 +13,131 @@ type ParsedPlace = {
   placeId: string | null
 }
 
-// Extract place names from Google Maps SSR HTML using multiple strategies
-function extractPlaceNames(html: string): string[] {
-  const names = new Set<string>()
+// ── Headless browser: render the Google Maps page and extract place names ──
+async function extractPlacesWithBrowser(url: string): Promise<string[]> {
+  let browser = null
+  try {
+    const chromium = (await import('@sparticuz/chromium')).default
+    const puppeteer = (await import('puppeteer-core')).default
 
-  // Strategy 1: data-item-id attributes
-  for (const m of html.matchAll(/data-item-id="([^"]+)"[^>]*>([^<]+)/g)) {
-    if (m[2]?.trim()) names.add(m[2].trim())
-  }
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    })
 
-  // Strategy 2: Escaped JSON strings containing place names in script data
-  // Google Maps embeds data like: [null,"Place Name",null,null,"address"]
-  // or ["0x...:0x...",null,"Place Name"]
-  for (const m of html.matchAll(/\[(?:null,)*"(0x[a-f0-9]+:0x[a-f0-9]+)"(?:,null)*,"([^"]{2,60})"/g)) {
-    if (m[2]?.trim()) names.add(m[2].trim())
-  }
+    const page = await browser.newPage()
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36')
 
-  // Strategy 3: Place names in \\\" escaped format within script tags
-  for (const m of html.matchAll(/\\\\?"([A-Z][^\\\"]{2,50})\\\\?",\\\\?"([^\\\"]{5,100})\\\\?"/g)) {
-    // name, address pairs
-    if (m[1]?.trim() && !m[1].includes('http') && !m[1].includes('function')) {
-      names.add(m[1].trim())
-    }
-  }
+    // Navigate to the URL (follows redirects automatically)
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 })
 
-  // Strategy 4: aria-label attributes on list items
-  if (names.size === 0) {
-    const skip = new Set(['search', 'menu', 'google', 'share', 'close', 'back', 'directions', 'zoom', 'map', 'satellite', 'layers', 'send', 'save', 'label', 'review', 'photo', 'street view', 'your lists', 'more', 'options'])
-    for (const m of html.matchAll(/aria-label="([^"]{3,80})"/g)) {
-      const name = m[1].trim()
-      if (skip.has(name.toLowerCase())) continue
-      if (/^(Navigate|Open|Close|Show|Toggle|Expand|Collapse)/i.test(name)) continue
-      names.add(name)
-    }
-  }
+    // Wait for list items to render — Google Maps uses various selectors
+    await page.waitForSelector('[role="main"]', { timeout: 10000 }).catch(() => {})
+    // Give extra time for dynamic content
+    await new Promise(r => setTimeout(r, 3000))
 
-  // Strategy 5: JSON-LD structured data
-  if (names.size === 0) {
-    for (const m of html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)) {
-      try {
-        const data = JSON.parse(m[1])
-        if (data.itemListElement) {
-          for (const item of data.itemListElement) {
-            if (item.name) names.add(item.name)
-          }
+    // Extract place names from the rendered DOM
+    const names = await page.evaluate(() => {
+      const results: string[] = []
+      const seen = new Set<string>()
+
+      // Strategy 1: Place names in list item elements with specific font styling
+      // Google Maps list items typically have the place name in a specific font-weight element
+      document.querySelectorAll('[role="article"], [data-item-id], .fontHeadlineSmall, .fontBodyMedium').forEach(el => {
+        const name = el.textContent?.trim()
+        if (name && name.length > 2 && name.length < 80 && !seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase())
+          results.push(name)
         }
-      } catch {}
-    }
-  }
+      })
 
-  // Strategy 6: og:description often contains "List with N places: Place1, Place2, ..."
-  const ogDesc = html.match(/property="og:description"\s+content="([^"]+)"/)?.[1]
-    || html.match(/content="([^"]+)"\s+property="og:description"/)?.[1]
-  if (ogDesc) {
-    // Extract place names from description like "Place1, Place2, Place3 and more"
-    const cleaned = ogDesc.replace(/ and \d+ more.*$/, '').replace(/ and more.*$/, '')
-    const parts = cleaned.split(/[,·•]/).map(s => s.trim()).filter(s => s.length > 2 && s.length < 60)
-    if (parts.length >= 2) {
-      for (const p of parts) names.add(p)
-    }
-  }
+      // Strategy 2: Look for elements with aria-label containing place info
+      if (results.length === 0) {
+        document.querySelectorAll('a[aria-label]').forEach(el => {
+          const label = el.getAttribute('aria-label') ?? ''
+          if (label.length > 2 && label.length < 80) {
+            const skip = ['directions', 'search', 'menu', 'share', 'google', 'close', 'zoom', 'map', 'satellite', 'layers', 'your location']
+            if (!skip.some(s => label.toLowerCase().includes(s)) && !seen.has(label.toLowerCase())) {
+              seen.add(label.toLowerCase())
+              results.push(label)
+            }
+          }
+        })
+      }
 
-  // Strategy 7: Title patterns like "Place Name - Google Maps"
-  // Google Maps list pages sometimes have place names in title/heading elements
-  for (const m of html.matchAll(/<h[12345][^>]*>([^<]{3,60})<\/h[12345]>/g)) {
-    const name = m[1].trim()
-    if (!name.toLowerCase().includes('google') && !name.toLowerCase().includes('map')) {
-      names.add(name)
-    }
-  }
+      // Strategy 3: Look for the specific list item containers Google Maps uses
+      if (results.length === 0) {
+        document.querySelectorAll('div.fontHeadlineSmall, div[class*="fontHeadline"]').forEach(el => {
+          const name = el.textContent?.trim()
+          if (name && name.length > 2 && name.length < 80 && !seen.has(name.toLowerCase())) {
+            seen.add(name.toLowerCase())
+            results.push(name)
+          }
+        })
+      }
 
-  return [...names]
+      // Strategy 4: Broader search — look for repeated patterns of text elements that look like place names
+      if (results.length === 0) {
+        // Find all elements with specific text styling that Google Maps uses for place names
+        document.querySelectorAll('span, div').forEach(el => {
+          const style = window.getComputedStyle(el)
+          const weight = parseInt(style.fontWeight)
+          const size = parseInt(style.fontSize)
+          // Place names are typically bold (500+) and medium-sized (14-20px)
+          if (weight >= 500 && size >= 14 && size <= 22 && el.children.length === 0) {
+            const name = el.textContent?.trim()
+            if (name && name.length > 2 && name.length < 60 && !seen.has(name.toLowerCase())) {
+              // Filter out obvious non-place text
+              if (!/^(Map|Satellite|Layers|Search|Menu|Share|Close|Sign|Log|More|Review|Photo|Save|Direction)/i.test(name) &&
+                  !/^\d+$/.test(name) && !/^[A-Z]{2,3}$/.test(name)) {
+                seen.add(name.toLowerCase())
+                results.push(name)
+              }
+            }
+          }
+        })
+      }
+
+      return results
+    })
+
+    await browser.close()
+    return names
+  } catch (e) {
+    if (browser) await browser.close().catch(() => {})
+    console.error('Browser extraction failed:', e)
+    return []
+  }
+}
+
+// ── Fallback: try simple HTML fetch patterns ──
+async function extractPlacesFromHTML(url: string): Promise<string[]> {
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+  const names: string[] = []
+
+  try {
+    let resolvedUrl = url
+    if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+      const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': UA } })
+      resolvedUrl = r.url
+    }
+
+    const res = await fetch(resolvedUrl, { headers: { 'User-Agent': UA, 'Accept': 'text/html' } })
+    const html = await res.text()
+
+    // og:description often has place names for shared lists
+    const ogDesc = html.match(/property="og:description"\s+content="([^"]+)"/)?.[1]
+      || html.match(/content="([^"]+)"\s+property="og:description"/)?.[1]
+    if (ogDesc) {
+      const cleaned = ogDesc.replace(/ and \d+ more.*$/, '').replace(/ and more.*$/, '')
+      const parts = cleaned.split(/[,·•]/).map(s => s.trim()).filter(s => s.length > 2 && s.length < 60)
+      if (parts.length >= 2) return parts
+    }
+  } catch {}
+
+  return names
 }
 
 export async function POST(req: NextRequest) {
@@ -96,57 +150,24 @@ export async function POST(req: NextRequest) {
 
   let places: ParsedPlace[] = []
 
-  // Mode 1: Google Maps list URL
+  // Mode 1: Google Maps URL — use headless browser to extract places
   if (url && (url.includes('google.com/maps') || url.includes('goo.gl') || url.includes('maps.app.goo.gl') || url.includes('maps.google'))) {
-    try {
-      // Resolve short URL to full URL
-      let resolvedUrl = url
-      if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
-        const r = await fetch(url, { redirect: 'follow', headers: { 'User-Agent': DESKTOP_UA } })
-        resolvedUrl = r.url
-      }
+    // Try headless browser first (most reliable)
+    let names = await extractPlacesWithBrowser(url)
 
-      // Fetch the page HTML
-      const res = await fetch(resolvedUrl, {
-        headers: {
-          'User-Agent': DESKTOP_UA,
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
-      })
-      const html = await res.text()
+    // Fallback to HTML parsing if browser failed
+    if (names.length === 0) {
+      names = await extractPlacesFromHTML(url)
+    }
 
-      // Try to extract place names from the HTML
-      const names = extractPlaceNames(html)
-      for (const name of names) {
-        places.push({ name, address: null, city: null, imageUrl: null, website: null, mapsUrl: null, placeId: null })
-      }
+    for (const name of names) {
+      places.push({ name, address: null, city: null, imageUrl: null, website: null, mapsUrl: null, placeId: null })
+    }
 
-      // If HTML parsing failed, try extracting from the URL itself
-      // Some list URLs contain place data in the path or query params
-      if (places.length === 0) {
-        // Try parsing place names from URL path segments
-        const decoded = decodeURIComponent(resolvedUrl)
-        const placeMatch = decoded.match(/place\/([^/]+)/)
-        if (placeMatch) {
-          const name = placeMatch[1].replace(/\+/g, ' ')
-          places.push({ name, address: null, city: null, imageUrl: null, website: null, mapsUrl: resolvedUrl, placeId: null })
-        }
-      }
-
-      // Last resort: if we still have nothing but have a valid Google Maps URL,
-      // return debug info so the user can try plain text input instead
-      if (places.length === 0) {
-        return NextResponse.json({
-          places: [],
-          hint: 'Google Maps list pages load content with JavaScript which we cannot parse server-side. Try opening the list in Google Maps, selecting all place names, and pasting them as text instead.',
-          resolvedUrl,
-        })
-      }
-    } catch (e: any) {
+    if (places.length === 0) {
       return NextResponse.json({
         places: [],
-        hint: `Could not fetch the URL: ${e.message ?? 'Unknown error'}. Check the link is correct and the list is public.`,
+        error: 'Could not extract places from this link. The list may be private, or Google may be blocking automated access. Try making the list public in Google Maps settings.',
       })
     }
   }
@@ -163,7 +184,7 @@ export async function POST(req: NextRequest) {
   // Enrich each place with Google Places data
   if (key && places.length > 0) {
     const enriched = await Promise.all(
-      places.slice(0, 20).map(async (place) => {
+      places.slice(0, 30).map(async (place) => {
         try {
           const searchRes = await fetch(
             `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(place.name)}&inputtype=textquery&fields=place_id,name,formatted_address,photos,geometry&key=${key}`
