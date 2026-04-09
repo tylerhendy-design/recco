@@ -486,6 +486,21 @@ export default function ProfilePage() {
               </svg>
               Add to your TOP 03
             </Link>
+
+            {/* Your Lists */}
+            <Link
+              href="/profile/lists"
+              className="w-full flex items-center justify-between py-3.5 mt-3 px-4 rounded-btn bg-bg-card border border-border"
+            >
+              <div className="flex items-center gap-2.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                <span className="text-[14px] font-semibold text-white">Your Lists</span>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </Link>
           </div>
 
           {/* Sign out */}
