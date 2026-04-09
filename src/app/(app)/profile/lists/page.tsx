@@ -24,8 +24,6 @@ type RecoList = {
   items: ListItem[]
 }
 
-type ImportStep = 'idle' | 'paste' | 'name'
-
 export default function ListsPage() {
   const supabase = createClient()
   const [userId, setUserId] = useState<string | null>(null)
@@ -34,8 +32,10 @@ export default function ListsPage() {
   const [openListId, setOpenListId] = useState<string | null>(null)
 
   // Import state — two-step flow
+  type ImportStep = 'idle' | 'paste' | 'text-fallback' | 'name'
   const [importStep, setImportStep] = useState<ImportStep>('idle')
   const [importUrl, setImportUrl] = useState('')
+  const [importText, setImportText] = useState('')
   const [importTitle, setImportTitle] = useState('')
   const [importing, setImporting] = useState(false)
   const [importResults, setImportResults] = useState<any[] | null>(null)
@@ -82,13 +82,39 @@ export default function ListsPage() {
       const data = await res.json()
       const places = data.places ?? []
       if (places.length === 0) {
-        setImportError('No places found. Make sure the list is set to public on Google Maps.')
+        // Offer text fallback instead of dead-ending
+        setImportStep('text-fallback')
       } else {
         setImportResults(places)
         setImportStep('name')
       }
     } catch {
-      setImportError('Something went wrong. Check the link and try again.')
+      setImportStep('text-fallback')
+    }
+    setImporting(false)
+  }
+
+  // Text fallback: user types place names
+  async function handleTextImport() {
+    if (!importText.trim()) return
+    setImporting(true)
+
+    try {
+      const res = await fetch('/api/import-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: importText.trim() }),
+      })
+      const data = await res.json()
+      const places = data.places ?? []
+      if (places.length === 0) {
+        setImportError('No places found. Try different names.')
+      } else {
+        setImportResults(places)
+        setImportStep('name')
+      }
+    } catch {
+      setImportError('Something went wrong. Try again.')
     }
     setImporting(false)
   }
@@ -128,6 +154,7 @@ export default function ListsPage() {
     // Reset
     setImportStep('idle')
     setImportUrl('')
+    setImportText('')
     setImportTitle('')
     setImportResults(null)
     setSaving(false)
@@ -137,6 +164,7 @@ export default function ListsPage() {
   function cancelImport() {
     setImportStep('idle')
     setImportUrl('')
+    setImportText('')
     setImportTitle('')
     setImportResults(null)
     setImportError(null)
@@ -216,6 +244,51 @@ export default function ListsPage() {
                   Finding places...
                 </span>
               ) : 'Next'}
+            </button>
+          </div>
+        )}
+
+        {/* ── FALLBACK: Type place names ── */}
+        {importStep === 'text-fallback' && (
+          <div className="px-6 pt-6 pb-4">
+            <div className="text-[20px] font-bold text-white tracking-[-0.5px] mb-1">Type your places</div>
+            <div className="text-[13px] text-text-faint leading-[1.5] mb-4">
+              Google Maps lists are tricky to parse automatically. Type or paste your place names below — one per line — and we'll find them for you.
+            </div>
+
+            <textarea
+              value={importText}
+              onChange={(e) => { setImportText(e.target.value); setImportError(null); const el = e.target; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }}
+              placeholder={"Padella\nBao Soho\nLina Stores\nDishoom King's Cross"}
+              rows={5}
+              autoFocus
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-3.5 text-[15px] text-white placeholder:text-[#444] outline-none focus:border-accent font-sans resize-none min-h-[120px] mb-3"
+            />
+
+            {importError && (
+              <div className="text-[13px] text-bad mb-3">{importError}</div>
+            )}
+
+            <button
+              onClick={handleTextImport}
+              disabled={importing || !importText.trim()}
+              className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
+                !importing && importText.trim() ? 'bg-accent text-accent-fg' : 'bg-accent/30 text-accent-fg/50'
+              }`}
+            >
+              {importing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-accent-fg/30 border-t-accent-fg rounded-full animate-spin" />
+                  Finding places...
+                </span>
+              ) : 'Find places'}
+            </button>
+
+            <button
+              onClick={() => { setImportStep('paste'); setImportError(null) }}
+              className="w-full py-3 text-[13px] font-semibold text-text-faint mt-2"
+            >
+              Back to link
             </button>
           </div>
         )}
