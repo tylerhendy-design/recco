@@ -134,9 +134,10 @@ interface RecoCardProps {
   onBeenThere?: (reco: Reco) => void
   onNoGo?: (reco: Reco) => void
   onForward?: (reco: Reco) => void
+  onClose?: () => void
 }
 
-export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, initialOpen, viewMode = 'full' }: RecoCardProps) {
+export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, onClose, initialOpen, viewMode = 'full' }: RecoCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [animating, setAnimating] = useState(false)
   const [whyIndex, setWhyIndex] = useState(0)
@@ -179,7 +180,10 @@ export function RecoCard({ reco, onMarkDone, onBeenThere, onNoGo, onForward, ini
 
   function close() {
     setAnimating(false)
-    setTimeout(() => setExpanded(false), 320)
+    setTimeout(() => {
+      setExpanded(false)
+      onClose?.()
+    }, 320)
   }
 
   // Auto-open when linked from notifications

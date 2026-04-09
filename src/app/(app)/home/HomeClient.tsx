@@ -20,8 +20,9 @@ import type { Reco, RecoRecommender } from '@/types/app.types'
 import { extractRecoCity } from '@/lib/city'
 import { SenderMergeSheet, type SenderItem } from '@/components/sender-merge/SenderMergeSheet'
 import { mergeQuickAddNames, mergeQuickAddToUser, undoMerge } from '@/lib/data/merges'
+import { WalletCard } from '@/components/ui/WalletCard'
 
-type Tab = 'todo' | 'done' | 'nogo'
+type Tab = 'todo' | 'done' | 'nogo' | 'everything'
 
 const CATEGORY_FILTERS = [
   { value: 'all', label: 'all' },
@@ -103,8 +104,8 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
 
   const [tab, setTab] = useState<Tab>('todo')
   const [tabDDOpen, setTabDDOpen] = useState(false)
-  const TAB_LABELS: Record<Tab, string> = { todo: 'To Do', done: 'Done', nogo: 'No Gos' }
-  const TAB_ORDER: Tab[] = ['todo', 'done', 'nogo']
+  const TAB_LABELS: Record<Tab, string> = { todo: 'To Do', done: 'Done', nogo: 'No Gos', everything: 'Everything' }
+  const TAB_ORDER: Tab[] = ['todo', 'done', 'nogo', 'everything']
   type ViewMode = 'full' | 'compact' | 'list'
   const VIEW_LABELS: Record<ViewMode, string> = { full: 'Full', compact: 'Compact', list: 'List' }
   const VIEW_CYCLE: ViewMode[] = ['full', 'compact', 'list']
@@ -273,6 +274,51 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
     ),
     [noGoRecos, dbNoGoRecos]
   )
+
+  // Everything tab: combine ALL recos (todo + done + nogo) into one chronological wallet
+  const [walletExpandedReco, setWalletExpandedReco] = useState<Reco | null>(null)
+
+  // Lightweight count for dropdown (always computed)
+  const everythingCount = useMemo(() => {
+    const ids = new Set<string>()
+    for (const r of [...dbRecos, ...manualRecos, ...doneRecos, ...dbNoGoRecos]) ids.add(r.id)
+    return ids.size
+  }, [dbRecos, manualRecos, doneRecos, dbNoGoRecos])
+
+  const allRecos = useMemo(() => {
+    if (tab !== 'everything') return []
+    const all = [...dbRecos, ...manualRecos, ...doneRecos, ...dbNoGoRecos]
+    const seen = new Set<string>()
+    return all
+      .filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [tab, dbRecos, manualRecos, doneRecos, dbNoGoRecos])
+
+  const walletFiltered = useMemo(() => {
+    if (tab !== 'everything') return []
+    return allRecos
+      .filter(r => catFilter === 'all' || r.category === catFilter)
+      .filter(r => {
+        if (timeFilter === 'all') return true
+        const ms = Date.now() - new Date(r.created_at).getTime()
+        if (timeFilter === 'today') return ms < 86400000
+        if (timeFilter === 'week') return ms < 7 * 86400000
+        if (timeFilter === 'month') return ms < 30 * 86400000
+        if (timeFilter === 'year') return ms < 365 * 86400000
+        return true
+      })
+      .filter(r => {
+        if (senderFilter === 'all') return true
+        const manualName = r.meta?.manual_sender_name as string | undefined
+        if (manualName && senderFilter === `manual::${manualName.trim().toLowerCase()}`) return true
+        return r.recommenders?.some(rec => rec.profile.id === senderFilter) ?? (r.sender?.id === senderFilter)
+      })
+      .filter(r => {
+        if (locationFilter === 'all') return true
+        const city = extractRecoCity(r.meta)
+        return city?.toLowerCase() === locationFilter
+      })
+  }, [allRecos, catFilter, timeFilter, senderFilter, locationFilter, tab])
 
   // Derive sender options from grouped recos (including manual/instant-add senders)
   const senderOptions = useMemo(() => {
@@ -464,7 +510,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
                 {TAB_LABELS[tab]}
               </h1>
               {(() => {
-                const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : noGoList.length
+                const count = tab === 'todo' ? grouped.length : tab === 'done' ? doneRecos.length : tab === 'everything' ? everythingCount : noGoList.length
                 return count > 0 ? <span className="text-[14px] font-semibold text-text-faint">{count}</span> : null
               })()}
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="3" strokeLinecap="round" className="ml-0.5">
@@ -474,7 +520,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
             {tabDDOpen && (
               <div className="absolute top-full left-0 mt-2 bg-bg-elevated border border-border rounded-xl overflow-hidden shadow-2xl min-w-[180px]">
                 {TAB_ORDER.map((t) => {
-                  const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : noGoList.length
+                  const count = t === 'todo' ? grouped.length : t === 'done' ? doneRecos.length : t === 'everything' ? everythingCount : noGoList.length
                   const active = tab === t
                   return (
                     <button
@@ -503,6 +549,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
           <button
             onClick={() => setViewMode(VIEW_CYCLE[(VIEW_CYCLE.indexOf(viewMode) + 1) % VIEW_CYCLE.length])}
             className="flex items-center justify-center w-9 h-9 text-text-faint hover:text-white transition-colors"
+            title={`View: ${VIEW_LABELS[viewMode]}`}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -523,7 +570,7 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
       </div>
 
       {/* Filter pills — horizontal scrollable, compact */}
-      {tab === 'todo' && (
+      {(tab === 'todo' || tab === 'everything') && (
       <div className="flex-shrink-0">
         <div className="flex gap-2 overflow-x-auto scrollbar-none px-5 py-2.5">
           {/* Category pill */}
@@ -705,6 +752,60 @@ function HomePageInner({ initialData }: { initialData: InitialHomeData | null })
         </>
       )}
 
+
+      {/* ── EVERYTHING TAB (wallet stack) ── */}
+      {tab === 'everything' && (
+        <div className="flex-1 overflow-y-auto scrollbar-none" onScroll={handleFeedScroll}>
+          <div className="px-4 pt-2 pb-24">
+            {loading ? (
+              <div className="flex flex-col gap-0">
+                {[0, 1, 2, 3, 4].map(i => (
+                  <div
+                    key={i}
+                    className="w-full rounded-2xl bg-[#1a1a1e] animate-pulse relative"
+                    style={{ height: 88, marginTop: i === 0 ? 0 : -46, zIndex: i, animationDelay: `${i * 80}ms` }}
+                  />
+                ))}
+              </div>
+            ) : walletFiltered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-10">
+                <div className="text-[36px] mb-2">🗂</div>
+                <div className="text-[17px] font-semibold text-white">Your wallet is empty</div>
+                <div className="text-[14px] text-text-muted leading-[1.6]">
+                  All your recos — given, received, done — will stack up here.
+                </div>
+              </div>
+            ) : (
+              walletFiltered.map((reco, i) => (
+                <div
+                  key={reco.id}
+                  className="relative"
+                  style={{ marginTop: i === 0 ? 0 : -46, zIndex: i }}
+                >
+                  <WalletCard
+                    reco={reco}
+                    onClick={() => setWalletExpandedReco(reco)}
+                  />
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Wallet expanded card overlay */}
+      {walletExpandedReco && (
+        <RecoCard
+          reco={walletExpandedReco}
+          initialOpen
+          viewMode="full"
+          onMarkDone={(r) => { setFeedbackReco(r) }}
+          onBeenThere={(r) => { setBeenThereReco(r) }}
+          onNoGo={(r) => { setNoGoReco(r) }}
+          onForward={handleForward}
+          onClose={() => setWalletExpandedReco(null)}
+        />
+      )}
 
       {/* ── TO DO TAB ── */}
       {tab === 'todo' && (
