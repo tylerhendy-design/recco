@@ -303,7 +303,25 @@ export default function WelcomePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-[13px] text-text-faint">Add friends first to send them recos. You can skip for now.</div>
+                    <div>
+                      <div className="text-[13px] text-text-faint mb-3">No friends on RECO yet? Invite someone and send them your first reco.</div>
+                      <button
+                        onClick={async () => {
+                          const text = giveTitle.trim()
+                            ? `I just reco'd "${giveTitle.trim()}" for you on RECO. Join to see it:`
+                            : 'A place for all your recommendations, shared with your closest friends.'
+                          if (navigator.share) {
+                            try { await navigator.share({ title: 'Join me on RECO', text, url: 'https://givemeareco.com' }); return } catch {}
+                          }
+                          await navigator.clipboard.writeText(`${text} https://givemeareco.com`)
+                          setInviteCopied(true)
+                          setTimeout(() => setInviteCopied(false), 2000)
+                        }}
+                        className="w-full py-3 border border-accent rounded-xl text-[13px] font-semibold text-accent"
+                      >
+                        {inviteCopied ? 'Link copied' : 'Invite a friend'}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -361,7 +379,24 @@ export default function WelcomePage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-[13px] text-text-faint">Add friends first to request recos. You can skip for now.</div>
+                    <div>
+                      <div className="text-[13px] text-text-faint mb-3">No friends yet? Invite someone and ask them for a reco.</div>
+                      <button
+                        onClick={async () => {
+                          const cat = askCategory === 'custom' ? askCustomCat : askCategory
+                          const text = cat ? `I need a ${cat} reco. Join RECO and send me one:` : 'A place for all your recommendations, shared with your closest friends.'
+                          if (navigator.share) {
+                            try { await navigator.share({ title: 'Join me on RECO', text, url: 'https://givemeareco.com' }); return } catch {}
+                          }
+                          await navigator.clipboard.writeText(`${text} https://givemeareco.com`)
+                          setInviteCopied(true)
+                          setTimeout(() => setInviteCopied(false), 2000)
+                        }}
+                        className="w-full py-3 border border-accent rounded-xl text-[13px] font-semibold text-accent"
+                      >
+                        {inviteCopied ? 'Link copied' : 'Invite a friend'}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
