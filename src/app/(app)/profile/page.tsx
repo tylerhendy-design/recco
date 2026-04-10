@@ -617,20 +617,15 @@ export default function ProfilePage() {
               </Link>
             )}
 
-            {/* ── LISTS ── */}
-            <div className="mt-5">
+            {/* ── LISTS — Coming soon ── */}
+            <div className="mt-5 relative">
               <div className="flex items-baseline justify-between mb-3">
                 <h2 className="text-[18px] font-bold text-white tracking-[-0.3px]">Lists</h2>
-                <Link href="/profile/lists" className="text-[12px] font-semibold text-accent">
-                  {lists.length > 0 ? 'See all' : '+ Import'}
-                </Link>
+                <span className="text-[11px] font-semibold text-accent/60">Coming soon</span>
               </div>
 
-              {lists.length === 0 ? (
-                <Link
-                  href="/profile/lists"
-                  className="flex items-center gap-3 p-4 bg-bg-card border border-border rounded-2xl"
-                >
+              <div className="opacity-40 pointer-events-none">
+                <div className="flex items-center gap-3 p-4 bg-bg-card border border-border rounded-2xl">
                   <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
@@ -640,41 +635,8 @@ export default function ProfilePage() {
                     <div className="text-[14px] font-semibold text-white">Import from Google Maps</div>
                     <div className="text-[12px] text-text-faint">Bring in your saved places with one link</div>
                   </div>
-                </Link>
-              ) : (
-                <div className="flex gap-3 overflow-x-auto scrollbar-none -mx-4 px-4 pb-1">
-                  {lists.map(list => (
-                    <Link
-                      key={list.id}
-                      href="/profile/lists"
-                      className="flex-shrink-0 w-[200px] bg-bg-card border border-border rounded-2xl overflow-hidden"
-                    >
-                      {list.hero_image ? (
-                        <div className="w-full h-24 relative">
-                          <img src={list.hero_image} alt="" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-bg-card via-transparent to-transparent" />
-                        </div>
-                      ) : (
-                        <div className="w-full h-16 bg-[#1a1a1e] flex items-center justify-center">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        </div>
-                      )}
-                      <div className="px-3 py-2.5">
-                        <div className="text-[13px] font-bold text-white truncate">{list.title}</div>
-                        <div className="text-[11px] text-text-faint">{list.item_count} places</div>
-                      </div>
-                    </Link>
-                  ))}
-                  {/* Add another list card */}
-                  <Link
-                    href="/profile/lists"
-                    className="flex-shrink-0 w-[120px] bg-bg-card border border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-1.5 min-h-[120px]"
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4E23A" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    <span className="text-[11px] font-semibold text-accent">Import</span>
-                  </Link>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
