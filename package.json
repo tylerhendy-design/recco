@@ -10,14 +10,12 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^143.0.4",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.15.0",
     "next": "^15.5.14",
     "next-pwa": "^5.6.0",
-    "puppeteer-core": "^24.40.0",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
