@@ -364,8 +364,14 @@ function NotifRow({
     const subtype = notif.payload?.subtype
     const constraints = notif.payload?.constraints as Record<string, string> | undefined
     const details = notif.payload?.details as string | undefined
+    const constraintLabels: Record<string, string> = {
+      cuisine: 'Cuisine', vibe: 'Vibe', budget: 'Budget', group_size: 'Group',
+      booking: 'Booking', duration: 'Duration', avoid: 'Avoid', location: 'Location',
+      genre: 'Genre', mood: 'Mood', era: 'Era', length: 'Length', topic: 'Topic',
+      streaming: 'Streaming', occasion: 'Occasion', type: 'Type',
+    }
     const constraintStr = constraints && Object.keys(constraints).length > 0
-      ? Object.values(constraints).join(' · ')
+      ? Object.entries(constraints).map(([k, v]) => `${constraintLabels[k] ?? k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`).join(' · ')
       : null
     const extra = [constraintStr, details].filter(Boolean).join(' · ')
     heading = `${icon.emoji} Reco request`

@@ -89,8 +89,8 @@ function ThreadPageInner() {
         }
       }
 
-      // Fetch existing messages
-      const msgs = await fetchMessages(recoId, user.id)
+      // Fetch existing messages — scoped to this specific conversation partner
+      const msgs = await fetchMessages(recoId, user.id, withUserId ?? undefined)
       setMessages(msgs)
       setLoading(false)
 

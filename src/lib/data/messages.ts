@@ -14,16 +14,27 @@ export type MessageRow = {
   }
 }
 
-export async function fetchMessages(recoId: string, userId: string): Promise<MessageRow[]> {
+export async function fetchMessages(recoId: string, userId: string, withUserId?: string): Promise<MessageRow[]> {
   const supabase = createClient()
-  const { data } = await supabase
+
+  let query = supabase
     .from('messages')
     .select(`
       id, reco_id, sender_id, recipient_id, body, audio_url, created_at,
       sender:profiles!messages_sender_id_fkey(display_name, avatar_url)
     `)
     .eq('reco_id', recoId)
-    .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+
+  if (withUserId) {
+    // Only fetch messages between these two specific users on this reco
+    query = query.or(
+      `and(sender_id.eq.${userId},recipient_id.eq.${withUserId}),and(sender_id.eq.${withUserId},recipient_id.eq.${userId})`
+    )
+  } else {
+    query = query.or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
+  }
+
+  const { data } = await query
     .order('created_at', { ascending: true })
     .limit(100)
   return (data ?? []) as MessageRow[]
